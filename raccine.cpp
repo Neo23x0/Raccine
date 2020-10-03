@@ -30,7 +30,7 @@ DWORD getppid(DWORD pid) {
 }
 
 BOOL iswhitelisted(DWORD pid) {
-    char* whitelist[] = {"explorer.exe"}; 
+    char* whitelist[] = {"explorer.exe", "wininit.exe", "winlogon.exe"}; 
     PROCESSENTRY32 pe32;
     HANDLE hSnapshot;
     hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -98,7 +98,7 @@ int main(){
         printf("Kill PID %d\n", pids[i-1]);
         killprocess(pids[i-1], 1);
     }
-    printf("Raccine finished its cleanup.\n", pid);
+    printf("Raccine v0.1.1 finished its cleanup.\n", pid);
     std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     return 0;
 }
