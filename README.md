@@ -18,6 +18,10 @@ Disadvantages / Blind Spots:
 - It even kills the processes that tried to invoke `vssadmin.exe`, which could be a backup process
 - This won't catch methods in which the malicious process isn't one of the processes in the tree that has invoked `vssadmin.exe` (e.g. via `schtasks`)
 
+## Pivot
+
+In case that the Ransomware that your're currently handling uses a certain process name, e.g. `taskdl.exe`, you could just change the `.reg` patch to intercept calls to that name and let Raccine kill all parent processes of the invoking process tree.
+
 ## Warning
 
 You won't be able to run `vssadmin.exe` on a raccinated machine anymore until your apply the uninstall patch `raccine-reg-patch-uninstall.reg`.
