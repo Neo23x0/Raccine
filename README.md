@@ -20,7 +20,7 @@ Disadvantages / Blind Spots:
 
 ## Warning
 
-You won't be able to run `vssadmin.exe` on this system anymore until your apply the uninstall patch `raccine-reg-patch-uninstall.reg`.
+You won't be able to run `vssadmin.exe` on a raccinated machine anymore until your apply the uninstall patch `raccine-reg-patch-uninstall.reg`.
 
 ## Installation
 
