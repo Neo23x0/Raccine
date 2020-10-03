@@ -2,6 +2,12 @@
 
 A Simple Ransomware Vaccine
 
+## Why
+
+We see ransomware delete all shadow copies using `vssadmin` pretty often. What if we could just intercept that request and kill the invoking process?
+
+![Ransomware Process Tree](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen2.png)
+
 ## How it works
 
 We register a debugger for `vssadmin.exe` which is our compiled `raccine.exe`. Raccine is a binary, that first collects all PIDs of the parent processes and then tries to kill all parent processes. I've whitelisted `explorer.exe` in order to avoid unwanted problems with the Windows desktop. I don't know if this was a good idea.  
