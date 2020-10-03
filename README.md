@@ -25,7 +25,7 @@ You won't be able to run `vssadmin.exe` on a raccinated machine anymore until yo
 ## Installation
 
 1. Apply Registry Patch `raccine-reg-patch.reg`
-2. Place `raccine.exe` in the `PATH`, e.g. into `C:\Windows`
+2. Place `raccine.exe` from the [release section](https://github.com/Neo23x0/Raccine/releases/) in the `PATH`, e.g. into `C:\Windows`
 
 ## Screenshot
 
