@@ -31,4 +31,4 @@ You won't be able to run `vssadmin.exe` on this system anymore until your apply 
 
 Run `raccine.exe` and watch the parent process tree die. 
 
-![Kill Run](https://github.com/Neo23x0/Raccine/images/screen1.png)
+![Kill Run](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen1.png)
