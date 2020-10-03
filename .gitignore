@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+*.json
+raccine.pdb
+vc140.pdb
+raccine.ilk
