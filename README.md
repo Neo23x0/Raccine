@@ -17,12 +17,14 @@ Avantages:
 - The method is rather generic
 - We don't have to replace a system file (`vssadmin.exe`), which could lead to integrity problems and could break our raccination on each patch day 
 - The changes are easy to undo
+- Should work on all Windows versions from Windows 2000 onwards
+- No running executable or additional service required (agent-less)
 
 Disadvantages / Blind Spots:
 
 - The legitimate use of `vssadmin.exe` isn't possble anymore
 - It even kills the processes that tried to invoke `vssadmin.exe`, which could be a backup process
-- This won't catch methods in which the malicious process isn't one of the processes in the tree that has invoked `vssadmin.exe` (e.g. via `schtasks`)
+- This won't catch methods in which the malicious process isn't one of the processes in the tree that has invoked `vssadmin.exe` (e.g. via `wmic` or `schtasks`)
 
 Note: If you have a solid security monitoring that logs all process executions, you could check your logs to see if `vssadmin.exe` is frequently or sporadically used for legitimate purposes in which case you should refrain from using Raccine.  
 
