@@ -44,7 +44,7 @@ USE IT AT YOUR OWN RISK!
 
 You won't be able to run commands that use the blacklisted commands on a raccinated machine anymore until your apply the uninstall patch `raccine-reg-patch-uninstall.reg`. This could break various backup solutions that run that specific command during their work. It will not only block that request but kills all processes in that tree including the backup solution and its invoking process.
 
-If you have a solid security monitoring that logs all process executions, you could check your logs to see if `vssadmin.exe` is frequently or sporadically used for legitimate purposes in which case you should refrain from using Raccine. 
+If you have a solid security monitoring that logs all process executions, you could check your logs to see if `vssadmin.exe delete shadows` is frequently or sporadically used for legitimate purposes in which case you should refrain from using Raccine. 
 
 ## Version History
 
@@ -57,7 +57,7 @@ If you have a solid security monitoring that logs all process executions, you co
 ## Installation
 
 1. Apply Registry Patch `raccine-reg-patch-vssadmin.reg` to intercept invocations of `vssadmin.exe`
-2. Place `raccine.exe` from the [release section](https://github.com/Neo23x0/Raccine/releases/) in the `PATH`, e.g. into `C:\Windows`
+2. Place `Raccine.exe` from the [release section](https://github.com/Neo23x0/Raccine/releases/) in the `PATH`, e.g. into `C:\Windows`
 
 ### Eventlog Addon (Optional)
 
@@ -72,6 +72,11 @@ About 20-40% of Ransomware samples use `wmic` to delete the local shadowcopies. 
 4. Apply the `raccine-reg-patch-wmic.reg` patch to intercept invocations of `wmic.exe`
 
 ![Kill Run](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen5.png)
+
+## Uninstall 
+
+1. Run `raccine-reg-patch-uninstall.reg` 
+2. Remove `Raccine.exe` (optional)
 
 ## Screenshot
 
