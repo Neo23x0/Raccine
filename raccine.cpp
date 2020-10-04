@@ -1,5 +1,6 @@
-//
-//
+// Raccine 
+// A Simple Ransomware Vaccine
+// https://github.com/Neo23x0/Raccine
 //
 //
 
@@ -42,7 +43,7 @@ DWORD getppid(DWORD pid) {
 }
 
 BOOL isallowlisted(DWORD pid) {
-    TCHAR allowlist[3][MAX_PATH] = {TEXT("explorer.exe"), TEXT("wininit.exe"), TEXT("winlogon.exe")}; 
+    TCHAR allowlist[3][MAX_PATH] = { TEXT("wininit.exe"), TEXT("winlogon.exe")};
     PROCESSENTRY32 pe32;
     HANDLE hSnapshot;
     hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -80,14 +81,11 @@ BOOL killprocess(DWORD dwProcessId, UINT uExitCode) {
     return result;
 }
 
-int _tmain(int argc, _TCHAR* argv[])
-{
+int _tmain(int argc, _TCHAR* argv[]) {
 
     DWORD pids[1024];
     uint8_t c = 0;
     DWORD pid = GetCurrentProcessId();
-
-    fprintf(stdout,"Raccine PID is %d\n", pid);
 
     setlocale(LC_ALL, "");
 
@@ -95,9 +93,10 @@ int _tmain(int argc, _TCHAR* argv[])
     bool bShadow = false;
     bool bResize = false;
     bool bShadowStorage = false;
+    bool bShadowCopy = false;
 
-    // check if delete and shadow are in any of the
-    // the arguments and in any combination
+
+    // check for keywords in command line parameters
     for (DWORD iCount = 0; iCount < argc; iCount++)
     {
 
@@ -113,13 +112,17 @@ int _tmain(int argc, _TCHAR* argv[])
         else if (_tcsicmp(TEXT("resize"), argv[iCount]) == 0) {
             bResize = true;
         }
+        else if (_tcsicmp(TEXT("shadowcopy"), argv[iCount]) ==0 ) {
+            bShadowCopy = true;
+        }
     }
 
-    
+    fprintf(stdout, "Raccine - Ransomware Vaccine (PID is %d)\n", pid);
 
     // OK this is not want we want 
     // we want to kill the process responsible
-    if ((bDelete && bShadow) || (bResize && bShadowStorage)) {
+    if ((bDelete && bShadow) || (bResize && bShadowStorage) || (bDelete && bShadowCopy)) {
+
         // Collect PIDs to kill
         while (true) {
             try {
@@ -153,6 +156,7 @@ int _tmain(int argc, _TCHAR* argv[])
         HANDLE hReg = RegisterEventSource(NULL, TEXT("Raccine"));
         ReportEvent(hReg, EVENTLOG_INFORMATION_TYPE, RaccineAlert, Alert_1337, NULL, 0, 0, NULL, NULL);
 
+        printf("Raccine v0.2.0 finished\n");
 
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     }
@@ -163,7 +167,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
         DEBUG_EVENT debugEvent = { 0 };
 
-        fprintf(stdout, "Raccine is allowing a launch\n");
+        //fprintf(stdout, "Raccine is allowing a launch\n");
         std::wstring commandLineStr = TEXT("");
 
         for (int i = 1; i < argc; i++) commandLineStr.append(std::wstring(argv[i]).append(TEXT(" ")));
@@ -173,7 +177,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
         if (CreateProcess(NULL, (LPWSTR)commandLineStr.c_str(), NULL, NULL, TRUE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &info, &processInfo))
         {
-            fwprintf(stdout, TEXT("Created Process %s\n"), commandLineStr.c_str());
+            //fwprintf(stdout, TEXT("Created Process '%s'\n"), commandLineStr.c_str());
 
             DebugActiveProcessStop(processInfo.dwProcessId);
 
@@ -181,11 +185,6 @@ int _tmain(int argc, _TCHAR* argv[])
             CloseHandle(processInfo.hProcess);
             CloseHandle(processInfo.hThread);
         }
-
     }
-
-
-    printf("Raccine v0.1.2 finished its cleanup.\n");
-
     return 0;
 }
