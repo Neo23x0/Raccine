@@ -14,6 +14,7 @@
 #include <locale.h>
 #include <string>
 #include <vector>
+#include "RaccineMessageDLL/Message.h"
 
 #define arraysize(ar)  (sizeof(ar) / sizeof(ar[0]))
 
@@ -138,6 +139,11 @@ int _tmain(int argc, _TCHAR* argv[])
             killprocess(pids[i - 1], 1);
         }
 
+        // Log an event
+        HANDLE hReg = RegisterEventSource(NULL, TEXT("Raccine"));
+        ReportEvent(hReg, EVENTLOG_INFORMATION_TYPE, RaccineAlert, Alert_1337, NULL, 0, 0, NULL, NULL);
+
+
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     }
     //
@@ -155,54 +161,11 @@ int _tmain(int argc, _TCHAR* argv[])
         STARTUPINFO info = { sizeof(info) };
         PROCESS_INFORMATION processInfo;
 
-        bool Debugging = true;
-
         if (CreateProcess(NULL, (LPWSTR)commandLineStr.c_str(), NULL, NULL, TRUE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &info, &processInfo))
         {
             fwprintf(stdout, TEXT("Created Process %s\n"), commandLineStr.c_str());
 
             DebugActiveProcessStop(processInfo.dwProcessId);
-
-            /*
-            do {
-                WaitForDebugEvent(&debugEvent, INFINITE);
-                
-                    switch (debugEvent.dwDebugEventCode)
-                    {
-
-                    case EXIT_THREAD_DEBUG_EVENT:
-                        ContinueDebugEvent(
-                            debugEvent.dwProcessId,
-                            debugEvent.dwThreadId,
-                            DBG_CONTINUE);
-                        break;
-
-                    case EXIT_PROCESS_DEBUG_EVENT:
-                        ContinueDebugEvent(
-                            debugEvent.dwProcessId,
-                            debugEvent.dwThreadId,
-                            DBG_CONTINUE);
-                        Debugging = false;
-                        break;
-
-                    case RIP_EVENT:
-                        ContinueDebugEvent(
-                            debugEvent.dwProcessId,
-                            debugEvent.dwThreadId,
-                            DBG_CONTINUE);
-                        Debugging = false;
-                        break;
-
-                    default:
-                        ContinueDebugEvent(
-                            debugEvent.dwProcessId,
-                            debugEvent.dwThreadId,
-                            DBG_CONTINUE);
-                        break;
-                    }
-             
-
-            } while (Debugging);*/
 
             WaitForSingleObject(processInfo.hProcess, INFINITE);
             CloseHandle(processInfo.hProcess);
