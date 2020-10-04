@@ -1,3 +1,37 @@
+#######################
+# Visual Studio files #
+#######################
+*.suo
+*.user
+*.sdf
+ipch/
+.vs/
+
+##################
+# Python Ness    #
+##################
+__pycache__/
+env/
+*.pyc
+
+##################
+# Compiled files #
+##################
+linux/
+bin/
+obj/
+Release/
+Debug/
+*.dll
+*.exe
+*.pdb
+*.obj
+*.log
+*.tlog
+*.htm
+*.pch
+watchlist.db
+
 # Prerequisites
 *.d
 
