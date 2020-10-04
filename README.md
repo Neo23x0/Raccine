@@ -24,7 +24,7 @@ Disadvantages / Blind Spots:
 
 - The legitimate use of `vssadmin.exe delete shadows` (or any other blacklisted combination) isn't possible anymore
 - It even kills the processes that tried to invoke `vssadmin.exe delete shadows`, which could be a backup process
-- This won't catch methods in which the malicious process isn't one of the processes in the tree that has invoked `vssadmin.exe` (e.g. via `wmic` or `schtasks`)
+- This won't catch methods in which the malicious process isn't one of the processes in the tree that has invoked `vssadmin.exe` (e.g. via `schtasks`)
 
 ### The Process
 
