@@ -41,11 +41,18 @@ If you have a solid security monitoring that logs all process executions, you co
 - 0.1.0 - Initial version that intercepted blocked all vssadmin.exe executions
 - 0.2.0 - Version that blocks only vssadmin.exe executions that contain `delete` and `shadows` in their command line and otherwise pass all parameters to a new process that invokes vssadmin with its original parameters
 - 0.2.1 - Removed `explorer.exe` from the whitelist
+- 0.3.0 - Supports the `wmic` method calling `delete shadowcopy`, no outputs for whitelisted process starts (avoids problems with wmic output processing)
 
 ## Installation
 
 1. Apply Registry Patch `raccine-reg-patch.reg`
 2. Place `raccine.exe` from the [release section](https://github.com/Neo23x0/Raccine/releases/) in the `PATH`, e.g. into `C:\Windows`
+
+### Addon
+
+3. Also apply the `raccine-reg-patch-uninstall.reg` patch to intercept calls to `wmic`, which I consider much riskier. 
+
+![Kill Run](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen5.png)
 
 ## Screenshot
 
