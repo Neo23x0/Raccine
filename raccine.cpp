@@ -13,8 +13,10 @@
 #include <chrono>
 #include <thread>
 #include <locale.h>
+#include <psapi.h>
 #include <string>
 #include <vector>
+#include "RaccineMessageDLL/Message.h"
 
 #define arraysize(ar)  (sizeof(ar) / sizeof(ar[0]))
 
@@ -55,7 +57,25 @@ BOOL isallowlisted(DWORD pid) {
             if (pe32.th32ProcessID == pid){
                 for (uint8_t i = 0; i < arraysize(allowlist); i++) {
                     if (!_tcscmp((TCHAR*)pe32.szExeFile, allowlist[i])) {
-                        return TRUE;
+
+                        HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe32.th32ProcessID);
+                        if (hProcess != NULL)
+                        {
+                            wchar_t filePath[MAX_PATH];
+                            if (GetModuleFileNameEx(hProcess, NULL, filePath, MAX_PATH))
+                            {
+                                // Are they in the Windows directory?
+                                if (_tcsnicmp(filePath, TEXT("C:\\Windows\\System32\\"), _tcslen(TEXT("C:\\Windows\\System32\\"))) == 0) {
+                                    CloseHandle(hProcess);
+                                    return TRUE;
+                                }
+                            }
+                            else {
+
+                                CloseHandle(hProcess);
+                            }
+                        }
+
                     } 
                 }
                 break;
@@ -90,26 +110,39 @@ int _tmain(int argc, _TCHAR* argv[]) {
 
     bool bDelete = false;
     bool bShadow = false;
+    bool bResize = false;
+    bool bShadowStorage = false;
     bool bShadowCopy = false;
+
+
 
     // check for keywords in command line parameters
     for (DWORD iCount = 0; iCount < argc; iCount++)
     {
-        if (_tcsicmp(TEXT("delete"), argv[iCount])) {
+
+        if (_tcsicmp(TEXT("delete"), argv[iCount]) == 0) {
             bDelete = true;
         }
-        else if (_tcsicmp(TEXT("shadow"), argv[iCount])) {
+        else if (_tcsicmp(TEXT("shadows"), argv[iCount]) == 0) {
             bShadow = true;
         }
-        else if (_tcsicmp(TEXT("shadowcopy"), argv[iCount])) {
+        else if (_tcsicmp(TEXT("shadowstorage"), argv[iCount]) == 0) {
+            bShadowStorage = true;
+        }
+        else if (_tcsicmp(TEXT("resize"), argv[iCount]) == 0) {
+            bResize = true;
+        }
+        else if (_tcsicmp(TEXT("shadowcopy"), argv[iCount]) ==0 ) {
             bShadowCopy = true;
         }
     }
 
+    fprintf(stdout, "Raccine - Ransomware Vaccine (PID is %d)\n", pid);
+
     // OK this is not want we want 
     // we want to kill the process responsible
-    if ( ( bDelete && bShadow ) || (bDelete && bShadowCopy) ) {
-        fprintf(stdout, "Raccine - Ransomware Vaccine (PID is %d)\n", pid);
+    if ((bDelete && bShadow) || (bResize && bShadowStorage) || (bDelete && bShadowCopy)) {
+
         // Collect PIDs to kill
         while (true) {
             try {
@@ -123,7 +156,7 @@ int _tmain(int argc, _TCHAR* argv[]) {
                     c++;
                 }
                 else {
-                    printf("Process with PID %d is on whitelist\n", pid);
+                    printf("Process with PID %d is on allowlist\n", pid);
                 }
             }
             catch (...) {
@@ -138,8 +171,13 @@ int _tmain(int argc, _TCHAR* argv[]) {
             printf("Kill PID %d\n", pids[i - 1]);
             killprocess(pids[i - 1], 1);
         }
-        printf("Raccine v0.2.0 finished\n");
+
+        // Log an event
+        HANDLE hReg = RegisterEventSource(NULL, TEXT("Raccine"));
+        ReportEvent(hReg, EVENTLOG_INFORMATION_TYPE, RaccineAlert, Alert_1337, NULL, 0, 0, NULL, NULL);
+
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+
     }
     //
     // Otherwise launch it
@@ -156,59 +194,18 @@ int _tmain(int argc, _TCHAR* argv[]) {
         STARTUPINFO info = { sizeof(info) };
         PROCESS_INFORMATION processInfo;
 
-        bool Debugging = true;
-
         if (CreateProcess(NULL, (LPWSTR)commandLineStr.c_str(), NULL, NULL, TRUE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &info, &processInfo))
         {
             //fwprintf(stdout, TEXT("Created Process '%s'\n"), commandLineStr.c_str());
 
             DebugActiveProcessStop(processInfo.dwProcessId);
 
-            /*
-            do {
-                WaitForDebugEvent(&debugEvent, INFINITE);
-                
-                    switch (debugEvent.dwDebugEventCode)
-                    {
-
-                    case EXIT_THREAD_DEBUG_EVENT:
-                        ContinueDebugEvent(
-                            debugEvent.dwProcessId,
-                            debugEvent.dwThreadId,
-                            DBG_CONTINUE);
-                        break;
-
-                    case EXIT_PROCESS_DEBUG_EVENT:
-                        ContinueDebugEvent(
-                            debugEvent.dwProcessId,
-                            debugEvent.dwThreadId,
-                            DBG_CONTINUE);
-                        Debugging = false;
-                        break;
-
-                    case RIP_EVENT:
-                        ContinueDebugEvent(
-                            debugEvent.dwProcessId,
-                            debugEvent.dwThreadId,
-                            DBG_CONTINUE);
-                        Debugging = false;
-                        break;
-
-                    default:
-                        ContinueDebugEvent(
-                            debugEvent.dwProcessId,
-                            debugEvent.dwThreadId,
-                            DBG_CONTINUE);
-                        break;
-                    }
-             
-
-            } while (Debugging);*/
-
             WaitForSingleObject(processInfo.hProcess, INFINITE);
             CloseHandle(processInfo.hProcess);
             CloseHandle(processInfo.hThread);
         }
     }
+
+    printf("Raccine v0.2.0 finished\n");
     return 0;
 }
