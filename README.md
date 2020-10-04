@@ -40,6 +40,8 @@ Malicious combinations:
 
 ## Warning !!!
 
+USE IT AT YOUR OWN RISK!
+
 You won't be able to run commands that use the blacklisted commands on a raccinated machine anymore until your apply the uninstall patch `raccine-reg-patch-uninstall.reg`. This could break various backup solutions that run that specific command during their work. It will not only block that request but kills all processes in that tree including the backup solution and its invoking process.
 
 If you have a solid security monitoring that logs all process executions, you could check your logs to see if `vssadmin.exe` is frequently or sporadically used for legitimate purposes in which case you should refrain from using Raccine. 
@@ -64,6 +66,8 @@ If you have a solid security monitoring that logs all process executions, you co
 ![Eventlog Entry](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen6.png)
 
 ### Wmic Addon (Optional)
+
+About 20-40% of Ransomware samples use `wmic` to delete the local shadowcopies. However, `wmic` is used for administrative activity far more often than `vssadmin`. The output of wmic often gets processed by automated scripts. It is unknown how a proxied execution through Raccine affects these scripts and programs. We've removed all outputs for cases in which no malicious parameter combination gets detected, but who knows?
 
 4. Apply the `raccine-reg-patch-wmic.reg` patch to intercept invocations of `wmic.exe`
 

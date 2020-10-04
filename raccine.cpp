@@ -171,7 +171,7 @@ int _tmain(int argc, _TCHAR* argv[]) {
         HANDLE hReg = RegisterEventSource(NULL, TEXT("Raccine"));
         ReportEvent(hReg, EVENTLOG_INFORMATION_TYPE, RaccineAlert, Alert_1337, NULL, 0, 0, NULL, NULL);
 
-        printf("Raccine v0.2.0 finished\n");
+        printf("Raccine v0.4.0 finished\n");
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     }
     //
