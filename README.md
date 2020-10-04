@@ -6,8 +6,6 @@ A Simple Ransomware Vaccine
 
 We see ransomware delete all shadow copies using `vssadmin` pretty often. What if we could just intercept that request and kill the invoking process? Let's try to create a simple vaccine.
 
-![Ransomware Process Tree](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen2.png)
-
 ![Ransomware Process Tree](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen4.png)
 
 ## How it works
