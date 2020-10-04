@@ -22,8 +22,8 @@ Avantages:
 
 Disadvantages / Blind Spots:
 
-- The legitimate use of `vssadmin.exe` isn't possble anymore
-- It even kills the processes that tried to invoke `vssadmin.exe`, which could be a backup process
+- The legitimate use of `vssadmin.exe delete shadows` isn't possble anymore
+- It even kills the processes that tried to invoke `vssadmin.exe delete shadows`, which could be a backup process
 - This won't catch methods in which the malicious process isn't one of the processes in the tree that has invoked `vssadmin.exe` (e.g. via `wmic` or `schtasks`)
 
 ## Pivot
@@ -32,9 +32,14 @@ In case that the Ransomware that your're currently handling uses a certain proce
 
 ## Warning !!!
 
-You won't be able to run `vssadmin.exe` on a raccinated machine anymore until your apply the uninstall patch `raccine-reg-patch-uninstall.reg`. This could break various backup solutions that run `vssadmin.exe` during their work. 
+You won't be able to run `vssadmin.exe delete shadows` on a raccinated machine anymore until your apply the uninstall patch `raccine-reg-patch-uninstall.reg`. This could break various backup solutions that run that specific command during their work. 
 
 If you have a solid security monitoring that logs all process executions, you could check your logs to see if `vssadmin.exe` is frequently or sporadically used for legitimate purposes in which case you should refrain from using Raccine. 
+
+## Version History
+
+- 0.1.0 - Initial version that intercepted blocked all vssadmin.exe executions
+- 0.2.0 - Version that blocks only vssadmin.exe executions that contain `delete` and `shadows` in their command line and otherwise pass all parameters to a new process that invokes vssadmin with its original parameters
 
 ## Installation
 
@@ -52,6 +57,8 @@ Run `raccine.exe` and watch the parent process tree die.
 I'd like to extend Raccine but lack the C++ coding skills, especially o the Windows platform.
 
 ### ~~1. Allow Certain Vssadmin Executions~~
+
+***implemented by Ollie Whitehouse in v0.2.0***
 
 Since Raccine is registered as a debugger for `vssadmin.exe` the actual command line that starts raccine.exe looks like
 
