@@ -53,11 +53,13 @@ I'd like to extend Raccine but lack the C++ coding skills, especially o the Wind
 
 ### 1. Allow Certain Vssadmin Executions
 
-Since Raccine is registered as a debugger for `vssadmin.exe` the actual command line that starts raccine.exe should look like
+Since Raccine is registered as a debugger for `vssadmin.exe` the actual command line that starts raccine.exe looks like
 
 ```
 raccine.exe vssadmin.exe ... [params]
 ``` 
+
+![raccine as debugger](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen3.png)
 
 If we were able to process the command line options and apply filters to them, we could provide the following features: 
 
