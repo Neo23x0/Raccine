@@ -100,19 +100,22 @@ int _tmain(int argc, _TCHAR* argv[])
     // the arguments and in any combination
     for (DWORD iCount = 0; iCount < argc; iCount++)
     {
-        if (_tcsicmp(TEXT("delete"), argv[iCount])) {
+
+        if (_tcsicmp(TEXT("delete"), argv[iCount]) == 0) {
             bDelete = true;
         }
-        else if (_tcsicmp(TEXT("shadow"), argv[iCount])) {
+        else if (_tcsicmp(TEXT("shadows"), argv[iCount]) == 0) {
             bShadow = true;
         }
-        else if (_tcsicmp(TEXT("shadowstorage"), argv[iCount])) {
+        else if (_tcsicmp(TEXT("shadowstorage"), argv[iCount]) == 0) {
             bShadowStorage = true;
         }
-        else if (_tcsicmp(TEXT("resize"), argv[iCount])) {
+        else if (_tcsicmp(TEXT("resize"), argv[iCount]) == 0) {
             bResize = true;
         }
     }
+
+    
 
     // OK this is not want we want 
     // we want to kill the process responsible
