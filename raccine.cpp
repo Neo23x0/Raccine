@@ -42,7 +42,7 @@ DWORD getppid(DWORD pid) {
 }
 
 BOOL isallowlisted(DWORD pid) {
-    TCHAR allowlist[3][MAX_PATH] = { TEXT("explorer.exe"), TEXT("wininit.exe"), TEXT("winlogon.exe")};
+    TCHAR allowlist[3][MAX_PATH] = { TEXT("wininit.exe"), TEXT("winlogon.exe")};
     PROCESSENTRY32 pe32;
     HANDLE hSnapshot;
     hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
