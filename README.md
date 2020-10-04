@@ -8,6 +8,8 @@ We see ransomware delete all shadow copies using `vssadmin` pretty often. What i
 
 ![Ransomware Process Tree](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen2.png)
 
+![Ransomware Process Tree](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen4.png)
+
 ## How it works
 
 We [register a debugger](https://attack.mitre.org/techniques/T1546/012/) for `vssadmin.exe` which is our compiled `raccine.exe`. Raccine is a binary, that first collects all PIDs of the parent processes and then tries to kill all parent processes. 
@@ -32,7 +34,7 @@ In case that the Ransomware that your're currently handling uses a certain proce
 
 ## Warning !!!
 
-You won't be able to run `vssadmin.exe delete shadows` on a raccinated machine anymore until your apply the uninstall patch `raccine-reg-patch-uninstall.reg`. This could break various backup solutions that run that specific command during their work. 
+You won't be able to run `vssadmin.exe delete shadows` on a raccinated machine anymore until your apply the uninstall patch `raccine-reg-patch-uninstall.reg`. This could break various backup solutions that run that specific command during their work. It will not only block that request but kills all processes in that tree including the backup solution and its invoking process.
 
 If you have a solid security monitoring that logs all process executions, you could check your logs to see if `vssadmin.exe` is frequently or sporadically used for legitimate purposes in which case you should refrain from using Raccine. 
 
