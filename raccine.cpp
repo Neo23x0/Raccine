@@ -40,8 +40,8 @@ DWORD getppid(DWORD pid) {
     return ppid;
 }
 
-BOOL isdenylisted(DWORD pid) {
-    TCHAR denylist[3][MAX_PATH] = {TEXT("explorer.exe"), TEXT("wininit.exe"), TEXT("winlogon.exe")}; 
+BOOL isallowlisted(DWORD pid) {
+    TCHAR allowlist[3][MAX_PATH] = {TEXT("explorer.exe"), TEXT("wininit.exe"), TEXT("winlogon.exe")}; 
     PROCESSENTRY32 pe32;
     HANDLE hSnapshot;
     hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -52,8 +52,8 @@ BOOL isdenylisted(DWORD pid) {
         if (!Process32First(hSnapshot, &pe32)) __leave;
         do {
             if (pe32.th32ProcessID == pid){
-                for (uint8_t i = 0; i < arraysize(denylist); i++) {
-                    if (!_tcscmp((TCHAR*)pe32.szExeFile, denylist[i])) {
+                for (uint8_t i = 0; i < arraysize(allowlist); i++) {
+                    if (!_tcscmp((TCHAR*)pe32.szExeFile, allowlist[i])) {
                         return TRUE;
                     } 
                 }
@@ -116,7 +116,7 @@ int _tmain(int argc, _TCHAR* argv[])
                 if (pid == 0) {
                     break;
                 }
-                if (!isdenylisted(pid)) {
+                if (!isallowlisted(pid)) {
                     printf("Collecting PID %d for a kill\n", pid);
                     pids[c] = pid;
                     c++;
