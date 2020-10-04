@@ -1,8 +1,9 @@
-#include    <windows.h>
-#include    <tlhelp32.h>
-#include    <stdio.h>
-#include    <chrono>
-#include    <thread>
+#include <tchar.h>
+#include <windows.h>
+#include <tlhelp32.h>
+#include <stdio.h>
+#include <chrono>
+#include <thread>
 
 #define arraysize(ar)  (sizeof(ar) / sizeof(ar[0]))
 
@@ -29,8 +30,8 @@ DWORD getppid(DWORD pid) {
     return ppid;
 }
 
-BOOL iswhitelisted(DWORD pid) {
-    char* whitelist[] = {"explorer.exe", "wininit.exe", "winlogon.exe"}; 
+BOOL isdenylisted(DWORD pid) {
+    TCHAR denylist[3][MAX_PATH] = {TEXT("explorer.exe"), TEXT("wininit.exe"), TEXT("winlogon.exe")}; 
     PROCESSENTRY32 pe32;
     HANDLE hSnapshot;
     hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -41,8 +42,8 @@ BOOL iswhitelisted(DWORD pid) {
         if (!Process32First(hSnapshot, &pe32)) __leave;
         do {
             if (pe32.th32ProcessID == pid){
-                for (uint8_t i = 0; i < arraysize(whitelist); i++) {
-                    if (!strcmp((char*)pe32.szExeFile, whitelist[i])) {
+                for (uint8_t i = 0; i < arraysize(denylist); i++) {
+                    if (!_tcscmp((TCHAR*)pe32.szExeFile, denylist[i])) {
                         return TRUE;
                     } 
                 }
@@ -80,7 +81,7 @@ int main(){
             if (pid == 0) {
                 break;
             }
-            if (!iswhitelisted(pid)) {
+            if (!isdenylisted(pid)) {
                 printf("Collecting PID %d for a kill\n", pid);
                 pids[c] = pid;
                 c++;
