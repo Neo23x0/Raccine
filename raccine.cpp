@@ -99,7 +99,8 @@ int main(){
         printf("Kill PID %d\n", pids[i-1]);
         killprocess(pids[i-1], 1);
     }
-    printf("Raccine v0.1.1 finished its cleanup.\n", pid);
+    printf("Raccine v0.1.1 finished its cleanup.\n");
+
     std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     return 0;
 }
