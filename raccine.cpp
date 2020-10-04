@@ -13,6 +13,7 @@
 #include <chrono>
 #include <thread>
 #include <locale.h>
+#include <psapi.h>
 #include <string>
 #include <vector>
 #include "RaccineMessageDLL/Message.h"
@@ -56,7 +57,25 @@ BOOL isallowlisted(DWORD pid) {
             if (pe32.th32ProcessID == pid){
                 for (uint8_t i = 0; i < arraysize(allowlist); i++) {
                     if (!_tcscmp((TCHAR*)pe32.szExeFile, allowlist[i])) {
-                        return TRUE;
+
+                        HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe32.th32ProcessID);
+                        if (hProcess != NULL)
+                        {
+                            wchar_t filePath[MAX_PATH];
+                            if (GetModuleFileNameEx(hProcess, NULL, filePath, MAX_PATH))
+                            {
+                                // Are they in the Windows directory?
+                                if (_tcsnicmp(filePath, TEXT("C:\\Windows\\System32\\"), _tcslen(TEXT("C:\\Windows\\System32\\"))) == 0) {
+                                    CloseHandle(hProcess);
+                                    return TRUE;
+                                }
+                            }
+                            else {
+
+                                CloseHandle(hProcess);
+                            }
+                        }
+
                     } 
                 }
                 break;
@@ -137,7 +156,7 @@ int _tmain(int argc, _TCHAR* argv[]) {
                     c++;
                 }
                 else {
-                    printf("Process with PID %d is on whitelist\n", pid);
+                    printf("Process with PID %d is on allowlist\n", pid);
                 }
             }
             catch (...) {
