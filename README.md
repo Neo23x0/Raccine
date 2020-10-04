@@ -10,29 +10,37 @@ We see ransomware delete all shadow copies using `vssadmin` pretty often. What i
 
 ## How it works
 
-We [register a debugger](https://attack.mitre.org/techniques/T1546/012/) for `vssadmin.exe` which is our compiled `raccine.exe`. Raccine is a binary, that first collects all PIDs of the parent processes and then tries to kill all parent processes. 
+We [register a debugger](https://attack.mitre.org/techniques/T1546/012/) for `vssadmin.exe` (and `wmic.exe`), which is our compiled `raccine.exe`. Raccine is a binary, that first collects all PIDs of the parent processes and then tries to kill all parent processes. 
 
 Avantages:
 
 - The method is rather generic
-- We don't have to replace a system file (`vssadmin.exe`), which could lead to integrity problems and could break our raccination on each patch day 
+- We don't have to replace a system file (`vssadmin.exe` or `wmic.exe`), which could lead to integrity problems and could break our raccination on each patch day 
 - The changes are easy to undo
 - Should work on all Windows versions from Windows 2000 onwards
 - No running executable or additional service required (agent-less)
 
 Disadvantages / Blind Spots:
 
-- The legitimate use of `vssadmin.exe delete shadows` isn't possble anymore
+- The legitimate use of `vssadmin.exe delete shadows` (or any other blacklisted combination) isn't possible anymore
 - It even kills the processes that tried to invoke `vssadmin.exe delete shadows`, which could be a backup process
 - This won't catch methods in which the malicious process isn't one of the processes in the tree that has invoked `vssadmin.exe` (e.g. via `wmic` or `schtasks`)
 
-## Pivot
+### The Process
 
-In case that the Ransomware that your're currently handling uses a certain process name, e.g. `taskdl.exe`, you could just change the `.reg` patch to intercept calls to that name and let Raccine kill all parent processes of the invoking process tree.
+1. Invocation of `vssadmin.exe` (and `wmic.exe`) gets intercepted and passed to `raccine.exe` as debugger (`vssadmin.exe delete shadows` becomes `raccine.xe vssadmin.exe delete shadows`)
+2. We then process the command line arguments and look for malicious combinations. 
+3. If no malicious combination could be found, we create a new process with the original command line parameters. 
+4. If a malicious combination could be found, we collect all PIDs of parent processes and the start killing them (this should be the malware processes as shown in the screenshots above). Raccine shows a command line window with the killed PIDs for 5 seconds and then exits itself. 
+
+Malicious combinations:
+- `delete` and `shadows` (vssadmin)
+- `resize` and `shadowstorage` (vssadmin)
+- `delete` and `shadowcopy` (wmic)
 
 ## Warning !!!
 
-You won't be able to run `vssadmin.exe delete shadows` on a raccinated machine anymore until your apply the uninstall patch `raccine-reg-patch-uninstall.reg`. This could break various backup solutions that run that specific command during their work. It will not only block that request but kills all processes in that tree including the backup solution and its invoking process.
+You won't be able to run commands that use the blacklisted commands on a raccinated machine anymore until your apply the uninstall patch `raccine-reg-patch-uninstall.reg`. This could break various backup solutions that run that specific command during their work. It will not only block that request but kills all processes in that tree including the backup solution and its invoking process.
 
 If you have a solid security monitoring that logs all process executions, you could check your logs to see if `vssadmin.exe` is frequently or sporadically used for legitimate purposes in which case you should refrain from using Raccine. 
 
@@ -42,23 +50,32 @@ If you have a solid security monitoring that logs all process executions, you co
 - 0.2.0 - Version that blocks only vssadmin.exe executions that contain `delete` and `shadows` in their command line and otherwise pass all parameters to a new process that invokes vssadmin with its original parameters
 - 0.2.1 - Removed `explorer.exe` from the whitelist
 - 0.3.0 - Supports the `wmic` method calling `delete shadowcopy`, no outputs for whitelisted process starts (avoids problems with wmic output processing)
+- 0.4.0 - Supports logging to the Windows Eventlog for each blocked attempt, looks for more malicious parameter combinations
 
 ## Installation
 
-1. Apply Registry Patch `raccine-reg-patch.reg`
+1. Apply Registry Patch `raccine-reg-patch-vssadmin.reg` to intercept invocations of `vssadmin.exe`
 2. Place `raccine.exe` from the [release section](https://github.com/Neo23x0/Raccine/releases/) in the `PATH`, e.g. into `C:\Windows`
 
-### Addon
+### Eventlog Addon (Optional)
 
-3. Also apply the `raccine-reg-patch-uninstall.reg` patch to intercept calls to `wmic`, which I consider much riskier. 
+3. Run `InstallDll.bat` to install a message DLL that formats the eventlog entries generated by Raccine
+
+### Wmic Addon (Optional)
+
+4. Apply the `raccine-reg-patch-wmic.reg` patch to intercept invocations of `wmic.exe`
 
 ![Kill Run](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen5.png)
 
 ## Screenshot
 
-Run `raccine.exe` and watch the parent process tree die. 
+Run `raccine.exe` and watch the parent process tree die (screenshot of v0.1)
 
 ![Kill Run](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen1.png)
+
+## Pivot
+
+In case that the Ransomware that your're currently handling uses a certain process name, e.g. `taskdl.exe`, you could just change the `.reg` patch to intercept calls to that name and let Raccine kill all parent processes of the invoking process tree.
 
 ## Help Wanted 
 
