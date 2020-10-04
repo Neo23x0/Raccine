@@ -26,15 +26,15 @@ Disadvantages / Blind Spots:
 - It even kills the processes that tried to invoke `vssadmin.exe`, which could be a backup process
 - This won't catch methods in which the malicious process isn't one of the processes in the tree that has invoked `vssadmin.exe` (e.g. via `wmic` or `schtasks`)
 
-Note: If you have a solid security monitoring that logs all process executions, you could check your logs to see if `vssadmin.exe` is frequently or sporadically used for legitimate purposes in which case you should refrain from using Raccine.  
-
 ## Pivot
 
 In case that the Ransomware that your're currently handling uses a certain process name, e.g. `taskdl.exe`, you could just change the `.reg` patch to intercept calls to that name and let Raccine kill all parent processes of the invoking process tree.
 
-## Warning
+## Warning !!!
 
-You won't be able to run `vssadmin.exe` on a raccinated machine anymore until your apply the uninstall patch `raccine-reg-patch-uninstall.reg`.
+You won't be able to run `vssadmin.exe` on a raccinated machine anymore until your apply the uninstall patch `raccine-reg-patch-uninstall.reg`. This could break various backup solutions that run `vssadmin.exe` during their work. 
+
+If you have a solid security monitoring that logs all process executions, you could check your logs to see if `vssadmin.exe` is frequently or sporadically used for legitimate purposes in which case you should refrain from using Raccine. 
 
 ## Installation
 
@@ -46,3 +46,24 @@ You won't be able to run `vssadmin.exe` on a raccinated machine anymore until yo
 Run `raccine.exe` and watch the parent process tree die. 
 
 ![Kill Run](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen1.png)
+
+## Help Wanted 
+
+I'd like to extend Raccine but lack the C++ coding skills, especially o the Windows platform.
+
+### 1. Allow Certain Vssadmin Executions
+
+Since Raccine is registered as a debugger for `vssadmin.exe` the actual command line that starts raccine.exe should look like
+
+```
+raccine.exe vssadmin.exe ... [params]
+``` 
+
+If we were able to process the command line options and apply filters to them, we could provide the following features: 
+
+- Only block the execution in cases in which the parameters contains `delete shadows`
+- Allow all other executions by passing the original parameters to a newly created process of `vssadmin.exe` (transparent pass-through)
+
+### 2. Whitelist Certain Parents
+
+We could provide a config file that contains white-listed parents for `vssadmin.exe`. If such a parent is detected, it would also pass the parameters to a new process and skip killing the process tree.
