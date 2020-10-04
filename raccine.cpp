@@ -87,7 +87,7 @@ int _tmain(int argc, _TCHAR* argv[])
     uint8_t c = 0;
     DWORD pid = GetCurrentProcessId();
 
-    fprintf(stdout,"Raccine PID is %d\n", pid);
+    fprintf(stdout,"Raccine - Ransomware Vaccine (PID is %d)\n", pid);
 
     setlocale(LC_ALL, "");
 
@@ -159,7 +159,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
         if (CreateProcess(NULL, (LPWSTR)commandLineStr.c_str(), NULL, NULL, TRUE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &info, &processInfo))
         {
-            fwprintf(stdout, TEXT("Created Process %s\n"), commandLineStr.c_str());
+            fwprintf(stdout, TEXT("Created Process '%s'\n"), commandLineStr.c_str());
 
             DebugActiveProcessStop(processInfo.dwProcessId);
 
