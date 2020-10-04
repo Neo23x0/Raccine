@@ -93,6 +93,8 @@ int _tmain(int argc, _TCHAR* argv[])
 
     bool bDelete = false;
     bool bShadow = false;
+    bool bResize = false;
+    bool bShadowStorage = false;
 
     // check if delete and shadow are in any of the
     // the arguments and in any combination
@@ -104,12 +106,17 @@ int _tmain(int argc, _TCHAR* argv[])
         else if (_tcsicmp(TEXT("shadow"), argv[iCount])) {
             bShadow = true;
         }
+        else if (_tcsicmp(TEXT("shadowstorage"), argv[iCount])) {
+            bShadowStorage = true;
+        }
+        else if (_tcsicmp(TEXT("resize"), argv[iCount])) {
+            bResize = true;
+        }
     }
-
 
     // OK this is not want we want 
     // we want to kill the process responsible
-    if (bDelete && bShadow) {
+    if ((bDelete && bShadow) || (bResize && bShadowStorage)) {
         // Collect PIDs to kill
         while (true) {
             try {
