@@ -71,11 +71,9 @@ BOOL isallowlisted(DWORD pid) {
                                 }
                             }
                             else {
-
                                 CloseHandle(hProcess);
                             }
                         }
-
                     } 
                 }
                 break;
@@ -114,12 +112,9 @@ int _tmain(int argc, _TCHAR* argv[]) {
     bool bShadowStorage = false;
     bool bShadowCopy = false;
 
-
-
     // check for keywords in command line parameters
     for (DWORD iCount = 0; iCount < argc; iCount++)
     {
-
         if (_tcsicmp(TEXT("delete"), argv[iCount]) == 0) {
             bDelete = true;
         }
@@ -137,11 +132,11 @@ int _tmain(int argc, _TCHAR* argv[]) {
         }
     }
 
-    fprintf(stdout, "Raccine - Ransomware Vaccine (PID is %d)\n", pid);
-
     // OK this is not want we want 
     // we want to kill the process responsible
     if ((bDelete && bShadow) || (bResize && bShadowStorage) || (bDelete && bShadowCopy)) {
+
+        printf("Raccine detected malicious activity\n");
 
         // Collect PIDs to kill
         while (true) {
@@ -176,17 +171,14 @@ int _tmain(int argc, _TCHAR* argv[]) {
         HANDLE hReg = RegisterEventSource(NULL, TEXT("Raccine"));
         ReportEvent(hReg, EVENTLOG_INFORMATION_TYPE, RaccineAlert, Alert_1337, NULL, 0, 0, NULL, NULL);
 
+        printf("Raccine v0.2.0 finished\n");
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-
     }
     //
     // Otherwise launch it
     //
     else {
-
         DEBUG_EVENT debugEvent = { 0 };
-
-        //fprintf(stdout, "Raccine is allowing a launch\n");
         std::wstring commandLineStr = TEXT("");
 
         for (int i = 1; i < argc; i++) commandLineStr.append(std::wstring(argv[i]).append(TEXT(" ")));
@@ -196,8 +188,6 @@ int _tmain(int argc, _TCHAR* argv[]) {
 
         if (CreateProcess(NULL, (LPWSTR)commandLineStr.c_str(), NULL, NULL, TRUE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &info, &processInfo))
         {
-            //fwprintf(stdout, TEXT("Created Process '%s'\n"), commandLineStr.c_str());
-
             DebugActiveProcessStop(processInfo.dwProcessId);
 
             WaitForSingleObject(processInfo.hProcess, INFINITE);
@@ -205,7 +195,5 @@ int _tmain(int argc, _TCHAR* argv[]) {
             CloseHandle(processInfo.hThread);
         }
     }
-
-    printf("Raccine v0.2.0 finished\n");
     return 0;
 }
