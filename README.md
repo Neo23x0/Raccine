@@ -44,7 +44,7 @@ USE IT AT YOUR OWN RISK!
 
 You won't be able to run commands that use the blacklisted commands on a raccinated machine anymore until your apply the uninstall patch `raccine-reg-patch-uninstall.reg`. This could break various backup solutions that run that specific command during their work. It will not only block that request but kills all processes in that tree including the backup solution and its invoking process.
 
-If you have a solid security monitoring that logs all process executions, you could check your logs to see if `vssadmin.exe delete shadows` is frequently or sporadically used for legitimate purposes in which case you should refrain from using Raccine. 
+If you have a solid security monitoring that logs all process executions, you could check your logs to see if `vssadmin.exe delete shadows` or `vssadmin.exe resize shadowstorage ...` is frequently or sporadically used for legitimate purposes in which case you should refrain from using Raccine. 
 
 ## Version History
 
@@ -112,3 +112,8 @@ If we were able to process the command line options and apply filters to them, w
 ### 2. Whitelist Certain Parents
 
 We could provide a config file that contains white-listed parents for `vssadmin.exe`. If such a parent is detected, it would also pass the parameters to a new process and skip killing the process tree.
+
+## Credits
+
+Florian Roth [@cyb3rops](https://twitter.com/cyb3rops)
+Ollie Whitehouse [@ollieatnccgroup](https://twitter.com/ollieatnccgroup)
