@@ -10,7 +10,7 @@ We see ransomware delete all shadow copies using `vssadmin` pretty often. What i
 
 ## How it works
 
-We [register a debugger](https://attack.mitre.org/techniques/T1546/012/) for `vssadmin.exe` which is our compiled `raccine.exe`. Raccine is a binary, that first collects all PIDs of the parent processes and then tries to kill all parent processes. I've whitelisted `explorer.exe` in order to avoid unwanted problems with the Windows desktop. I don't know if this was a good idea.  
+We [register a debugger](https://attack.mitre.org/techniques/T1546/012/) for `vssadmin.exe` which is our compiled `raccine.exe`. Raccine is a binary, that first collects all PIDs of the parent processes and then tries to kill all parent processes. 
 
 Avantages:
 
@@ -40,6 +40,7 @@ If you have a solid security monitoring that logs all process executions, you co
 
 - 0.1.0 - Initial version that intercepted blocked all vssadmin.exe executions
 - 0.2.0 - Version that blocks only vssadmin.exe executions that contain `delete` and `shadows` in their command line and otherwise pass all parameters to a new process that invokes vssadmin with its original parameters
+- 0.2.1 - Removed `explorer.exe` from the whitelist
 
 ## Installation
 
