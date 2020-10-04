@@ -1,5 +1,6 @@
-//
-//
+// Raccine 
+// A Simple Ransomware Vaccine
+// https://github.com/Neo23x0/Raccine
 //
 //
 
@@ -105,7 +106,6 @@ int _tmain(int argc, _TCHAR* argv[])
         }
     }
 
-
     // OK this is not want we want 
     // we want to kill the process responsible
     if (bDelete && bShadow) {
@@ -208,11 +208,7 @@ int _tmain(int argc, _TCHAR* argv[])
             CloseHandle(processInfo.hProcess);
             CloseHandle(processInfo.hThread);
         }
-
     }
-
-
-    printf("Raccine v0.1.2 finished its cleanup.\n");
-
+    printf("Raccine v0.2.0 finished\n");
     return 0;
 }

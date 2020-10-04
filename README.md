@@ -51,7 +51,7 @@ Run `raccine.exe` and watch the parent process tree die.
 
 I'd like to extend Raccine but lack the C++ coding skills, especially o the Windows platform.
 
-### 1. Allow Certain Vssadmin Executions
+### ~~1. Allow Certain Vssadmin Executions~~
 
 Since Raccine is registered as a debugger for `vssadmin.exe` the actual command line that starts raccine.exe looks like
 
