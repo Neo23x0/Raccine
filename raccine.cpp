@@ -1,5 +1,6 @@
-//
-//
+// Raccine 
+// A Simple Ransomware Vaccine
+// https://github.com/Neo23x0/Raccine
 //
 //
 
@@ -42,7 +43,7 @@ DWORD getppid(DWORD pid) {
 }
 
 BOOL isallowlisted(DWORD pid) {
-    TCHAR allowlist[3][MAX_PATH] = {TEXT("explorer.exe"), TEXT("wininit.exe"), TEXT("winlogon.exe")}; 
+    TCHAR allowlist[3][MAX_PATH] = {TEXT("wininit.exe"), TEXT("winlogon.exe")}; 
     PROCESSENTRY32 pe32;
     HANDLE hSnapshot;
     hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -80,14 +81,13 @@ BOOL killprocess(DWORD dwProcessId, UINT uExitCode) {
     return result;
 }
 
-int _tmain(int argc, _TCHAR* argv[])
-{
+int _tmain(int argc, _TCHAR* argv[]) {
 
     DWORD pids[1024];
     uint8_t c = 0;
     DWORD pid = GetCurrentProcessId();
 
-    fprintf(stdout,"Raccine PID is %d\n", pid);
+    fprintf(stdout,"Raccine - Ransomware Vaccine (PID is %d)\n", pid);
 
     setlocale(LC_ALL, "");
 
@@ -114,8 +114,6 @@ int _tmain(int argc, _TCHAR* argv[])
             bResize = true;
         }
     }
-
-    
 
     // OK this is not want we want 
     // we want to kill the process responsible
@@ -173,7 +171,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
         if (CreateProcess(NULL, (LPWSTR)commandLineStr.c_str(), NULL, NULL, TRUE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &info, &processInfo))
         {
-            fwprintf(stdout, TEXT("Created Process %s\n"), commandLineStr.c_str());
+            fwprintf(stdout, TEXT("Created Process '%s'\n"), commandLineStr.c_str());
 
             DebugActiveProcessStop(processInfo.dwProcessId);
 
@@ -181,11 +179,7 @@ int _tmain(int argc, _TCHAR* argv[])
             CloseHandle(processInfo.hProcess);
             CloseHandle(processInfo.hThread);
         }
-
     }
-
-
-    printf("Raccine v0.1.2 finished its cleanup.\n");
-
+    printf("Raccine v0.2.0 finished\n");
     return 0;
 }
