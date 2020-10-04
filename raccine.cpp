@@ -96,6 +96,7 @@ int _tmain(int argc, _TCHAR* argv[]) {
     bool bShadowCopy = false;
 
 
+
     // check for keywords in command line parameters
     for (DWORD iCount = 0; iCount < argc; iCount++)
     {
@@ -156,9 +157,8 @@ int _tmain(int argc, _TCHAR* argv[]) {
         HANDLE hReg = RegisterEventSource(NULL, TEXT("Raccine"));
         ReportEvent(hReg, EVENTLOG_INFORMATION_TYPE, RaccineAlert, Alert_1337, NULL, 0, 0, NULL, NULL);
 
-        printf("Raccine v0.2.0 finished\n");
-
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+
     }
     //
     // Otherwise launch it
@@ -186,5 +186,7 @@ int _tmain(int argc, _TCHAR* argv[]) {
             CloseHandle(processInfo.hThread);
         }
     }
+
+    printf("Raccine v0.2.0 finished\n");
     return 0;
 }
