@@ -18,6 +18,8 @@
 #include <vector>
 #include "RaccineMessageDLL/Message.h"
 
+#pragma comment(lib,"advapi32.lib")
+
 #define arraysize(ar)  (sizeof(ar) / sizeof(ar[0]))
 
 DWORD getppid(DWORD pid) {
