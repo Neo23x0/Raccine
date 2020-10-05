@@ -130,7 +130,7 @@ We could provide a config file that contains white-listed parents for `vssadmin.
 
 The solution is outlined in this [tweet](https://twitter.com/cyb3rops/status/1312982510746374144?s=20) and related [talk](https://www.youtube.com/watch?v=LOsesi3QkXY&feature=youtu.be).
 
-![raccine as debugger](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen_tweet1.png)
+![raccine as debugger](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen-tweet1.png)
 
 ## Other Info
 
