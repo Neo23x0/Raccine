@@ -111,8 +111,9 @@ BOOL isallowlisted(DWORD pid) {
                                 // Are they in the Windows directory?
                                 if (_tcsnicmp(filePath, TEXT("C:\\Windows\\System32\\"), _tcslen(TEXT("C:\\Windows\\System32\\"))) == 0) {
                                     
-                                    if (IntegrityIsSystem(hProcess)) {
+                                    if (IntegrityIsSystem(hProcess) == TRUE) {
                                         CloseHandle(hProcess);
+                                        
                                         return TRUE;
                                     }
                                     
