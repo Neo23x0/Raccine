@@ -77,7 +77,7 @@ BOOL IntegrityIsSystem(HANDLE hProcess) {
         else if (dwIntegrityLevel >= SECURITY_MANDATORY_SYSTEM_RID)
         {
             // System Integrity
-            return FALSE;
+            return TRUE;
         }
     }
 }
