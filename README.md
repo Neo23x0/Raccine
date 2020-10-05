@@ -132,6 +132,14 @@ The solution is outlined in this [tweet](https://twitter.com/cyb3rops/status/131
 
 ![raccine as debugger](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen-tweet1.png)
 
+## FAQs
+
+### Why did it even kill explorer.exe during its run?
+
+Since malware tends to inject into `explorer.exe`, we thought it would be a good idea to kill even `explorer.exe` in order to avoid malicious code performing other operations on the system. What happens in real world examples is that a user that executed the Ransomware process would loose its windows task bar and desktop, while other programs like Microsoft Word or Outlook would still be running and the user would be able to save his work and close the respective programs before calling the helpdesk or simpy reboot the system. An expericend user could bring up task manager using `CTRL+ALT+Del` and start a new `explorer.exe` or just log off.
+
+![raccine as debugger](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen-explorer-injection.png)
+
 ## Other Info
 
 The right pronounciation is "Rax-Een".
