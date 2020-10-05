@@ -115,7 +115,13 @@ If we were able to process the command line options and apply filters to them, w
 
 We could provide a config file that contains white-listed parents for `vssadmin.exe`. If such a parent is detected, it would also pass the parameters to a new process and skip killing the process tree.
 
+### 3. Create Shim Instead of Image File Execution Options Hack
+
+The solution is outlined in this [tweet](https://twitter.com/cyb3rops/status/1312982510746374144?s=20) and related [talk](https://www.youtube.com/watch?v=LOsesi3QkXY&feature=youtu.be).
+
+![raccine as debugger](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen_tweet1.png)
+
 ## Credits
 
-Florian Roth [@cyb3rops](https://twitter.com/cyb3rops)
-Ollie Whitehouse [@ollieatnccgroup](https://twitter.com/ollieatnccgroup)
+- Florian Roth [@cyb3rops](https://twitter.com/cyb3rops)
+- Ollie Whitehouse [@ollieatnccgroup](https://twitter.com/ollieatnccgroup)
