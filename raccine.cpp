@@ -56,7 +56,7 @@ BOOL isallowlisted(DWORD pid) {
         do {
             if (pe32.th32ProcessID == pid){
                 for (uint8_t i = 0; i < arraysize(allowlist); i++) {
-                    if (!_tcscmp((TCHAR*)pe32.szExeFile, allowlist[i])) {
+                    if (_tcscmp((TCHAR*)pe32.szExeFile, allowlist[i]) == 0 ) {
 
                         HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe32.th32ProcessID);
                         if (hProcess != NULL)
