@@ -43,6 +43,45 @@ DWORD getppid(DWORD pid) {
     return ppid;
 }
 
+BOOL IntegrityIsSystem(HANDLE hProcess) {
+
+    HANDLE hToken = INVALID_HANDLE_VALUE;
+    DWORD dwIntegrityLevel = 0;
+    DWORD dwLengthNeeded = 0;
+    TOKEN_MANDATORY_LABEL pTIL;
+
+    OpenProcessToken(hProcess, TOKEN_QUERY, &hToken);
+
+    if (GetTokenInformation(hToken, TokenIntegrityLevel,
+        &pTIL, dwLengthNeeded, &dwLengthNeeded))
+    {
+        dwIntegrityLevel = *GetSidSubAuthority(pTIL.Label.Sid,
+            (DWORD)(UCHAR)(*GetSidSubAuthorityCount(pTIL.Label.Sid) - 1));
+
+        if (dwIntegrityLevel == SECURITY_MANDATORY_LOW_RID)
+        {
+            // Low Integrity
+            return FALSE;
+        }
+        else if (dwIntegrityLevel >= SECURITY_MANDATORY_MEDIUM_RID &&
+            dwIntegrityLevel < SECURITY_MANDATORY_HIGH_RID)
+        {
+            // Medium Integrity
+            return FALSE;
+        }
+        else if (dwIntegrityLevel >= SECURITY_MANDATORY_HIGH_RID)
+        {
+            // High Integrity
+            return FALSE;
+        }
+        else if (dwIntegrityLevel >= SECURITY_MANDATORY_SYSTEM_RID)
+        {
+            // System Integrity
+            return FALSE;
+        }
+    }
+}
+
 BOOL isallowlisted(DWORD pid) {
     TCHAR allowlist[3][MAX_PATH] = { TEXT("wininit.exe"), TEXT("winlogon.exe")};
     PROCESSENTRY32 pe32;
@@ -71,8 +110,12 @@ BOOL isallowlisted(DWORD pid) {
                             {
                                 // Are they in the Windows directory?
                                 if (_tcsnicmp(filePath, TEXT("C:\\Windows\\System32\\"), _tcslen(TEXT("C:\\Windows\\System32\\"))) == 0) {
-                                    CloseHandle(hProcess);
-                                    return TRUE;
+                                    
+                                    if (IntegrityIsSystem(hProcess)) {
+                                        CloseHandle(hProcess);
+                                        return TRUE;
+                                    }
+                                    
                                 }
                             }
                             else {
