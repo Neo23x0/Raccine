@@ -2,7 +2,7 @@
 
 # Raccine
 
-A Simple Ransomware Vaccine
+A Simple Ransomware Protection 
 
 ## Why
 
@@ -143,6 +143,10 @@ Since malware tends to inject into `explorer.exe`, we thought it would be a good
 ## Other Info
 
 The right pronounciation is "Rax-Een".
+
+## Important
+
+Although it uses the term vaccine, I'd like to point out that the process applied by Raccine does not reflect the way vaccines work in medical science. Although its application introduces some changes to the system and doesn't require running processes like agents or scanners, it performs some destructive actions after being invoked by a malicious process. Vaccines in medical science don't work that way. Some members of the community asked me to clarify that and I am happy to comply with that request.
 
 ## Credits
 
