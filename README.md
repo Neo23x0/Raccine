@@ -68,8 +68,8 @@ If you have a solid security monitoring that logs all process executions, you co
 
 This step is optional and purely cosmetic. Registering the DLL allows for well-formatted eventlog entries
 
-![Eventlog Entry Without DLL](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/eventlog_withoutdll.png)
-![Eventlog Entry With DLL](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/eventlog_withdll.png)
+![Eventlog Entry Without DLL](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/eventlog-withoutdll.png)
+![Eventlog Entry With DLL](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/eventlog-withdll.png)
 
 ### Wmic Addon (Optional)
 
