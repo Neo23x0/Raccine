@@ -56,6 +56,9 @@ DWORD IntegrityLevel(HANDLE hProcess) {
     
     GetTokenInformation(hToken, TokenIntegrityLevel, NULL, 0, &dwLengthNeeded);
     pTIL = (PTOKEN_MANDATORY_LABEL) LocalAlloc(0, dwLengthNeeded);
+    if (!pTIL) {
+        return 0;
+    }
 
     if (GetTokenInformation(hToken, TokenIntegrityLevel,
         pTIL, dwLengthNeeded, &dwLengthNeeded))
