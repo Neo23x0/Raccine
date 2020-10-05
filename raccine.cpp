@@ -43,47 +43,62 @@ DWORD getppid(DWORD pid) {
     return ppid;
 }
 
-BOOL IntegrityIsSystem(HANDLE hProcess) {
+DWORD IntegrityLevel(HANDLE hProcess) {
 
     HANDLE hToken = INVALID_HANDLE_VALUE;
     DWORD dwIntegrityLevel = 0;
-    DWORD dwLengthNeeded = 0;
-    TOKEN_MANDATORY_LABEL pTIL;
+    PTOKEN_MANDATORY_LABEL pTIL;
+    DWORD dwLengthNeeded = sizeof(pTIL);
 
     OpenProcessToken(hProcess, TOKEN_QUERY, &hToken);
+    
+    GetTokenInformation(hToken, TokenIntegrityLevel, NULL, 0, &dwLengthNeeded);
+    pTIL = (PTOKEN_MANDATORY_LABEL) LocalAlloc(0, dwLengthNeeded);
 
     if (GetTokenInformation(hToken, TokenIntegrityLevel,
-        &pTIL, dwLengthNeeded, &dwLengthNeeded))
+        pTIL, dwLengthNeeded, &dwLengthNeeded))
     {
-        dwIntegrityLevel = *GetSidSubAuthority(pTIL.Label.Sid,
-            (DWORD)(UCHAR)(*GetSidSubAuthorityCount(pTIL.Label.Sid) - 1));
+        dwIntegrityLevel = *GetSidSubAuthority(pTIL->Label.Sid,
+            (DWORD)(UCHAR)(*GetSidSubAuthorityCount(pTIL->Label.Sid) - 1));
+
+        LocalFree(pTIL);
 
         if (dwIntegrityLevel == SECURITY_MANDATORY_LOW_RID)
         {
             // Low Integrity
-            return FALSE;
+            return 1;
         }
         else if (dwIntegrityLevel >= SECURITY_MANDATORY_MEDIUM_RID &&
             dwIntegrityLevel < SECURITY_MANDATORY_HIGH_RID)
         {
             // Medium Integrity
-            return FALSE;
+            return 2;
         }
         else if (dwIntegrityLevel >= SECURITY_MANDATORY_HIGH_RID)
         {
             // High Integrity
-            return FALSE;
+            return 3;
         }
         else if (dwIntegrityLevel >= SECURITY_MANDATORY_SYSTEM_RID)
         {
             // System Integrity
-            return TRUE;
+            return 4;
+        }
+        else
+        {
+            return 0;
         }
     }
+    else {
+        return 0;
+    }
+
+
+    return 0;
 }
 
 BOOL isallowlisted(DWORD pid) {
-    TCHAR allowlist[3][MAX_PATH] = { TEXT("wininit.exe"), TEXT("winlogon.exe")};
+    TCHAR allowlist[3][MAX_PATH] = { TEXT("wininit.exe"), TEXT("winlogon.exe"), TEXT("explorer.exe") };
     PROCESSENTRY32 pe32;
     HANDLE hSnapshot;
     hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -99,8 +114,8 @@ BOOL isallowlisted(DWORD pid) {
         do {
             if (pe32.th32ProcessID == pid){
                 for (uint8_t i = 0; i < arraysize(allowlist); i++) {
-         
-                    if (_tcsicmp((TCHAR*)pe32.szExeFile, allowlist[i]) == 0 ) {
+        
+                    if (_tcsicmp((TCHAR*)pe32.szExeFile, allowlist[i]) == 0 ) {                
 
                         HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe32.th32ProcessID);
                         if (hProcess != NULL)
@@ -108,15 +123,28 @@ BOOL isallowlisted(DWORD pid) {
                             wchar_t filePath[MAX_PATH];
                             if (GetModuleFileNameEx(hProcess, NULL, filePath, MAX_PATH))
                             {
+
+                                DWORD dwInLevel = IntegrityLevel(hProcess);                              
+
                                 // Are they in the Windows directory?
                                 if (_tcsnicmp(filePath, TEXT("C:\\Windows\\System32\\"), _tcslen(TEXT("C:\\Windows\\System32\\"))) == 0) {
                                     
-                                    if (IntegrityIsSystem(hProcess) == TRUE) {
+                                    // Is the process running as SYSTEM
+                                    if (IntegrityLevel(hProcess) == 4) {
                                         CloseHandle(hProcess);
-                                        
                                         return TRUE;
                                     }
                                     
+                                }
+
+                                // Are you explorer running in the Windows dir
+                                if (_tcsnicmp(filePath, TEXT("C:\\Windows\\Explorer.exe"), _tcslen(TEXT("C:\\Windows\\Explorer.exe"))) == 0) {
+                                    
+                                    // Is the process running as MEDIUM (which Explorer does)
+                                    if (IntegrityLevel(hProcess) == 2) {
+                                        CloseHandle(hProcess);
+                                        return TRUE;
+                                    }
                                 }
                             }
                             else {
