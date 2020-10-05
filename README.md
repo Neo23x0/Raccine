@@ -78,7 +78,7 @@ Eventlog entry after DLL installation:
 
 ### Wmic Addon (Optional)
 
-About 20-40% of Ransomware samples use `wmic` to delete the local shadowcopies. However, `wmic` is used for administrative activity far more often than `vssadmin`. The output of wmic often gets processed by automated scripts. It is unknown how a proxied execution through Raccine affects these scripts and programs. We've removed all outputs for cases in which no malicious parameter combination gets detected, but who knows?
+About 10-30% of Ransomware samples use `wmic` to delete the local shadowcopies. However, `wmic` is used for administrative activity far more often than `vssadmin`. The output of wmic often gets processed by automated scripts. It is unknown how a proxied execution through Raccine affects these scripts and programs. We've removed all outputs for cases in which no malicious parameter combination gets detected, but who knows?
 
 4. Apply the `raccine-reg-patch-wmic.reg` patch to intercept invocations of `wmic.exe`
 
