@@ -76,7 +76,8 @@ DWORD IntegrityLevel(HANDLE hProcess) {
             // Medium Integrity
             return 2;
         }
-        else if (dwIntegrityLevel >= SECURITY_MANDATORY_HIGH_RID)
+        else if (dwIntegrityLevel >= SECURITY_MANDATORY_HIGH_RID && 
+            dwIntegrityLevel < SECURITY_MANDATORY_SYSTEM_RID)
         {
             // High Integrity
             return 3;
