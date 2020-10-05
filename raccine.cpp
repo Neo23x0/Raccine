@@ -49,14 +49,19 @@ BOOL isallowlisted(DWORD pid) {
     HANDLE hSnapshot;
     hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     __try {
+        
         if(hSnapshot == INVALID_HANDLE_VALUE) __leave;
+        
         ZeroMemory(&pe32, sizeof(pe32));
         pe32.dwSize = sizeof(pe32);
+
         if (!Process32First(hSnapshot, &pe32)) __leave;
+        
         do {
             if (pe32.th32ProcessID == pid){
                 for (uint8_t i = 0; i < arraysize(allowlist); i++) {
-                    if (_tcscmp((TCHAR*)pe32.szExeFile, allowlist[i]) == 0 ) {
+         
+                    if (_tcsicmp((TCHAR*)pe32.szExeFile, allowlist[i]) == 0 ) {
 
                         HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe32.th32ProcessID);
                         if (hProcess != NULL)
@@ -74,7 +79,7 @@ BOOL isallowlisted(DWORD pid) {
                                 CloseHandle(hProcess);
                             }
                         }
-                    } 
+                    } // _tcsicmp
                 }
                 break;
             }
