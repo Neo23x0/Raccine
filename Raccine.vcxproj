@@ -143,9 +143,6 @@
   <ItemGroup>
     <ClCompile Include="Raccine.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="RaccineMessageDLL\Message.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

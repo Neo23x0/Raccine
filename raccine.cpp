@@ -16,7 +16,6 @@
 #include <psapi.h>
 #include <string>
 #include <vector>
-#include "RaccineMessageDLL/Message.h"
 
 #pragma comment(lib,"advapi32.lib")
 
@@ -28,7 +27,7 @@ DWORD getppid(DWORD pid) {
     DWORD ppid = 0;
     hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     __try {
-        if(hSnapshot == INVALID_HANDLE_VALUE) __leave;
+        if (hSnapshot == INVALID_HANDLE_VALUE) __leave;
         ZeroMemory(&pe32, sizeof(pe32));
         pe32.dwSize = sizeof(pe32);
         if (!Process32First(hSnapshot, &pe32)) __leave;
@@ -61,45 +60,37 @@ DWORD IntegrityLevel(HANDLE hProcess) {
     }
 
     if (GetTokenInformation(hToken, TokenIntegrityLevel,
-        pTIL, dwLengthNeeded, &dwLengthNeeded))
-    {
+        pTIL, dwLengthNeeded, &dwLengthNeeded))  {
         dwIntegrityLevel = *GetSidSubAuthority(pTIL->Label.Sid,
             (DWORD)(UCHAR)(*GetSidSubAuthorityCount(pTIL->Label.Sid) - 1));
 
         LocalFree(pTIL);
 
-        if (dwIntegrityLevel == SECURITY_MANDATORY_LOW_RID)
-        {
+        if (dwIntegrityLevel == SECURITY_MANDATORY_LOW_RID) {
             // Low Integrity
             return 1;
         }
         else if (dwIntegrityLevel >= SECURITY_MANDATORY_MEDIUM_RID &&
-            dwIntegrityLevel < SECURITY_MANDATORY_HIGH_RID)
-        {
+            dwIntegrityLevel < SECURITY_MANDATORY_HIGH_RID) {
             // Medium Integrity
             return 2;
         }
         else if (dwIntegrityLevel >= SECURITY_MANDATORY_HIGH_RID && 
-            dwIntegrityLevel < SECURITY_MANDATORY_SYSTEM_RID)
-        {
+            dwIntegrityLevel < SECURITY_MANDATORY_SYSTEM_RID) {
             // High Integrity
             return 3;
         }
-        else if (dwIntegrityLevel >= SECURITY_MANDATORY_SYSTEM_RID)
-        {
+        else if (dwIntegrityLevel >= SECURITY_MANDATORY_SYSTEM_RID) {
             // System Integrity
             return 4;
         }
-        else
-        {
+        else {
             return 0;
         }
     }
     else {
         return 0;
     }
-
-
     return 0;
 }
 
@@ -108,8 +99,8 @@ BOOL isallowlisted(DWORD pid) {
     PROCESSENTRY32 pe32;
     HANDLE hSnapshot;
     hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
     __try {
-        
         if(hSnapshot == INVALID_HANDLE_VALUE) __leave;
         
         ZeroMemory(&pe32, sizeof(pe32));
@@ -124,12 +115,10 @@ BOOL isallowlisted(DWORD pid) {
                     if (_tcsicmp((TCHAR*)pe32.szExeFile, allowlist[i]) == 0 ) {                
 
                         HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe32.th32ProcessID);
-                        if (hProcess != NULL)
-                        {
+                        
+                        if (hProcess != NULL) {
                             wchar_t filePath[MAX_PATH];
-                            if (GetModuleFileNameEx(hProcess, NULL, filePath, MAX_PATH))
-                            {
-
+                            if (GetModuleFileNameEx(hProcess, NULL, filePath, MAX_PATH)) {
                                 DWORD dwInLevel = IntegrityLevel(hProcess);                              
 
                                 // Are they in the Windows directory?
@@ -140,7 +129,6 @@ BOOL isallowlisted(DWORD pid) {
                                         CloseHandle(hProcess);
                                         return TRUE;
                                     }
-                                    
                                 }
 
                                 // Are you explorer running in the Windows dir
@@ -189,11 +177,31 @@ int _tmain(int argc, _TCHAR* argv[]) {
 
     setlocale(LC_ALL, "");
 
+    bool bVssadmin = false; 
+    bool bWmic = false;
+    bool bWbadmin = false;
+
     bool bDelete = false;
     bool bShadow = false;
     bool bResize = false;
     bool bShadowStorage = false;
     bool bShadowCopy = false;
+    bool bCatalog = false;
+    bool bQuiet = false;
+
+    // check for invoked program 
+    if ((_tcsicmp(TEXT("vssadmin.exe"), argv[1]) == 0) || 
+        (_tcsicmp(TEXT("vssadmin"), argv[1]) == 0)) {
+        bVssadmin = true;
+    }
+    else if ((_tcsicmp(TEXT("wmic.exe"), argv[1]) == 0) ||
+        (_tcsicmp(TEXT("wmic"), argv[1]) == 0)) {
+        bWmic= true;
+    }
+    else if ((_tcsicmp(TEXT("wbadmin.exe"), argv[1]) == 0) ||
+        (_tcsicmp(TEXT("wbadmin"), argv[1]) == 0)) {
+        bWbadmin = true;
+    }
 
     // check for keywords in command line parameters
     for (DWORD iCount = 0; iCount < argc; iCount++)
@@ -210,14 +218,22 @@ int _tmain(int argc, _TCHAR* argv[]) {
         else if (_tcsicmp(TEXT("resize"), argv[iCount]) == 0) {
             bResize = true;
         }
-        else if (_tcsicmp(TEXT("shadowcopy"), argv[iCount]) ==0 ) {
+        else if (_tcsicmp(TEXT("shadowcopy"), argv[iCount]) == 0) {
             bShadowCopy = true;
+        }
+        else if (_tcsicmp(TEXT("catalog"), argv[iCount]) == 0) {
+            bCatalog = true;
+        }
+        else if (_tcsicmp(TEXT("-quiet"), argv[iCount]) == 0) {
+            bQuiet = true;
         }
     }
 
     // OK this is not want we want 
     // we want to kill the process responsible
-    if ((bDelete && bShadow) || (bResize && bShadowStorage) || (bDelete && bShadowCopy)) {
+    if ((bVssadmin && bDelete && bShadow) || (bVssadmin && bResize && bShadowStorage) ||  // vssadmin.exe
+        (bWmic && bDelete && bShadowCopy) ||                                              // wmic.exe
+        (bWbadmin && bDelete && bCatalog && bQuiet)) {                                    // wbadmin.exe 
 
         printf("Raccine detected malicious activity\n");
 
@@ -243,18 +259,13 @@ int _tmain(int argc, _TCHAR* argv[]) {
             }
         }
 
-        //std::this_thread::sleep_for(std::chrono::milliseconds(5000));
         // Loop over collected PIDs and try to kill the processes
         for (uint8_t i = c; i > 0; --i) {
             printf("Kill PID %d\n", pids[i - 1]);
             killprocess(pids[i - 1], 1);
         }
 
-        // Log an event
-        HANDLE hReg = RegisterEventSource(NULL, TEXT("Raccine"));
-        ReportEvent(hReg, EVENTLOG_INFORMATION_TYPE, RaccineAlert, Alert_1337, NULL, 0, 0, NULL, NULL);
-
-        printf("Raccine v0.4.0 finished\n");
+        printf("Raccine v0.5.0 finished\n");
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     }
     //
@@ -272,7 +283,6 @@ int _tmain(int argc, _TCHAR* argv[]) {
         if (CreateProcess(NULL, (LPWSTR)commandLineStr.c_str(), NULL, NULL, TRUE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &info, &processInfo))
         {
             DebugActiveProcessStop(processInfo.dwProcessId);
-
             WaitForSingleObject(processInfo.hProcess, INFINITE);
             CloseHandle(processInfo.hProcess);
             CloseHandle(processInfo.hThread);
