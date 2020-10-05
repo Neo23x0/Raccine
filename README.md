@@ -78,9 +78,9 @@ About 10-30% of Ransomware samples use `wmic` to delete the local shadowcopies. 
 
 ### Wbadmin Addon (Optional)
 
-4. Apply the `raccine-reg-patch-wbadmin.reg` patch to intercept invocations of `wbadmin.exe`
+Ransomware [often](https://www.google.com/search?q=%22wbadmin+delete+catalog+-quiet%22) uses the command `wbadmin delete catalog -quiet` to delete the backup catalog of the local computer. 
 
-![Kill Run](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen5.png)
+4. Apply the `raccine-reg-patch-wbadmin.reg` patch to intercept invocations of `wbadmin.exe`
 
 ## Uninstall 
 
