@@ -10,8 +10,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdio.h>
-#include <chrono>
-#include <thread>
 #include <locale.h>
 #include <psapi.h>
 #include <string>
@@ -269,7 +267,7 @@ int wmain(int argc, WCHAR* argv[]) {
         }
 
         wprintf(L"Raccine v0.5.1 finished\n");
-        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+        Sleep(5000);
     }
     //
     // Otherwise launch it
