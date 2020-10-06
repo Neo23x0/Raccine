@@ -22,21 +22,24 @@ DWORD getppid(DWORD pid) {
     HANDLE hSnapshot;
     DWORD ppid = 0;
     hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    __try {
-        if (hSnapshot == INVALID_HANDLE_VALUE) __leave;
-        ZeroMemory(&pe32, sizeof(pe32));
-        pe32.dwSize = sizeof(pe32);
-        if (!Process32First(hSnapshot, &pe32)) __leave;
-        do {
-            if (pe32.th32ProcessID == pid) {
-                ppid = pe32.th32ParentProcessID;
-                break;
-            }
-        } while (Process32Next(hSnapshot, &pe32));
+
+    if (hSnapshot == INVALID_HANDLE_VALUE) {
+        goto out;
     }
-    __finally {
-        if (hSnapshot != INVALID_HANDLE_VALUE) CloseHandle(hSnapshot);
+    ZeroMemory(&pe32, sizeof(pe32));
+    pe32.dwSize = sizeof(pe32);
+    if (!Process32First(hSnapshot, &pe32)) {
+        goto out;
     }
+    do {
+        if (pe32.th32ProcessID == pid) {
+            ppid = pe32.th32ParentProcessID;
+            break;
+        }
+    } while (Process32Next(hSnapshot, &pe32));
+
+    out:
+    if (hSnapshot != INVALID_HANDLE_VALUE) CloseHandle(hSnapshot);
     return ppid;
 }
 
@@ -97,59 +100,63 @@ BOOL isallowlisted(DWORD pid) {
     HANDLE hSnapshot;
     hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
-    __try {
-        if (hSnapshot == INVALID_HANDLE_VALUE) __leave;
+    if (hSnapshot == INVALID_HANDLE_VALUE) {
+        goto out;
+    }
 
-        ZeroMemory(&pe32, sizeof(pe32));
-        pe32.dwSize = sizeof(pe32);
+    ZeroMemory(&pe32, sizeof(pe32));
+    pe32.dwSize = sizeof(pe32);
 
-        if (!Process32First(hSnapshot, &pe32)) __leave;
+    if (!Process32First(hSnapshot, &pe32)) {
+        goto out;
+    }
 
-        do {
-            if (pe32.th32ProcessID == pid) {
-                for (uint8_t i = 0; i < ARRAYSIZE(allowlist); i++) {
+    do {
+        if (pe32.th32ProcessID == pid) {
+            for (uint8_t i = 0; i < ARRAYSIZE(allowlist); i++) {
 
-                    if (_wcsicmp((wchar_t*)pe32.szExeFile, allowlist[i]) == 0) {
+                if (_wcsicmp((wchar_t*)pe32.szExeFile, allowlist[i]) == 0) {
 
-                        HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe32.th32ProcessID);
+                    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe32.th32ProcessID);
 
-                        if (hProcess != NULL) {
-                            wchar_t filePath[MAX_PATH] = { 0 };
-                            if (GetModuleFileNameEx(hProcess, NULL, filePath, MAX_PATH)) {
-                                DWORD dwInLevel = IntegrityLevel(hProcess);
+                    if (hProcess != NULL) {
+                        wchar_t filePath[MAX_PATH] = { 0 };
+                        if (GetModuleFileNameEx(hProcess, NULL, filePath, MAX_PATH)) {
+                            DWORD dwInLevel = IntegrityLevel(hProcess);
 
-                                // Are they in the Windows directory?
-                                if (_wcsnicmp(filePath, L"C:\\Windows\\System32\\", wcslen(L"C:\\Windows\\System32\\")) == 0) {
+                            // Are they in the Windows directory?
+                            if (_wcsnicmp(filePath, L"C:\\Windows\\System32\\", wcslen(L"C:\\Windows\\System32\\")) == 0) {
 
-                                    // Is the process running as SYSTEM
-                                    if (IntegrityLevel(hProcess) == 4) {
-                                        CloseHandle(hProcess);
-                                        return TRUE;
-                                    }
-                                }
-
-                                // Are you explorer running in the Windows dir
-                                if (_wcsnicmp(filePath, L"C:\\Windows\\Explorer.exe", wcslen(L"C:\\Windows\\Explorer.exe")) == 0) {
-
-                                    // Is the process running as MEDIUM (which Explorer does)
-                                    if (IntegrityLevel(hProcess) == 2) {
-                                        CloseHandle(hProcess);
-                                        return TRUE;
-                                    }
+                                // Is the process running as SYSTEM
+                                if (IntegrityLevel(hProcess) == 4) {
+                                    CloseHandle(hProcess);
+                                    return TRUE;
                                 }
                             }
-                            else {
-                                CloseHandle(hProcess);
+
+                            // Are you explorer running in the Windows dir
+                            if (_wcsnicmp(filePath, L"C:\\Windows\\Explorer.exe", wcslen(L"C:\\Windows\\Explorer.exe")) == 0) {
+
+                                // Is the process running as MEDIUM (which Explorer does)
+                                if (IntegrityLevel(hProcess) == 2) {
+                                    CloseHandle(hProcess);
+                                    return TRUE;
+                                }
                             }
                         }
-                    } // _wcsicmp
-                }
-                break;
+                        else {
+                            CloseHandle(hProcess);
+                        }
+                    }
+                } // _wcsicmp
             }
-        } while (Process32Next(hSnapshot, &pe32));
-    }
-    __finally {
-        if (hSnapshot != INVALID_HANDLE_VALUE) CloseHandle(hSnapshot);
+            break;
+        }
+    } while (Process32Next(hSnapshot, &pe32));
+
+    out:
+    if (hSnapshot != INVALID_HANDLE_VALUE) {
+        CloseHandle(hSnapshot);
     }
     return FALSE;
 }
@@ -240,24 +247,26 @@ int wmain(int argc, WCHAR* argv[]) {
 
         // Collect PIDs to kill
         while (c < 1024) {
-            try {
-                pid = getppid(pid);
-                if (pid == 0) {
-                    break;
-                }
-                if (!isallowlisted(pid)) {
-                    wprintf(L"Collecting PID %d for a kill\n", pid);
-                    pids[c] = pid;
-                    c++;
-                }
-                else {
-                    wprintf(L"Process with PID %d is on allowlist\n", pid);
-                }
-            }
-            catch (...) {
-                wprintf(L"Couldn't kill PID %d\n", pid);
+            pid = getppid(pid);
+            if (pid == 0) {
                 break;
             }
+            if (!isallowlisted(pid)) {
+                wprintf(L"Collecting PID %d for a kill\n", pid);
+                pids[c] = pid;
+                c++;
+            }
+            else {
+                wprintf(L"Process with PID %d is on allowlist\n", pid);
+            }
+        }
+        if (!isallowlisted(pid)) {
+            wprintf(L"Collecting PID %d for a kill\n", pid);
+            pids[c] = pid;
+            c++;
+        }
+        else {
+            wprintf(L"Process with PID %d is on allowlist\n", pid);
         }
 
         // Loop over collected PIDs and try to kill the processes
