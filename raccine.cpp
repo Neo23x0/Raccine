@@ -234,7 +234,7 @@ int wmain(int argc, WCHAR* argv[]) {
 
     // OK this is not want we want 
     // we want to kill the process responsible
-    if ((bVssadmin && bDelete && bShadow) || (bVssadmin && bResize && bShadowStorage) ||  // vssadmin.exe
+    if ((bVssadmin && bDelete && bShadow) || (bVssadmin && bDelete && bShadowStorage) || (bVssadmin && bResize && bShadowStorage) ||  // vssadmin.exe
         (bWmic && bDelete && bShadowCopy) ||                                              // wmic.exe
         (bWbadmin && bDelete && bCatalog && bQuiet)) {                                    // wbadmin.exe 
 
@@ -281,7 +281,7 @@ int wmain(int argc, WCHAR* argv[]) {
         for (int i = 1; i < argc; i++) commandLineStr.append(std::wstring(argv[i]).append(L" "));
 
         STARTUPINFO info = { sizeof(info) };
-        PROCESS_INFORMATION processInfo;
+        PROCESS_INFORMATION processInfo = { 0 };
 
         if (CreateProcess(NULL, (LPWSTR)commandLineStr.c_str(), NULL, NULL, TRUE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &info, &processInfo))
         {
