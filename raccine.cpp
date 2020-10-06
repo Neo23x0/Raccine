@@ -241,7 +241,7 @@ int wmain(int argc, WCHAR* argv[]) {
         wprintf(L"Raccine detected malicious activity\n");
 
         // Collect PIDs to kill
-        while (true) {
+        while (c < 1024) {
             try {
                 pid = getppid(pid);
                 if (pid == 0) {
