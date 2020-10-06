@@ -268,7 +268,7 @@ int wmain(int argc, WCHAR* argv[]) {
             killprocess(pids[i - 1], 1);
         }
 
-        wprintf(L"Raccine v0.5.0 finished\n");
+        wprintf(L"Raccine v0.5.1 finished\n");
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     }
     //
