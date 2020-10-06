@@ -4,7 +4,7 @@
 //
 // Florian Roth, Ollie Whitehouse
 
-#include <tchar.h>
+#include <WCHAR.h>
 #include <windows.h>
 #include <tlhelp32.h>
 #include <stdio.h>
@@ -19,8 +19,6 @@
 
 #pragma comment(lib,"advapi32.lib")
 
-#define arraysize(ar)  (sizeof(ar) / sizeof(ar[0]))
-
 DWORD getppid(DWORD pid) {
     PROCESSENTRY32 pe32;
     HANDLE hSnapshot;
@@ -32,7 +30,7 @@ DWORD getppid(DWORD pid) {
         pe32.dwSize = sizeof(pe32);
         if (!Process32First(hSnapshot, &pe32)) __leave;
         do {
-            if (pe32.th32ProcessID == pid){
+            if (pe32.th32ProcessID == pid) {
                 ppid = pe32.th32ParentProcessID;
                 break;
             }
@@ -52,15 +50,15 @@ DWORD IntegrityLevel(HANDLE hProcess) {
     DWORD dwLengthNeeded = sizeof(pTIL);
 
     OpenProcessToken(hProcess, TOKEN_QUERY, &hToken);
-    
+
     GetTokenInformation(hToken, TokenIntegrityLevel, NULL, 0, &dwLengthNeeded);
-    pTIL = (PTOKEN_MANDATORY_LABEL) LocalAlloc(0, dwLengthNeeded);
+    pTIL = (PTOKEN_MANDATORY_LABEL)LocalAlloc(0, dwLengthNeeded);
     if (!pTIL) {
         return 0;
     }
 
     if (GetTokenInformation(hToken, TokenIntegrityLevel,
-        pTIL, dwLengthNeeded, &dwLengthNeeded))  {
+        pTIL, dwLengthNeeded, &dwLengthNeeded)) {
         dwIntegrityLevel = *GetSidSubAuthority(pTIL->Label.Sid,
             (DWORD)(UCHAR)(*GetSidSubAuthorityCount(pTIL->Label.Sid) - 1));
 
@@ -75,7 +73,7 @@ DWORD IntegrityLevel(HANDLE hProcess) {
             // Medium Integrity
             return 2;
         }
-        else if (dwIntegrityLevel >= SECURITY_MANDATORY_HIGH_RID && 
+        else if (dwIntegrityLevel >= SECURITY_MANDATORY_HIGH_RID &&
             dwIntegrityLevel < SECURITY_MANDATORY_SYSTEM_RID) {
             // High Integrity
             return 3;
@@ -89,41 +87,42 @@ DWORD IntegrityLevel(HANDLE hProcess) {
         }
     }
     else {
+        LocalFree(pTIL);
         return 0;
     }
     return 0;
 }
 
 BOOL isallowlisted(DWORD pid) {
-    TCHAR allowlist[3][MAX_PATH] = { TEXT("wininit.exe"), TEXT("winlogon.exe"), TEXT("explorer.exe") };
-    PROCESSENTRY32 pe32;
+    WCHAR allowlist[3][MAX_PATH] = { L"wininit.exe", L"winlogon.exe", L"explorer.exe" };
+    PROCESSENTRY32 pe32 = { 0 };
     HANDLE hSnapshot;
     hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
     __try {
-        if(hSnapshot == INVALID_HANDLE_VALUE) __leave;
-        
+        if (hSnapshot == INVALID_HANDLE_VALUE) __leave;
+
         ZeroMemory(&pe32, sizeof(pe32));
         pe32.dwSize = sizeof(pe32);
 
         if (!Process32First(hSnapshot, &pe32)) __leave;
-        
+
         do {
-            if (pe32.th32ProcessID == pid){
-                for (uint8_t i = 0; i < arraysize(allowlist); i++) {
-        
-                    if (_tcsicmp((TCHAR*)pe32.szExeFile, allowlist[i]) == 0 ) {                
+            if (pe32.th32ProcessID == pid) {
+                for (uint8_t i = 0; i < ARRAYSIZE(allowlist); i++) {
+
+                    if (_wcsicmp((wchar_t*)pe32.szExeFile, allowlist[i]) == 0) {
 
                         HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe32.th32ProcessID);
-                        
+
                         if (hProcess != NULL) {
-                            wchar_t filePath[MAX_PATH];
+                            wchar_t filePath[MAX_PATH] = { 0 };
                             if (GetModuleFileNameEx(hProcess, NULL, filePath, MAX_PATH)) {
-                                DWORD dwInLevel = IntegrityLevel(hProcess);                              
+                                DWORD dwInLevel = IntegrityLevel(hProcess);
 
                                 // Are they in the Windows directory?
-                                if (_tcsnicmp(filePath, TEXT("C:\\Windows\\System32\\"), _tcslen(TEXT("C:\\Windows\\System32\\"))) == 0) {
-                                    
+                                if (_wcsnicmp(filePath, L"C:\\Windows\\System32\\", wcslen(L"C:\\Windows\\System32\\")) == 0) {
+
                                     // Is the process running as SYSTEM
                                     if (IntegrityLevel(hProcess) == 4) {
                                         CloseHandle(hProcess);
@@ -132,8 +131,8 @@ BOOL isallowlisted(DWORD pid) {
                                 }
 
                                 // Are you explorer running in the Windows dir
-                                if (_tcsnicmp(filePath, TEXT("C:\\Windows\\Explorer.exe"), _tcslen(TEXT("C:\\Windows\\Explorer.exe"))) == 0) {
-                                    
+                                if (_wcsnicmp(filePath, L"C:\\Windows\\Explorer.exe", wcslen(L"C:\\Windows\\Explorer.exe")) == 0) {
+
                                     // Is the process running as MEDIUM (which Explorer does)
                                     if (IntegrityLevel(hProcess) == 2) {
                                         CloseHandle(hProcess);
@@ -145,7 +144,7 @@ BOOL isallowlisted(DWORD pid) {
                                 CloseHandle(hProcess);
                             }
                         }
-                    } // _tcsicmp
+                    } // _wcsicmp
                 }
                 break;
             }
@@ -159,7 +158,7 @@ BOOL isallowlisted(DWORD pid) {
 
 BOOL killprocess(DWORD dwProcessId, UINT uExitCode) {
     DWORD dwDesiredAccess = PROCESS_TERMINATE;
-    BOOL  bInheritHandle  = FALSE;
+    BOOL  bInheritHandle = FALSE;
     HANDLE hProcess = OpenProcess(dwDesiredAccess, bInheritHandle, dwProcessId);
     if (hProcess == NULL)
         return FALSE;
@@ -169,15 +168,15 @@ BOOL killprocess(DWORD dwProcessId, UINT uExitCode) {
     return result;
 }
 
-int _tmain(int argc, _TCHAR* argv[]) {
+int wmain(int argc, WCHAR* argv[]) {
 
-    DWORD pids[1024];
+    DWORD pids[1024] = { 0 };
     uint8_t c = 0;
     DWORD pid = GetCurrentProcessId();
 
     setlocale(LC_ALL, "");
 
-    bool bVssadmin = false; 
+    bool bVssadmin = false;
     bool bWmic = false;
     bool bWbadmin = false;
 
@@ -189,42 +188,46 @@ int _tmain(int argc, _TCHAR* argv[]) {
     bool bCatalog = false;
     bool bQuiet = false;
 
-    // check for invoked program 
-    if ((_tcsicmp(TEXT("vssadmin.exe"), argv[1]) == 0) || 
-        (_tcsicmp(TEXT("vssadmin"), argv[1]) == 0)) {
-        bVssadmin = true;
-    }
-    else if ((_tcsicmp(TEXT("wmic.exe"), argv[1]) == 0) ||
-        (_tcsicmp(TEXT("wmic"), argv[1]) == 0)) {
-        bWmic= true;
-    }
-    else if ((_tcsicmp(TEXT("wbadmin.exe"), argv[1]) == 0) ||
-        (_tcsicmp(TEXT("wbadmin"), argv[1]) == 0)) {
-        bWbadmin = true;
+
+    if (argc > 1)
+    {
+        // check for invoked program 
+        if ((_wcsicmp(L"vssadmin.exe", argv[1]) == 0) ||
+            (_wcsicmp(L"vssadmin", argv[1]) == 0)) {
+            bVssadmin = true;
+        }
+        else if ((_wcsicmp(L"wmic.exe", argv[1]) == 0) ||
+            (_wcsicmp(L"wmic", argv[1]) == 0)) {
+            bWmic = true;
+        }
+        else if ((_wcsicmp(L"wbadmin.exe", argv[1]) == 0) ||
+            (_wcsicmp(L"wbadmin", argv[1]) == 0)) {
+            bWbadmin = true;
+        }
     }
 
     // check for keywords in command line parameters
-    for (DWORD iCount = 0; iCount < argc; iCount++)
+    for (int iCount = 0; iCount < argc; iCount++)
     {
-        if (_tcsicmp(TEXT("delete"), argv[iCount]) == 0) {
+        if (_wcsicmp(L"delete", argv[iCount]) == 0) {
             bDelete = true;
         }
-        else if (_tcsicmp(TEXT("shadows"), argv[iCount]) == 0) {
+        else if (_wcsicmp(L"shadows", argv[iCount]) == 0) {
             bShadow = true;
         }
-        else if (_tcsicmp(TEXT("shadowstorage"), argv[iCount]) == 0) {
+        else if (_wcsicmp(L"shadowstorage", argv[iCount]) == 0) {
             bShadowStorage = true;
         }
-        else if (_tcsicmp(TEXT("resize"), argv[iCount]) == 0) {
+        else if (_wcsicmp(L"resize", argv[iCount]) == 0) {
             bResize = true;
         }
-        else if (_tcsicmp(TEXT("shadowcopy"), argv[iCount]) == 0) {
+        else if (_wcsicmp(L"shadowcopy", argv[iCount]) == 0) {
             bShadowCopy = true;
         }
-        else if (_tcsicmp(TEXT("catalog"), argv[iCount]) == 0) {
+        else if (_wcsicmp(L"catalog", argv[iCount]) == 0) {
             bCatalog = true;
         }
-        else if (_tcsicmp(TEXT("-quiet"), argv[iCount]) == 0) {
+        else if (_wcsicmp(L"-quiet", argv[iCount]) == 0) {
             bQuiet = true;
         }
     }
@@ -235,7 +238,7 @@ int _tmain(int argc, _TCHAR* argv[]) {
         (bWmic && bDelete && bShadowCopy) ||                                              // wmic.exe
         (bWbadmin && bDelete && bCatalog && bQuiet)) {                                    // wbadmin.exe 
 
-        printf("Raccine detected malicious activity\n");
+        wprintf(L"Raccine detected malicious activity\n");
 
         // Collect PIDs to kill
         while (true) {
@@ -245,27 +248,27 @@ int _tmain(int argc, _TCHAR* argv[]) {
                     break;
                 }
                 if (!isallowlisted(pid)) {
-                    printf("Collecting PID %d for a kill\n", pid);
+                    wprintf(L"Collecting PID %d for a kill\n", pid);
                     pids[c] = pid;
                     c++;
                 }
                 else {
-                    printf("Process with PID %d is on allowlist\n", pid);
+                    wprintf(L"Process with PID %d is on allowlist\n", pid);
                 }
             }
             catch (...) {
-                printf("Couldn't kill PID %d\n", pid);
+                wprintf(L"Couldn't kill PID %d\n", pid);
                 break;
             }
         }
 
         // Loop over collected PIDs and try to kill the processes
         for (uint8_t i = c; i > 0; --i) {
-            printf("Kill PID %d\n", pids[i - 1]);
+            wprintf(L"Kill PID %d\n", pids[i - 1]);
             killprocess(pids[i - 1], 1);
         }
 
-        printf("Raccine v0.5.0 finished\n");
+        wprintf(L"Raccine v0.5.0 finished\n");
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     }
     //
@@ -273,9 +276,9 @@ int _tmain(int argc, _TCHAR* argv[]) {
     //
     else {
         DEBUG_EVENT debugEvent = { 0 };
-        std::wstring commandLineStr = TEXT("");
+        std::wstring commandLineStr = L"";
 
-        for (int i = 1; i < argc; i++) commandLineStr.append(std::wstring(argv[i]).append(TEXT(" ")));
+        for (int i = 1; i < argc; i++) commandLineStr.append(std::wstring(argv[i]).append(L" "));
 
         STARTUPINFO info = { sizeof(info) };
         PROCESS_INFORMATION processInfo;
