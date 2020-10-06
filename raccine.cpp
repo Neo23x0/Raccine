@@ -4,7 +4,7 @@
 //
 // Florian Roth, Ollie Whitehouse
 
-#include <WCHAR.h>
+#include <wchar.h>
 #include <windows.h>
 #include <tlhelp32.h>
 #include <stdio.h>
