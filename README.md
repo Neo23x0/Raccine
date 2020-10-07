@@ -147,3 +147,5 @@ The right pronounciation is "Rax-Een".
 
 - Florian Roth [@cyb3rops](https://twitter.com/cyb3rops)
 - Ollie Whitehouse [@ollieatnccgroup](https://twitter.com/ollieatnccgroup)
+- John Lambert [@JohnLaTwC](https://twitter.com/JohnLaTwC)
+- Hilko Bengen [@_hillu_](https://twitter.com/_hillu_)
