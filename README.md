@@ -39,6 +39,7 @@ Malicious combinations:
 
 - `delete` and `shadows` (vssadmin)
 - `resize` and `shadowstorage` (vssadmin)
+- `delete` and `shadowstorage` (vssadmin)
 - `delete` and `shadowcopy` (wmic)
 - `delete` and `catalog` and `-quiet` (wbadmin)
 
@@ -60,6 +61,8 @@ If you have a solid security monitoring that logs all process executions, you co
 - 0.4.1 - Statically linked binaries
 - 0.4.2 - Bugfixes provided by John Lambert
 - 0.5.0 - Removed Eventlog logging (basic info was unnecessary; cuased higher complexity; can be achieved by process creation logging as well), support for wbadmin filtering
+- 0.5.1 - Improvements by @JohnLaTwC
+- 0.5.2 - Additional check for `delete shadowstorage` by @JohnLaTwC, code review by @_hillu, application icon 
 
 ## Installation
 
