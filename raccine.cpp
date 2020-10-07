@@ -3,6 +3,7 @@
 // https://github.com/Neo23x0/Raccine
 //
 // Florian Roth, Ollie Whitehouse
+// with help of John Lambert and Hilko Bengen
 
 #include <wchar.h>
 #include <windows.h>
@@ -239,9 +240,11 @@ int wmain(int argc, WCHAR* argv[]) {
 
     // OK this is not want we want 
     // we want to kill the process responsible
-    if ((bVssadmin && bDelete && bShadow) || (bVssadmin && bDelete && bShadowStorage) || (bVssadmin && bResize && bShadowStorage) ||  // vssadmin.exe
-        (bWmic && bDelete && bShadowCopy) ||                                              // wmic.exe
-        (bWbadmin && bDelete && bCatalog && bQuiet)) {                                    // wbadmin.exe 
+    if ((bVssadmin && bDelete && bShadow) ||             // vssadmin.exe
+        (bVssadmin && bDelete && bShadowStorage) ||      // vssadmin.exe
+        (bVssadmin && bResize && bShadowStorage) ||      // vssadmin.exe
+        (bWmic && bDelete && bShadowCopy) ||             // wmic.exe
+        (bWbadmin && bDelete && bCatalog && bQuiet)) {   // wbadmin.exe 
 
         wprintf(L"Raccine detected malicious activity\n");
 
@@ -275,7 +278,7 @@ int wmain(int argc, WCHAR* argv[]) {
             killprocess(pids[i - 1], 1);
         }
 
-        wprintf(L"Raccine v0.5.1 finished\n");
+        wprintf(L"Raccine v0.5.2 finished\n");
         Sleep(5000);
     }
     //
