@@ -1,5 +1,6 @@
 @ECHO OFF
 SET __COMPAT_LAYER=RunAsInvoker
+SETLOCAL EnableDelayedExpansion
 CLS 
 
 :: BatchGotAdmin
@@ -33,7 +34,13 @@ IF '%errorlevel%' NEQ '0' (
 :gotAdmin
     PUSHD "%CD%"
     CD /D "%~dp0"
-    GOTO MENU
+
+:: Check Architecture and set postfix
+SET ARCH=
+IF "%PROCESSOR_ARCHITECTURE%" EQU "x86" (
+    ECHO Detected x86 architecture
+    SET ARCH=_x86
+)
 
 :MENU
 CLS
@@ -66,31 +73,20 @@ IF %M%==E GOTO EOF
 IF %M%==e GOTO EOF
 
 :: Installer actions
-:SOFT 
-REGEDIT.EXE /S raccine-reg-patch-vssadmin.reg
-IF '%errorlevel%' NEQ '0' (
-    ECHO Something went wrong. Sorry.
-    GOTO MENU
-)
-COPY Raccine.exe C:\Windows\Raccine.exe
-IF '%errorlevel%' NEQ '0' (
-    ECHO Something went wrong. Sorry.
-) ELSE (
-    ECHO.
-    ECHO Successfully installed! You system has been raccinated.
-)
-TIMEOUT /t 5
-GOTO MENU
 
-:FULL 
+:: Full
+:FULL
+ECHO.
+ECHO Installing Registry patches ...
 REGEDIT.EXE /S raccine-reg-patch-vssadmin.reg
 IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry.
     GOTO MENU
 )
 REGEDIT.EXE /S raccine-reg-patch-wmic.reg 
-REGEDIT.EXE /S raccine-reg-patch-wbadmin.reg 
-COPY Raccine.exe C:\Windows\Raccine.exe
+REGEDIT.EXE /S raccine-reg-patch-wbadmin.reg
+ECHO Copying Raccine%ARCH%.exe to C:\Windows\Raccine.exe ...
+COPY Raccine%ARCH%.exe C:\Windows\Raccine.exe
 IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry.
 ) ELSE (
@@ -100,8 +96,32 @@ IF '%errorlevel%' NEQ '0' (
 TIMEOUT /t 5
 GOTO MENU
 
-:UNINSTALL 
+:: Soft
+:SOFT 
+ECHO.
+ECHO Installing Registry patches ...
+REGEDIT.EXE /S raccine-reg-patch-vssadmin.reg
+IF '%errorlevel%' NEQ '0' (
+    ECHO Something went wrong. Sorry.
+    GOTO MENU
+)
+ECHO Copying Raccine%ARCH%.exe to C:\Windows\Raccine.exe ...
+COPY Raccine%ARCH%.exe C:\Windows\Raccine.exe
+IF '%errorlevel%' NEQ '0' (
+    ECHO Something went wrong. Sorry.
+) ELSE (
+    ECHO.
+    ECHO Successfully installed! You system has been raccinated.
+)
+TIMEOUT /t 5
+GOTO MENU
+
+:: Uninstall
+:UNINSTALL
+ECHO.
+ECHO Uninstalling Registry patch ...
 REGEDIT.EXE /S raccine-reg-patch-uninstall.reg
+ECHO Removing Raccine.exe from the Windows folder ...
 DEL /Q C:\Windows\Raccine.exe
 IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry.
