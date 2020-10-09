@@ -278,7 +278,7 @@ int wmain(int argc, WCHAR* argv[]) {
             killprocess(pids[i - 1], 1);
         }
 
-        wprintf(L"Raccine v0.5.2 finished\n");
+        wprintf(L"Raccine v0.5.3 finished\n");
         Sleep(5000);
     }
     //
