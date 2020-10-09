@@ -73,6 +73,8 @@ If you have a solid security monitoring that logs all process executions, you co
 2. Extract it
 3. Run `raccine-installer.bat`
 
+![Windows Batch Installer](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/batch-installer.png)
+
 ### Manual
 
 1. Apply Registry Patch `raccine-reg-patch-vssadmin.reg` to intercept invocations of `vssadmin.exe`
