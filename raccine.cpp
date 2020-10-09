@@ -15,6 +15,7 @@
 #include <psapi.h>
 #include <string>
 #include <vector>
+#include <fstream>
 
 #pragma comment(lib,"advapi32.lib")
 
@@ -172,6 +173,13 @@ BOOL killprocess(DWORD dwProcessId, UINT uExitCode) {
     BOOL result = TerminateProcess(hProcess, uExitCode);
     CloseHandle(hProcess);
     return result;
+}
+
+void Log(const WCHAR* szString) {
+    wprintf(L"%s\n", szString);
+    FILE* pFile = fopen("Raccine_log.txt", "a");
+    fwprintf(pFile, L"%s\n", szString);
+    fclose(pFile);
 }
 
 int wmain(int argc, WCHAR* argv[]) {
