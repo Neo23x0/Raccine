@@ -91,7 +91,7 @@ IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry.
 ) ELSE (
     ECHO.
-    ECHO Successfully installed! You system has been raccinated.
+    ECHO Successfully installed. Your system has been raccinated.
 )
 TIMEOUT /t 5
 GOTO MENU
@@ -111,7 +111,7 @@ IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry.
 ) ELSE (
     ECHO.
-    ECHO Successfully installed! You system has been raccinated.
+    ECHO Successfully installed. Your system has been raccinated.
 )
 TIMEOUT /t 5
 GOTO MENU
