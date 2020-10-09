@@ -63,8 +63,17 @@ If you have a solid security monitoring that logs all process executions, you co
 - 0.5.0 - Removed Eventlog logging (basic info was unnecessary; cuased higher complexity; can be achieved by process creation logging as well), support for wbadmin filtering
 - 0.5.1 - Improvements by @JohnLaTwC
 - 0.5.2 - Additional check for `delete shadowstorage` by @JohnLaTwC, code review by @_hillu, application icon 
+- 0.5.3 - Batch installer 
 
 ## Installation
+
+### Automatic
+
+1. Download `Raccine.zip` from the [Release](https://github.com/Neo23x0/Raccine/releases/) section
+2. Extract it
+3. Run `raccine-installer.bat`
+
+### Manual
 
 1. Apply Registry Patch `raccine-reg-patch-vssadmin.reg` to intercept invocations of `vssadmin.exe`
 2. Place `Raccine.exe` from the [release section](https://github.com/Neo23x0/Raccine/releases/) in the `PATH`, e.g. into `C:\Windows`
