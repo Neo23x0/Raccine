@@ -185,6 +185,7 @@ int wmain(int argc, WCHAR* argv[]) {
     bool bVssadmin = false;
     bool bWmic = false;
     bool bWbadmin = false;
+	bool bcdEdit = false;
 
     bool bDelete = false;
     bool bShadow = false;
@@ -194,6 +195,8 @@ int wmain(int argc, WCHAR* argv[]) {
     bool bCatalog = false;
     bool bQuiet = false;
 
+    bool bRecoveryEnabled = false;
+    bool bIgnoreallFailures = false;
 
     if (argc > 1)
     {
@@ -209,6 +212,10 @@ int wmain(int argc, WCHAR* argv[]) {
         else if ((_wcsicmp(L"wbadmin.exe", argv[1]) == 0) ||
             (_wcsicmp(L"wbadmin", argv[1]) == 0)) {
             bWbadmin = true;
+        }
+		else if ((_wcsicmp(L"bcdedit.exe", argv[1]) == 0) ||
+            (_wcsicmp(L"bcdedit", argv[1]) == 0)) {
+            bcdEdit = true;
         }
     }
 
@@ -236,6 +243,12 @@ int wmain(int argc, WCHAR* argv[]) {
         else if (_wcsicmp(L"-quiet", argv[iCount]) == 0) {
             bQuiet = true;
         }
+        else if (_wcsicmp(L"recoveryenabled", argv[iCount]) == 0) {
+            bRecoveryEnabled = true;
+        }
+        else if (_wcsicmp(L"ignoreallfailures", argv[iCount]) == 0) {
+            bIgnoreallFailures = true;
+        }
     }
 
     // OK this is not want we want 
@@ -244,7 +257,9 @@ int wmain(int argc, WCHAR* argv[]) {
         (bVssadmin && bDelete && bShadowStorage) ||      // vssadmin.exe
         (bVssadmin && bResize && bShadowStorage) ||      // vssadmin.exe
         (bWmic && bDelete && bShadowCopy) ||             // wmic.exe
-        (bWbadmin && bDelete && bCatalog && bQuiet)) {   // wbadmin.exe 
+        (bWbadmin && bDelete && bCatalog && bQuiet) || 	 // wbadmin.exe 
+        (bcdEdit && bIgnoreallFailures) ||               // bcdedit.exe
+        (bcdEdit && bRecoveryEnabled)){                  // bcdedit.exe  
 
         wprintf(L"Raccine detected malicious activity\n");
 

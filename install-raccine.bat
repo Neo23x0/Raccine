@@ -85,6 +85,7 @@ IF '%errorlevel%' NEQ '0' (
 )
 REGEDIT.EXE /S raccine-reg-patch-wmic.reg 
 REGEDIT.EXE /S raccine-reg-patch-wbadmin.reg
+REGEDIT.EXE /S raccine-reg-patch-bcdedit.reg
 ECHO Copying Raccine%ARCH%.exe to C:\Windows\Raccine.exe ...
 COPY Raccine%ARCH%.exe C:\Windows\Raccine.exe
 IF '%errorlevel%' NEQ '0' (
@@ -105,6 +106,7 @@ IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry.
     GOTO MENU
 )
+REGEDIT.EXE /S raccine-reg-patch-bcdedit.reg
 ECHO Copying Raccine%ARCH%.exe to C:\Windows\Raccine.exe ...
 COPY Raccine%ARCH%.exe C:\Windows\Raccine.exe
 IF '%errorlevel%' NEQ '0' (
