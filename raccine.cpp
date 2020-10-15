@@ -313,14 +313,6 @@ int wmain(int argc, WCHAR* argv[]) {
                 wprintf(L"Process with PID %d is on allowlist\n", pid);
             }
         }
-        if (!isallowlisted(pid)) {
-            wprintf(L"Collecting PID %d for a kill\n", pid);
-            pids[c] = pid;
-            c++;
-        }
-        else {
-            wprintf(L"Process with PID %d is on allowlist\n", pid);
-        }
 
         // Loop over collected PIDs and try to kill the processes
         for (uint8_t i = c; i > 0; --i) {
