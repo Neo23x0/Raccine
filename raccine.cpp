@@ -202,7 +202,7 @@ int wmain(int argc, WCHAR* argv[]) {
 	
     bool bwin32ShadowCopy = false;
     bool bEncodedCommand = false;
-    WCHAR encodedCommands[5][8] = {L"JAB", L"SQBFAF", L"SQBuAH", L"SUVY", L"cwBha"};
+    WCHAR encodedCommands[7][9] = {L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI", L"cwBhA", L"aWV4I", L"aQBlAHgA"};
 
     if (argc > 1)
     {
