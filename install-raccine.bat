@@ -52,7 +52,7 @@ ECHO ..........................................................
 :::  /_/|_|\_,_/\__/\__/_/_//_/\__/ 
 :::
 for /f "delims=: tokens=*" %%A in ('findstr /b ::: "%~f0"') do @echo(%%A
-ECHO   A Simple Ransomware Vaccine
+ECHO   A Simple Ransomware and Emotet Vaccine
 ECHO   Installer by Florian Roth, October 2020  
 ECHO.                       
 ECHO ----------------------------------------------------------
@@ -60,7 +60,7 @@ ECHO   WARNING! Raccine could break your backup solution
 ECHO ..........................................................
 ECHO.
 ECHO   1 - Install Raccine for all possible methods (radical)
-ECHO   2 - Install Raccine for Vssadmin only (relatively safe)
+ECHO   2 - Install Raccine for Vssadmin and BcdEdit only (relatively safe)
 ECHO   3 - Uninstall Raccine
 ECHO   E - EXIT
 ECHO.
