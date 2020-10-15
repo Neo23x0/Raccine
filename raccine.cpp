@@ -15,6 +15,7 @@
 #include <psapi.h>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #pragma comment(lib,"advapi32.lib")
 
@@ -200,7 +201,9 @@ int wmain(int argc, WCHAR* argv[]) {
     bool bIgnoreallFailures = false;
 	
     bool bwin32ShadowCopy = false;
-    bool bEncoded = false;
+    bool bEncodedCommand = false;
+    bool bEnc = false;
+    bool bJab = false;
 
     if (argc > 1)
     {
@@ -232,7 +235,10 @@ int wmain(int argc, WCHAR* argv[]) {
     {
 	wchar_t* convertedCh = argv[iCount];
         std::wstring convertedArg(convertedCh); //convert wchar to wide string so we can perform contains/find command
-        
+
+	if (convertedArg != L"JAB") {
+		transform(convertedArg.begin(), convertedArg.end(), convertedArg.begin(), ::tolower); // convert args to lowercase
+	}
 	if (_wcsicmp(L"delete", argv[iCount]) == 0) {
             bDelete = true;
         }
@@ -260,12 +266,18 @@ int wmain(int argc, WCHAR* argv[]) {
         else if (_wcsicmp(L"ignoreallfailures", argv[iCount]) == 0) {
             bIgnoreallFailures = true;
         }
-	else if (convertedArg.find(L"win32_shadowcopy") != std::string::npos || convertedArg.find(L"Win32_Shadowcopy") != std::string::npos) {
+	else if (convertedArg.find(L"win32_shadowcopy") != std::string::npos) {
             bwin32ShadowCopy = true;
         }
         else if (_wcsicmp(L"-encodedcommand", argv[iCount]) == 0) {
-            bEncoded = true;
+            bEncodedCommand = true;
         }
+	else if (convertedArg.find(L"-enc") != std::string::npos) {
+            bEnc = true;
+    	}
+	else if (convertedArg.find(L"jab") != std::string::npos) {
+            bJab = true;
+    	}
     }
 
     // OK this is not want we want 
@@ -278,7 +290,8 @@ int wmain(int argc, WCHAR* argv[]) {
         (bcdEdit && bIgnoreallFailures) ||               // bcdedit.exe
         (bcdEdit && bRecoveryEnabled) ||                 // bcdedit.exe
 	(bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
-	(bPowerShell && bEncoded)){                      // powershell.exe
+	(bPowerShell && bEncodedCommand) ||              // powershell.exe
+        (bPowerShell && bEnc && bJab)){                       // powershell.exe
 
         wprintf(L"Raccine detected malicious activity\n");
 
