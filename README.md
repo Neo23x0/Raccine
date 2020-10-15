@@ -43,6 +43,8 @@ Malicious combinations:
 - `delete` and `shadowcopy` (wmic)
 - `delete` and `catalog` and `-quiet` (wbadmin)
 - `win32_shadowcopy` or element from a list of encoded commands (powershell)
+- `recoveryenabled` (bcedit)
+- `ignoreallfailures` (bcedit)
 
 ## Warning !!!
 
@@ -163,3 +165,4 @@ The right pronounciation is "Rax-Een".
 - Ollie Whitehouse [@ollieatnccgroup](https://twitter.com/ollieatnccgroup)
 - John Lambert [@JohnLaTwC](https://twitter.com/JohnLaTwC)
 - Hilko Bengen [@_hillu_](https://twitter.com/_hillu_)
+- Branislav Đalić [@LordOfThePies4](https://twitter.com/LordOfThePies4)
