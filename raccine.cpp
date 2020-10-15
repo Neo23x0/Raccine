@@ -230,11 +230,13 @@ int wmain(int argc, WCHAR* argv[]) {
     }
 
     // check for keywords in command line parameters
-    for (int iCount = 0; iCount < argc; iCount++) {
+    for (int iCount = 1; iCount < argc; iCount++) {
 
         //convert wchar to wide string so we can perform contains/find command
         wchar_t* convertedCh = argv[iCount];
+        wchar_t* convertedChPrev = argv[iCount-1];
         std::wstring convertedArg(convertedCh);
+        std::wstring convertedArgPrev(convertedChPrev);
 
         // convert args to lowercase for case-insensitive comparisons
         transform(convertedArg.begin(), convertedArg.end(), convertedArg.begin(), ::tolower);
@@ -269,7 +271,7 @@ int wmain(int argc, WCHAR* argv[]) {
         else if (convertedArg.find(L"win32_shadowcopy") != std::string::npos) {
             bwin32ShadowCopy = true;
         }
-        else if (convertedArg.find(L"-e") != std::string::npos) {
+        else if (convertedArgPrev.find(L"-e") != std::string::npos) {
             for (uint8_t i = 0; i < ARRAYSIZE(encodedCommands); i++) {
                 if (convertedArg.find(encodedCommands[i]) != std::string::npos) {
                     bEncodedCommand = true;
