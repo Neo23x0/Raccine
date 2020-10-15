@@ -15,6 +15,7 @@
 #include <psapi.h>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #pragma comment(lib,"advapi32.lib")
 
@@ -185,7 +186,8 @@ int wmain(int argc, WCHAR* argv[]) {
     bool bVssadmin = false;
     bool bWmic = false;
     bool bWbadmin = false;
-	bool bcdEdit = false;
+    bool bcdEdit = false;
+    bool bPowerShell = false;
 
     bool bDelete = false;
     bool bShadow = false;
@@ -197,6 +199,10 @@ int wmain(int argc, WCHAR* argv[]) {
 
     bool bRecoveryEnabled = false;
     bool bIgnoreallFailures = false;
+	
+    bool bwin32ShadowCopy = false;
+    bool bEncodedCommand = false;
+    WCHAR encodedCommands[7][9] = {L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI", L"cwBhA", L"aWV4I", L"aQBlAHgA"};
 
     if (argc > 1)
     {
@@ -213,15 +219,32 @@ int wmain(int argc, WCHAR* argv[]) {
             (_wcsicmp(L"wbadmin", argv[1]) == 0)) {
             bWbadmin = true;
         }
-		else if ((_wcsicmp(L"bcdedit.exe", argv[1]) == 0) ||
+	else if ((_wcsicmp(L"bcdedit.exe", argv[1]) == 0) ||
             (_wcsicmp(L"bcdedit", argv[1]) == 0)) {
             bcdEdit = true;
+        }
+        else if ((_wcsicmp(L"powershell.exe", argv[1]) == 0) ||
+            (_wcsicmp(L"powershell", argv[1]) == 0)) {
+            bPowerShell = true;
         }
     }
 
     // check for keywords in command line parameters
-    for (int iCount = 0; iCount < argc; iCount++)
-    {
+    for (int iCount = 1; iCount < argc; iCount++) {
+
+        //convert wchar to wide string so we can perform contains/find command
+        wchar_t* convertedCh = argv[iCount];
+        wchar_t* convertedChOrig = argv[iCount];    // original parameter (no tolower)
+        wchar_t* convertedChPrev = argv[iCount-1];  // previous parameter
+        // convert them to wide strings
+        std::wstring convertedArg(convertedCh);
+        std::wstring convertedArgOrig(convertedChOrig);
+        std::wstring convertedArgPrev(convertedChPrev);
+
+        // convert args to lowercase for case-insensitive comparisons
+        transform(convertedArg.begin(), convertedArg.end(), convertedArg.begin(), ::tolower);
+        transform(convertedArgPrev.begin(), convertedArgPrev.end(), convertedArgPrev.begin(), ::tolower);
+
         if (_wcsicmp(L"delete", argv[iCount]) == 0) {
             bDelete = true;
         }
@@ -249,6 +272,16 @@ int wmain(int argc, WCHAR* argv[]) {
         else if (_wcsicmp(L"ignoreallfailures", argv[iCount]) == 0) {
             bIgnoreallFailures = true;
         }
+        else if (convertedArg.find(L"win32_shadowcopy") != std::string::npos) {
+            bwin32ShadowCopy = true;
+        }
+        else if (convertedArgPrev.find(L"-e") != std::string::npos) {
+            for (uint8_t i = 0; i < ARRAYSIZE(encodedCommands); i++) {
+                if (convertedArgOrig.find(encodedCommands[i]) != std::string::npos) {
+                    bEncodedCommand = true;
+                }
+            }
+        }
     }
 
     // OK this is not want we want 
@@ -259,7 +292,9 @@ int wmain(int argc, WCHAR* argv[]) {
         (bWmic && bDelete && bShadowCopy) ||             // wmic.exe
         (bWbadmin && bDelete && bCatalog && bQuiet) || 	 // wbadmin.exe 
         (bcdEdit && bIgnoreallFailures) ||               // bcdedit.exe
-        (bcdEdit && bRecoveryEnabled)){                  // bcdedit.exe  
+        (bcdEdit && bRecoveryEnabled) ||                 // bcdedit.exe
+	    (bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
+        (bPowerShell && bEncodedCommand)) {              // powershell.exe
 
         wprintf(L"Raccine detected malicious activity\n");
 
@@ -278,14 +313,6 @@ int wmain(int argc, WCHAR* argv[]) {
                 wprintf(L"Process with PID %d is on allowlist\n", pid);
             }
         }
-        if (!isallowlisted(pid)) {
-            wprintf(L"Collecting PID %d for a kill\n", pid);
-            pids[c] = pid;
-            c++;
-        }
-        else {
-            wprintf(L"Process with PID %d is on allowlist\n", pid);
-        }
 
         // Loop over collected PIDs and try to kill the processes
         for (uint8_t i = c; i > 0; --i) {
@@ -293,7 +320,7 @@ int wmain(int argc, WCHAR* argv[]) {
             killprocess(pids[i - 1], 1);
         }
 
-        wprintf(L"Raccine v0.6.0 finished\n");
+        wprintf(L"Raccine v0.7.0 finished\n");
         Sleep(5000);
     }
     //
