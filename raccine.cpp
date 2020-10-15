@@ -234,12 +234,16 @@ int wmain(int argc, WCHAR* argv[]) {
 
         //convert wchar to wide string so we can perform contains/find command
         wchar_t* convertedCh = argv[iCount];
-        wchar_t* convertedChPrev = argv[iCount-1];
+        wchar_t* convertedChOrig = argv[iCount];    // original parameter (no tolower)
+        wchar_t* convertedChPrev = argv[iCount-1];  // previous parameter
+        // convert them to wide strings
         std::wstring convertedArg(convertedCh);
+        std::wstring convertedArgOrig(convertedChOrig);
         std::wstring convertedArgPrev(convertedChPrev);
 
         // convert args to lowercase for case-insensitive comparisons
         transform(convertedArg.begin(), convertedArg.end(), convertedArg.begin(), ::tolower);
+        transform(convertedArgPrev.begin(), convertedArgPrev.end(), convertedArgPrev.begin(), ::tolower);
 
         if (_wcsicmp(L"delete", argv[iCount]) == 0) {
             bDelete = true;
@@ -273,7 +277,7 @@ int wmain(int argc, WCHAR* argv[]) {
         }
         else if (convertedArgPrev.find(L"-e") != std::string::npos) {
             for (uint8_t i = 0; i < ARRAYSIZE(encodedCommands); i++) {
-                if (convertedArg.find(encodedCommands[i]) != std::string::npos) {
+                if (convertedArgOrig.find(encodedCommands[i]) != std::string::npos) {
                     bEncodedCommand = true;
                 }
             }
