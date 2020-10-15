@@ -86,6 +86,7 @@ IF '%errorlevel%' NEQ '0' (
 REGEDIT.EXE /S raccine-reg-patch-wmic.reg 
 REGEDIT.EXE /S raccine-reg-patch-wbadmin.reg
 REGEDIT.EXE /S raccine-reg-patch-bcdedit.reg
+REGEDIT.EXE /S raccine-reg-patch-powershell.reg
 ECHO Copying Raccine%ARCH%.exe to C:\Windows\Raccine.exe ...
 COPY Raccine%ARCH%.exe C:\Windows\Raccine.exe
 IF '%errorlevel%' NEQ '0' (
