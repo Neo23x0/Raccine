@@ -42,6 +42,8 @@ Malicious combinations:
 - `delete` and `shadowstorage` (vssadmin)
 - `delete` and `shadowcopy` (wmic)
 - `delete` and `catalog` and `-quiet` (wbadmin)
+- `recoveryenabled` (bcedit)
+- `ignoreallfailures` (bcedit)
 
 ## Warning !!!
 
@@ -64,6 +66,7 @@ If you have a solid security monitoring that logs all process executions, you co
 - 0.5.1 - Improvements by @JohnLaTwC
 - 0.5.2 - Additional check for `delete shadowstorage` by @JohnLaTwC, code review by @_hillu, application icon 
 - 0.5.3 - Batch installer 
+- 0.6.0 - Additional checks for `bcdedit.exe /set {default} bootstatuspolicy ignoreallfailures` and `bcdedit.exe /set {default} recoveryenabled no`
 
 ## Installation
 
@@ -160,3 +163,4 @@ The right pronounciation is "Rax-Een".
 - Ollie Whitehouse [@ollieatnccgroup](https://twitter.com/ollieatnccgroup)
 - John Lambert [@JohnLaTwC](https://twitter.com/JohnLaTwC)
 - Hilko Bengen [@_hillu_](https://twitter.com/_hillu_)
+- Branislav Đalić [@LordOfThePies4](https://twitter.com/LordOfThePies4)
