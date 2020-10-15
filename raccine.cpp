@@ -186,7 +186,7 @@ int wmain(int argc, WCHAR* argv[]) {
     bool bWmic = false;
     bool bWbadmin = false;
     bool bcdEdit = false;
-    bool bShell = false;
+    bool bPowerShell = false;
 
     bool bDelete = false;
     bool bShadow = false;
@@ -223,7 +223,7 @@ int wmain(int argc, WCHAR* argv[]) {
         }
         else if ((_wcsicmp(L"powershell.exe", argv[1]) == 0) ||
             (_wcsicmp(L"powershell", argv[1]) == 0)) {
-            bShell = true;
+            bPowerShell = true;
         }
     }
 
@@ -277,8 +277,8 @@ int wmain(int argc, WCHAR* argv[]) {
         (bWbadmin && bDelete && bCatalog && bQuiet) || 	 // wbadmin.exe 
         (bcdEdit && bIgnoreallFailures) ||               // bcdedit.exe
         (bcdEdit && bRecoveryEnabled) ||                 // bcdedit.exe
-	(bShell && bwin32ShadowCopy) ||                  // powershell.exe
-	(bShell && bEncoded)){                           // powershell.exe
+	(bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
+	(bPowerShell && bEncoded)){                      // powershell.exe
 
         wprintf(L"Raccine detected malicious activity\n");
 
