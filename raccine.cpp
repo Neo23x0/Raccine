@@ -40,7 +40,7 @@ DWORD getppid(DWORD pid) {
         }
     } while (Process32Next(hSnapshot, &pe32));
 
-    out:
+out:
     if (hSnapshot != INVALID_HANDLE_VALUE) CloseHandle(hSnapshot);
     return ppid;
 }
@@ -52,8 +52,9 @@ DWORD IntegrityLevel(HANDLE hProcess) {
     PTOKEN_MANDATORY_LABEL pTIL;
     DWORD dwLengthNeeded = sizeof(pTIL);
 
-    OpenProcessToken(hProcess, TOKEN_QUERY, &hToken);
-
+    if (!OpenProcessToken(hProcess, TOKEN_QUERY, &hToken))
+        return 0;
+    
     GetTokenInformation(hToken, TokenIntegrityLevel, NULL, 0, &dwLengthNeeded);
     pTIL = (PTOKEN_MANDATORY_LABEL)LocalAlloc(0, dwLengthNeeded);
     if (!pTIL) {
@@ -132,6 +133,7 @@ BOOL isallowlisted(DWORD pid) {
                                 // Is the process running as SYSTEM
                                 if (IntegrityLevel(hProcess) == 4) {
                                     CloseHandle(hProcess);
+                                    CloseHandle(hSnapshot);
                                     return TRUE;
                                 }
                             }
@@ -142,6 +144,7 @@ BOOL isallowlisted(DWORD pid) {
                                 // Is the process running as MEDIUM (which Explorer does)
                                 if (IntegrityLevel(hProcess) == 2) {
                                     CloseHandle(hProcess);
+                                    CloseHandle(hSnapshot);
                                     return TRUE;
                                 }
                             }
@@ -156,7 +159,7 @@ BOOL isallowlisted(DWORD pid) {
         }
     } while (Process32Next(hSnapshot, &pe32));
 
-    out:
+out:
     if (hSnapshot != INVALID_HANDLE_VALUE) {
         CloseHandle(hSnapshot);
     }
@@ -199,10 +202,10 @@ int wmain(int argc, WCHAR* argv[]) {
 
     bool bRecoveryEnabled = false;
     bool bIgnoreallFailures = false;
-	
+
     bool bwin32ShadowCopy = false;
     bool bEncodedCommand = false;
-    WCHAR encodedCommands[7][9] = {L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI", L"cwBhA", L"aWV4I", L"aQBlAHgA"};
+    WCHAR encodedCommands[7][9] = { L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI", L"cwBhA", L"aWV4I", L"aQBlAHgA" };
 
     if (argc > 1)
     {
@@ -219,7 +222,7 @@ int wmain(int argc, WCHAR* argv[]) {
             (_wcsicmp(L"wbadmin", argv[1]) == 0)) {
             bWbadmin = true;
         }
-	else if ((_wcsicmp(L"bcdedit.exe", argv[1]) == 0) ||
+        else if ((_wcsicmp(L"bcdedit.exe", argv[1]) == 0) ||
             (_wcsicmp(L"bcdedit", argv[1]) == 0)) {
             bcdEdit = true;
         }
@@ -235,7 +238,7 @@ int wmain(int argc, WCHAR* argv[]) {
         //convert wchar to wide string so we can perform contains/find command
         wchar_t* convertedCh = argv[iCount];
         wchar_t* convertedChOrig = argv[iCount];    // original parameter (no tolower)
-        wchar_t* convertedChPrev = argv[iCount-1];  // previous parameter
+        wchar_t* convertedChPrev = argv[iCount - 1];  // previous parameter
         // convert them to wide strings
         std::wstring convertedArg(convertedCh);
         std::wstring convertedArgOrig(convertedChOrig);
@@ -293,7 +296,7 @@ int wmain(int argc, WCHAR* argv[]) {
         (bWbadmin && bDelete && bCatalog && bQuiet) || 	 // wbadmin.exe 
         (bcdEdit && bIgnoreallFailures) ||               // bcdedit.exe
         (bcdEdit && bRecoveryEnabled) ||                 // bcdedit.exe
-	    (bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
+        (bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
         (bPowerShell && bEncodedCommand)) {              // powershell.exe
 
         wprintf(L"Raccine detected malicious activity\n");
