@@ -202,8 +202,7 @@ int wmain(int argc, WCHAR* argv[]) {
 	
     bool bwin32ShadowCopy = false;
     bool bEncodedCommand = false;
-    bool bEnc = false;
-    bool bJab = false;
+    WCHAR encodedCommands[5][8] = {L"JAB", L"SQBFAF", L"SQBuAH", L"SUVY", L"cwBha"};
 
     if (argc > 1)
     {
@@ -231,15 +230,16 @@ int wmain(int argc, WCHAR* argv[]) {
     }
 
     // check for keywords in command line parameters
-    for (int iCount = 0; iCount < argc; iCount++)
-    {
-	wchar_t* convertedCh = argv[iCount];
-        std::wstring convertedArg(convertedCh); //convert wchar to wide string so we can perform contains/find command
+    for (int iCount = 0; iCount < argc; iCount++) {
 
-	if (convertedArg != L"JAB") {
-		transform(convertedArg.begin(), convertedArg.end(), convertedArg.begin(), ::tolower); // convert args to lowercase
-	}
-	if (_wcsicmp(L"delete", argv[iCount]) == 0) {
+        //convert wchar to wide string so we can perform contains/find command
+        wchar_t* convertedCh = argv[iCount];
+        std::wstring convertedArg(convertedCh);
+
+        // convert args to lowercase for case-insensitive comparisons
+        transform(convertedArg.begin(), convertedArg.end(), convertedArg.begin(), ::tolower);
+
+        if (_wcsicmp(L"delete", argv[iCount]) == 0) {
             bDelete = true;
         }
         else if (_wcsicmp(L"shadows", argv[iCount]) == 0) {
@@ -266,18 +266,16 @@ int wmain(int argc, WCHAR* argv[]) {
         else if (_wcsicmp(L"ignoreallfailures", argv[iCount]) == 0) {
             bIgnoreallFailures = true;
         }
-	else if (convertedArg.find(L"win32_shadowcopy") != std::string::npos) {
+        else if (convertedArg.find(L"win32_shadowcopy") != std::string::npos) {
             bwin32ShadowCopy = true;
         }
-        else if (_wcsicmp(L"-encodedcommand", argv[iCount]) == 0) {
-            bEncodedCommand = true;
+        else if (convertedArg.find(L"-e") != std::string::npos) {
+            for (uint8_t i = 0; i < ARRAYSIZE(encodedCommands); i++) {
+                if (convertedArg.find(encodedCommands[i]) != std::string::npos) {
+                    bEncodedCommand = true;
+                }
+            }
         }
-	else if (convertedArg.find(L"-enc") != std::string::npos) {
-            bEnc = true;
-    	}
-	else if (convertedArg.find(L"jab") != std::string::npos) {
-            bJab = true;
-    	}
     }
 
     // OK this is not want we want 
@@ -289,9 +287,8 @@ int wmain(int argc, WCHAR* argv[]) {
         (bWbadmin && bDelete && bCatalog && bQuiet) || 	 // wbadmin.exe 
         (bcdEdit && bIgnoreallFailures) ||               // bcdedit.exe
         (bcdEdit && bRecoveryEnabled) ||                 // bcdedit.exe
-	(bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
-	(bPowerShell && bEncodedCommand) ||              // powershell.exe
-        (bPowerShell && bEnc && bJab)){                       // powershell.exe
+	    (bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
+        (bPowerShell && bEncodedCommand)) {              // powershell.exe
 
         wprintf(L"Raccine detected malicious activity\n");
 
