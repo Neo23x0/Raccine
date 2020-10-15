@@ -185,7 +185,8 @@ int wmain(int argc, WCHAR* argv[]) {
     bool bVssadmin = false;
     bool bWmic = false;
     bool bWbadmin = false;
-	bool bcdEdit = false;
+    bool bcdEdit = false;
+    bool bShell = false;
 
     bool bDelete = false;
     bool bShadow = false;
@@ -197,6 +198,9 @@ int wmain(int argc, WCHAR* argv[]) {
 
     bool bRecoveryEnabled = false;
     bool bIgnoreallFailures = false;
+	
+    bool bwin32ShadowCopy = false;
+    bool bEncoded = false;
 
     if (argc > 1)
     {
@@ -213,16 +217,23 @@ int wmain(int argc, WCHAR* argv[]) {
             (_wcsicmp(L"wbadmin", argv[1]) == 0)) {
             bWbadmin = true;
         }
-		else if ((_wcsicmp(L"bcdedit.exe", argv[1]) == 0) ||
+	else if ((_wcsicmp(L"bcdedit.exe", argv[1]) == 0) ||
             (_wcsicmp(L"bcdedit", argv[1]) == 0)) {
             bcdEdit = true;
+        }
+        else if ((_wcsicmp(L"powershell.exe", argv[1]) == 0) ||
+            (_wcsicmp(L"powershell", argv[1]) == 0)) {
+            bShell = true;
         }
     }
 
     // check for keywords in command line parameters
     for (int iCount = 0; iCount < argc; iCount++)
     {
-        if (_wcsicmp(L"delete", argv[iCount]) == 0) {
+	wchar_t* convertedCh = argv[iCount];
+        std::wstring convertedArg(convertedCh); //convert wchar to wide string so we can perform contains/find command
+        
+	if (_wcsicmp(L"delete", argv[iCount]) == 0) {
             bDelete = true;
         }
         else if (_wcsicmp(L"shadows", argv[iCount]) == 0) {
@@ -249,6 +260,12 @@ int wmain(int argc, WCHAR* argv[]) {
         else if (_wcsicmp(L"ignoreallfailures", argv[iCount]) == 0) {
             bIgnoreallFailures = true;
         }
+	else if (convertedArg.find(L"win32_shadowcopy") != std::string::npos || convertedArg.find(L"Win32_Shadowcopy") != std::string::npos) {
+            bwin32ShadowCopy = true;
+        }
+        else if (_wcsicmp(L"-encodedcommand", argv[iCount]) == 0) {
+            bEncoded = true;
+        }
     }
 
     // OK this is not want we want 
@@ -259,7 +276,9 @@ int wmain(int argc, WCHAR* argv[]) {
         (bWmic && bDelete && bShadowCopy) ||             // wmic.exe
         (bWbadmin && bDelete && bCatalog && bQuiet) || 	 // wbadmin.exe 
         (bcdEdit && bIgnoreallFailures) ||               // bcdedit.exe
-        (bcdEdit && bRecoveryEnabled)){                  // bcdedit.exe  
+        (bcdEdit && bRecoveryEnabled) ||                 // bcdedit.exe
+	(bShell && bwin32ShadowCopy) ||                  // powershell.exe
+	(bShell && bEncoded)){                           // powershell.exe
 
         wprintf(L"Raccine detected malicious activity\n");
 
