@@ -69,6 +69,8 @@ If you have a solid security monitoring that logs all process executions, you co
 - 0.5.3 - Batch installer 
 - 0.6.0 - Additional checks for `bcdedit.exe /set {default} bootstatuspolicy ignoreallfailures` and `bcdedit.exe /set {default} recoveryenabled no`
 - 0.7.0 - Additional checks for `powershell.exe` and `win32_shadowcopy` or a list of encoded commands
+- 0.7.1 - Improvements by @JohnLaTwC
+- 0.7.2 - Using abolsute paths in registry patches
 
 ## Installation
 
