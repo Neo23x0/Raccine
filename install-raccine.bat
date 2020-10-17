@@ -59,8 +59,8 @@ ECHO ----------------------------------------------------------
 ECHO   WARNING! Raccine could break your backup solution 
 ECHO ..........................................................
 ECHO.
-ECHO   1 - Install Raccine for all possible methods (radical)
-ECHO   2 - Install Raccine for Vssadmin and BcdEdit only (relatively safe)
+ECHO   1 - Install Raccine for all possible methods (full)
+ECHO   2 - Install Raccine for Vssadmin and BcdEdit only (soft)
 ECHO   3 - Uninstall Raccine
 ECHO   E - EXIT
 ECHO.
@@ -87,6 +87,10 @@ REGEDIT.EXE /S raccine-reg-patch-wmic.reg
 REGEDIT.EXE /S raccine-reg-patch-wbadmin.reg
 REGEDIT.EXE /S raccine-reg-patch-bcdedit.reg
 REGEDIT.EXE /S raccine-reg-patch-powershell.reg
+ECHO Registering Eventlog Events
+eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine event message" 2> nul
+eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message" 2> nul
+REG.EXE ADD HKCU\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
 ECHO Copying Raccine%ARCH%.exe to C:\Windows\Raccine.exe ...
 COPY Raccine%ARCH%.exe C:\Windows\Raccine.exe
 IF '%errorlevel%' NEQ '0' (
@@ -108,6 +112,10 @@ IF '%errorlevel%' NEQ '0' (
     GOTO MENU
 )
 REGEDIT.EXE /S raccine-reg-patch-bcdedit.reg
+ECHO Registering Eventlog Events
+eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine event message" 2> nul
+eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message" 2> nul
+REG.EXE ADD HKCU\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
 ECHO Copying Raccine%ARCH%.exe to C:\Windows\Raccine.exe ...
 COPY Raccine%ARCH%.exe C:\Windows\Raccine.exe
 IF '%errorlevel%' NEQ '0' (
@@ -124,6 +132,8 @@ GOTO MENU
 ECHO.
 ECHO Uninstalling Registry patch ...
 REGEDIT.EXE /S raccine-reg-patch-uninstall.reg
+ECHO Removing Registry key ...
+REG.EXE DELETE HKCU\Software\Raccine /F
 ECHO Removing Raccine.exe from the Windows folder ...
 DEL /Q C:\Windows\Raccine.exe
 IF '%errorlevel%' NEQ '0' (
