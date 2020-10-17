@@ -16,6 +16,10 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <chrono>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
 
 #pragma comment(lib,"advapi32.lib")
 
@@ -178,6 +182,40 @@ BOOL killprocess(DWORD dwProcessId, UINT uExitCode) {
     return result;
 }
 
+std::string getTimeStamp() {
+    struct tm buf;
+    auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now() - std::chrono::hours(24));
+    localtime_s(&buf, &time);
+    std::stringstream ss;
+    ss << std::put_time(&buf, "%F %T");
+    auto timestamp = ss.str();
+    return timestamp;
+}
+
+std::wstring logFormat(int pid, const std::wstring cmdLine, const std::wstring comment = L"done") {
+    std::string timeString = getTimeStamp();
+    std::wstring timeStringW(timeString.begin(), timeString.end());
+    std::wstring logLine = timeStringW + L" DETECTED_CMD: '" + cmdLine + L"' PID: " + std::to_wstring(pid) + L" ACTION: " + comment + L"\n";
+    // wprintf(L"Detection logged\n");
+    return logLine;
+}
+
+void logSend(const std::wstring logStr) {
+    static FILE* logFile = 0;
+    if (logFile == 0) {
+        logFile = fopen("C:\\ProgramData\\Raccine_log.txt", "at");
+        if (!logFile) logFile = fopen("C:\\ProgramData\\Raccine_log.txt", "wt");
+        if (!logFile) {
+            wprintf(L"\nCan not open C:\\ProgramData\\Raccine_log.txt for writing.\n");
+            return;   // bail out if we can't log
+        }
+    }
+    //transform(logStr.begin(), logStr.end(), logStr.begin(), ::tolower);
+    fwprintf(logFile, L"%s", logStr.c_str());
+    fflush(logFile);
+    fclose(logFile);
+}
+
 int wmain(int argc, WCHAR* argv[]) {
 
     DWORD pids[1024] = { 0 };
@@ -205,7 +243,14 @@ int wmain(int argc, WCHAR* argv[]) {
 
     bool bwin32ShadowCopy = false;
     bool bEncodedCommand = false;
+
     WCHAR encodedCommands[7][9] = { L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI", L"cwBhA", L"aWV4I", L"aQBlAHgA" };
+    //log
+    std::wstring sCommandLine = L"";
+
+    std::wstring sListLogs(L"");
+
+    for (int i = 1; i < argc; i++) sCommandLine.append(std::wstring(argv[i]).append(L" "));
 
     if (argc > 1)
     {
@@ -278,7 +323,7 @@ int wmain(int argc, WCHAR* argv[]) {
         else if (convertedArg.find(L"win32_shadowcopy") != std::string::npos) {
             bwin32ShadowCopy = true;
         }
-        else if (convertedArgPrev.find(L"-e") != std::string::npos) {
+        else if (convertedArgPrev.find(L"-e") != std::string::npos || convertedArgPrev.find(L"/e") != std::string::npos) {
             for (uint8_t i = 0; i < ARRAYSIZE(encodedCommands); i++) {
                 if (convertedArgOrig.find(encodedCommands[i]) != std::string::npos) {
                     bEncodedCommand = true;
@@ -286,7 +331,7 @@ int wmain(int argc, WCHAR* argv[]) {
             }
         }
     }
-
+    
     // OK this is not want we want 
     // we want to kill the process responsible
     if ((bVssadmin && bDelete && bShadow) ||             // vssadmin.exe
@@ -307,13 +352,15 @@ int wmain(int argc, WCHAR* argv[]) {
             if (pid == 0) {
                 break;
             }
+           
             if (!isallowlisted(pid)) {
-                wprintf(L"Collecting PID %d for a kill\n", pid);
+                wprintf(L"\nCollecting PID %d for a kill\n", pid);
                 pids[c] = pid;
                 c++;
             }
             else {
-                wprintf(L"Process with PID %d is on allowlist\n", pid);
+                wprintf(L"\nProcess with PID %d is on allowlist\n", pid);
+                sListLogs.append(logFormat(pid, sCommandLine, L"Whitelisted"));
             }
         }
 
@@ -321,9 +368,11 @@ int wmain(int argc, WCHAR* argv[]) {
         for (uint8_t i = c; i > 0; --i) {
             wprintf(L"Kill PID %d\n", pids[i - 1]);
             killprocess(pids[i - 1], 1);
+            sListLogs.append(logFormat(pids[i - 1], sCommandLine, L"Terminated"));
         }
 
-        wprintf(L"Raccine v0.7.2 finished\n");
+        logSend(sListLogs);
+        wprintf(L"\nRaccine v0.8.0 finished\n");
         Sleep(5000);
     }
     //
@@ -331,14 +380,14 @@ int wmain(int argc, WCHAR* argv[]) {
     //
     else {
         DEBUG_EVENT debugEvent = { 0 };
-        std::wstring commandLineStr = L"";
+        std::wstring sCommandLineStr = L"";
 
-        for (int i = 1; i < argc; i++) commandLineStr.append(std::wstring(argv[i]).append(L" "));
+        for (int i = 1; i < argc; i++) sCommandLineStr.append(std::wstring(argv[i]).append(L" "));
 
         STARTUPINFO info = { sizeof(info) };
         PROCESS_INFORMATION processInfo = { 0 };
 
-        if (CreateProcess(NULL, (LPWSTR)commandLineStr.c_str(), NULL, NULL, TRUE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &info, &processInfo))
+        if (CreateProcess(NULL, (LPWSTR)sCommandLineStr.c_str(), NULL, NULL, TRUE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &info, &processInfo))
         {
             DebugActiveProcessStop(processInfo.dwProcessId);
             WaitForSingleObject(processInfo.hProcess, INFINITE);

@@ -71,6 +71,7 @@ If you have a solid security monitoring that logs all process executions, you co
 - 0.7.0 - Additional checks for `powershell.exe` and `win32_shadowcopy` or a list of encoded commands
 - 0.7.1 - Improvements by @JohnLaTwC
 - 0.7.2 - Using abolsute paths in registry patches
+- 0.8.0 - Creates a log file with all intercepted requests and actions performed `C:\ProgramData\Raccine_log.txt`
 
 ## Installation
 
@@ -107,6 +108,12 @@ Ransomware [often](https://www.google.com/search?q=%22wbadmin+delete+catalog+-qu
 
 1. Run `raccine-reg-patch-uninstall.reg` 
 2. Remove `Raccine.exe` (optional)
+
+## Logfile
+
+A logfile with all interceptions and actions taken is written to `C:\ProgramData\Raccine_log.txt` 
+
+![Log File](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/logfile.png)
 
 ## Screenshot
 
