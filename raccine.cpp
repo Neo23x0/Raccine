@@ -202,7 +202,7 @@ void logSend(const std::wstring logStr) {
         }
     }
     //transform(logStr.begin(), logStr.end(), logStr.begin(), ::tolower);
-    fwprintf(logFile, L"%s\n", logStr.c_str());
+    fwprintf(logFile, L"%s", logStr.c_str());
     fflush(logFile);
     fclose(logFile);
 }
