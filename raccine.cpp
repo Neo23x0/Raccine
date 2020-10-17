@@ -181,23 +181,27 @@ BOOL killprocess(DWORD dwProcessId, UINT uExitCode) {
 }
 
 std::wstring logFormat(int pid, const std::wstring cmdLine, const std::wstring comment = L"done") {
-    std::wstring logLine = L"=>pid:" + std::to_wstring(pid) + L"=>" + cmdLine + L"=> " + comment + L"\n";
+    auto start = std::chrono::system_clock::now();
+    std::time_t timestamp = std::chrono::system_clock::to_time_t(start);
+    std::string timeString = ctime(&timestamp);
+    timeString = timeString.substr(0, timeString.size() - 1);
+    std::wstring timeStringW(timeString.begin(), timeString.end());
+    std::wstring logLine = timeStringW + L" DETECTED_CMD: '" + cmdLine + L"' PID: " + std::to_wstring(pid) + L" ACTION: " + comment + L"\n";
     // wprintf(L"Detection logged\n");
     return logLine;
 }
 
 void logSend(const std::wstring logStr) {
-    printf("\nLog saved\n");
     static FILE* logFile = 0;
     if (logFile == 0) {
-        logFile = fopen("C:\\Windows\\Raccine_log.txt", "at");
-        if (!logFile) logFile = fopen("C:\\Windows\\Raccine_log.txt", "wt");
+        logFile = fopen("C:\\ProgramData\\Raccine_log.txt", "at");
+        if (!logFile) logFile = fopen("C:\\ProgramData\\Raccine_log.txt", "wt");
         if (!logFile) {
-            wprintf(L"\nCan not open C:\Windows\Raccine_log.txt for writing.\n");
+            wprintf(L"\nCan not open C:\\ProgramData\\Raccine_log.txt for writing.\n");
             return;   // bail out if we can't log
         }
     }
-    transform(logStr.begin(), logStr.end(), logStr.begin(), ::tolower);
+    //transform(logStr.begin(), logStr.end(), logStr.begin(), ::tolower);
     fwprintf(logFile, L"%s\n", logStr.c_str());
     fflush(logFile);
     fclose(logFile);
@@ -231,16 +235,13 @@ int wmain(int argc, WCHAR* argv[]) {
     bool bwin32ShadowCopy = false;
     bool bEncodedCommand = false;
 
-    WCHAR encodedCommands[7][9] = {L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI", L"cwBhA", L"aWV4I", L"aQBlAHgA"};
+    WCHAR encodedCommands[7][9] = { L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI", L"cwBhA", L"aWV4I", L"aQBlAHgA" };
     //log
     std::wstring sCommandLine = L"";
 
-    auto start = std::chrono::system_clock::now();
-    std::time_t timestamp = std::chrono::system_clock::to_time_t(start);
-    std::string timeString = ctime(&timestamp);
-    std::wstring sListLogs(timeString.begin(), timeString.end());
+    std::wstring sListLogs(L"");
 
-    for (int i = 1; i < argc; i++) sCommandLine.append(std::wstring(argv[i]).append(L"_"));
+    for (int i = 1; i < argc; i++) sCommandLine.append(std::wstring(argv[i]).append(L" "));
 
     if (argc > 1)
     {
@@ -345,7 +346,6 @@ int wmain(int argc, WCHAR* argv[]) {
            
             if (!isallowlisted(pid)) {
                 wprintf(L"\nCollecting PID %d for a kill\n", pid);
-                sListLogs.append(logFormat(pid, sCommandLine, L"Intercepted"));
                 pids[c] = pid;
                 c++;
             }
@@ -359,7 +359,7 @@ int wmain(int argc, WCHAR* argv[]) {
         for (uint8_t i = c; i > 0; --i) {
             wprintf(L"Kill PID %d\n", pids[i - 1]);
             killprocess(pids[i - 1], 1);
-            sListLogs.append(logFormat(pids[i - 1], sCommandLine,L"Terminated"));
+            sListLogs.append(logFormat(pids[i - 1], sCommandLine, L"Terminated"));
         }
 
         logSend(sListLogs);
