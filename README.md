@@ -58,13 +58,15 @@ Emotet with Raccine - [Link](https://app.any.run/tasks/057ff7f5-43c1-4e51-93c3-a
 
 ![Emotet wihtout Raccine](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/emotet-with-raccine.png)
 
+The infection gets nipped in the bud. 
+
 ## Warning !!!
 
 USE IT AT YOUR OWN RISK!
 
 You won't be able to run commands that use the blacklisted commands on a raccinated machine anymore until your apply the uninstall patch `raccine-reg-patch-uninstall.reg`. This could break various backup solutions that run that specific command during their work. It will not only block that request but kills all processes in that tree including the backup solution and its invoking process.
 
-If you have a solid security monitoring that logs all process executions, you could check your logs to see if `vssadmin.exe delete shadows` or `vssadmin.exe resize shadowstorage ...` is frequently or sporadically used for legitimate purposes in which case you should refrain from using Raccine.
+If you have a solid security monitoring that logs all process executions, you could check your logs to see if `vssadmin.exe delete shadows`, `vssadmin.exe resize shadowstorage ...` or the other blocked command lines are frequently or sporadically used for legitimate purposes in which case you should refrain from using Raccine.
 
 ## Version History
 
