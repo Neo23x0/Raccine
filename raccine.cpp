@@ -2,8 +2,8 @@
 // A Simple Ransomware Vaccine
 // https://github.com/Neo23x0/Raccine
 //
-// Florian Roth, Ollie Whitehouse
-// with help of John Lambert and Hilko Bengen
+// Florian Roth, Ollie Whitehouse, Branislav Dalic, John Lambert
+// with help of Hilko Bengen
 
 #include <wchar.h>
 #include <windows.h>
@@ -418,7 +418,7 @@ int wmain(int argc, WCHAR* argv[]) {
         (bPowerShell && bEncodedCommand)) {              // powershell.exe
 
         LPCWSTR lpMessage = sCommandLine.c_str();
-        StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity=\n%s\n", lpMessage);
+        StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n", lpMessage);
         WriteEventLogEntryWithId((LPWSTR)wMessage, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
 
         // Collect PIDs to kill
@@ -447,7 +447,7 @@ int wmain(int argc, WCHAR* argv[]) {
         }
 
         logSend(sListLogs);
-        wprintf(L"\nRaccine v0.8.0 finished\n");
+        wprintf(L"\nRaccine v0.9.0 finished\n");
         Sleep(5000);
     }
     //
