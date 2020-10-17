@@ -18,6 +18,8 @@
 #include <algorithm>
 #include <chrono>
 #include <ctime>
+#include <iomanip>
+#include <sstream>
 
 #pragma comment(lib,"advapi32.lib")
 
@@ -180,11 +182,18 @@ BOOL killprocess(DWORD dwProcessId, UINT uExitCode) {
     return result;
 }
 
+std::string getTimeStamp() {
+    struct tm buf;
+    auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now() - std::chrono::hours(24));
+    localtime_s(&buf, &time);
+    std::stringstream ss;
+    ss << std::put_time(&buf, "%F %T");
+    auto timestamp = ss.str();
+    return timestamp;
+}
+
 std::wstring logFormat(int pid, const std::wstring cmdLine, const std::wstring comment = L"done") {
-    auto start = std::chrono::system_clock::now();
-    std::time_t timestamp = std::chrono::system_clock::to_time_t(start);
-    std::string timeString = ctime(&timestamp);
-    timeString = timeString.substr(0, timeString.size() - 1);
+    std::string timeString = getTimeStamp();
     std::wstring timeStringW(timeString.begin(), timeString.end());
     std::wstring logLine = timeStringW + L" DETECTED_CMD: '" + cmdLine + L"' PID: " + std::to_wstring(pid) + L" ACTION: " + comment + L"\n";
     // wprintf(L"Detection logged\n");
@@ -363,7 +372,7 @@ int wmain(int argc, WCHAR* argv[]) {
         }
 
         logSend(sListLogs);
-        wprintf(L"\nRaccine v0.7.0 finished\n");
+        wprintf(L"\nRaccine v0.8.0 finished\n");
         Sleep(5000);
     }
     //
