@@ -61,14 +61,17 @@ ECHO ..........................................................
 ECHO.
 ECHO   1 - Install Raccine for all possible methods (full)
 ECHO   2 - Install Raccine for Vssadmin and BcdEdit only (soft)
-ECHO   3 - Uninstall Raccine
+ECHO   3 - Install Raccine to block all Emotet infections only
+ECHO   U - Uninstall Raccine
 ECHO   E - EXIT
 ECHO.
 
 SET /P M=" Select 1, 2, 3, or E then press ENTER: "
 IF %M%==1 GOTO FULL
 IF %M%==2 GOTO SOFT
-IF %M%==3 GOTO UNINSTALL
+IF %M%==3 GOTO EMOTET
+IF %M%==U GOTO UNINSTALL
+IF %M%==u GOTO UNINSTALL
 IF %M%==E GOTO EOF
 IF %M%==e GOTO EOF
 
@@ -99,7 +102,7 @@ IF '%errorlevel%' NEQ '0' (
     ECHO.
     ECHO Successfully installed. Your system has been raccinated.
 )
-TIMEOUT /t 5
+TIMEOUT /t 7
 GOTO MENU
 
 :: Soft
@@ -124,7 +127,31 @@ IF '%errorlevel%' NEQ '0' (
     ECHO.
     ECHO Successfully installed. Your system has been raccinated.
 )
-TIMEOUT /t 5
+TIMEOUT /t 7
+GOTO MENU
+
+:: Emotet
+:EMOTET
+ECHO.
+ECHO Installing Registry patches ...
+REGEDIT.EXE /S raccine-reg-patch-powershell.reg
+IF '%errorlevel%' NEQ '0' (
+    ECHO Something went wrong. Sorry.
+    GOTO MENU
+)
+ECHO Registering Eventlog Events
+eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine event message" 2> nul
+eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message" 2> nul
+REG.EXE ADD HKCU\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
+ECHO Copying Raccine%ARCH%.exe to C:\Windows\Raccine.exe ...
+COPY Raccine%ARCH%.exe C:\Windows\Raccine.exe
+IF '%errorlevel%' NEQ '0' (
+    ECHO Something went wrong. Sorry.
+) ELSE (
+    ECHO.
+    ECHO Successfully installed. Your system is now immune to weaponized Emotet documents.
+)
+TIMEOUT /t 7
 GOTO MENU
 
 :: Uninstall
@@ -142,7 +169,7 @@ IF '%errorlevel%' NEQ '0' (
     ECHO.
     ECHO Successfully uninstalled!
 )
-TIMEOUT /t 5
+TIMEOUT /t 7
 GOTO MENU
 
 :EOF
