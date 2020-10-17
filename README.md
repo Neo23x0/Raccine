@@ -48,6 +48,16 @@ Malicious combinations:
 
 Powershell list of encoded commands: `JAB`, `SQBFAF`, `SQBuAH`, `SUVYI`, `cwBhA`, `aWV4I`, `aQBlAHgA`
 
+## Example
+
+Emotet without Raccine - [Link](https://app.any.run/tasks/b12f8ee2-f6cc-4571-bcc2-51e34c19941f/)
+
+![Emotet wihtout Raccine](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/emotet-wo-raccine.png)
+
+Emotet with Raccine - [Link](https://app.any.run/tasks/057ff7f5-43c1-4e51-93c3-a702c6fb0d75/) (ignore the process activity that is related to the Raccine installation)
+
+![Emotet wihtout Raccine](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/emotet-with-raccine.png)
+
 ## Warning !!!
 
 USE IT AT YOUR OWN RISK!
