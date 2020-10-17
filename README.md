@@ -90,7 +90,7 @@ If you have a solid security monitoring that logs all process executions, you co
 
 ## Installation
 
-### Automatic
+### Automatic Installation
 
 1. Download `Raccine.zip` from the [Release](https://github.com/Neo23x0/Raccine/releases/) section
 2. Extract it
@@ -100,7 +100,7 @@ If you have a solid security monitoring that logs all process executions, you co
 
 The batch installer includes an "uninstall" option.
 
-### Manual
+### Manual Installation
 
 1. Apply Registry Patch `raccine-reg-patch-vssadmin.reg` to intercept invocations of `vssadmin.exe`
 2. Apply all other registry patches of applications that you'd like to intercept
