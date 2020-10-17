@@ -20,8 +20,61 @@
 #include <ctime>
 #include <iomanip>
 #include <sstream>
+#include <strsafe.h>
 
 #pragma comment(lib,"advapi32.lib")
+
+BOOL g_fLogToEventLog = FALSE;
+#define RACCINE_REG_CONFIG  L"SOFTWARE\\Raccine"
+#define MAX_MESSAGE 1000
+
+#define RACCINE_DEFAULT_EVENTID  1
+#define RACCINE_EVENTID_MALICIOUS_ACTIVITY  2
+
+/// This function will optionally log messages to the eventlog
+/// To enable viewing in the eventlog run this command to create the message IDs for Raccine
+/// As admin:
+///  eventcreate.exe / L Application / T Information / id 1 / so Raccine / d "Raccine event message"
+///  eventcreate.exe / L Application / T Information / id 2 / so Raccine / d "Raccine event message"
+///
+/// To configure event logging, set this registry key to 2
+///  REG.EXE ADD HKCU\Software\Raccine / v Logging / t REG_DWORD / d 2
+void WriteEventLogEntryWithId(LPWSTR  pszMessage, DWORD dwEventId)
+{
+    if (g_fLogToEventLog)
+    {
+        HANDLE hEventSource = NULL;
+        LPCWSTR lpszStrings[2] = { NULL, NULL };
+
+        hEventSource = RegisterEventSource(NULL, L"Raccine");
+        if (hEventSource)
+        {
+            lpszStrings[0] = pszMessage;
+            lpszStrings[1] = NULL;
+
+
+            ReportEvent(hEventSource,  // Event log handle
+                EVENTLOG_INFORMATION_TYPE,                 // Event type
+                0,                     // Event category
+                dwEventId,                     // Event identifier
+                NULL,                  // No security identifier
+                1,  // Size of lpszStrings array
+                0,                     // No binary data
+                lpszStrings,           // Array of strings
+                NULL                   // No binary data
+            );
+
+            DeregisterEventSource(hEventSource);
+        }
+    }
+    // always print the message to the console
+    wprintf(pszMessage);
+}
+
+void WriteEventLogEntry(LPWSTR  pszMessage)
+{
+    WriteEventLogEntryWithId(pszMessage, RACCINE_DEFAULT_EVENTID);
+}
 
 DWORD getppid(DWORD pid) {
     PROCESSENTRY32 pe32;
@@ -203,7 +256,9 @@ std::wstring logFormat(int pid, const std::wstring cmdLine, const std::wstring c
 void logSend(const std::wstring logStr) {
     static FILE* logFile = 0;
     if (logFile == 0) {
+        #pragma warning(suppress : 4996)
         logFile = fopen("C:\\ProgramData\\Raccine_log.txt", "at");
+        #pragma warning(suppress : 4996)
         if (!logFile) logFile = fopen("C:\\ProgramData\\Raccine_log.txt", "wt");
         if (!logFile) {
             wprintf(L"\nCan not open C:\\ProgramData\\Raccine_log.txt for writing.\n");
@@ -249,6 +304,8 @@ int wmain(int argc, WCHAR* argv[]) {
     std::wstring sCommandLine = L"";
 
     std::wstring sListLogs(L"");
+    WCHAR wMessage[MAX_MESSAGE] = { 0 };
+
 
     for (int i = 1; i < argc; i++) sCommandLine.append(std::wstring(argv[i]).append(L" "));
 
@@ -331,7 +388,23 @@ int wmain(int argc, WCHAR* argv[]) {
             }
         }
     }
-    
+
+    // Query for logging level.  A value of 1 or more indicates to log key events to the event log
+    HKEY hKey = NULL;
+    if (ERROR_SUCCESS == RegOpenKeyEx(HKEY_CURRENT_USER, RACCINE_REG_CONFIG, 0, KEY_READ, &hKey))
+    {
+        DWORD dwLoggingLevel = 0;
+        DWORD cbData = sizeof(dwLoggingLevel);
+        if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"Logging", NULL, NULL, (LPBYTE)&dwLoggingLevel, &cbData))
+        {
+            if (dwLoggingLevel > 1)
+            {
+                g_fLogToEventLog = TRUE;
+            }
+        }
+        RegCloseKey(hKey);
+    }
+
     // OK this is not want we want 
     // we want to kill the process responsible
     if ((bVssadmin && bDelete && bShadow) ||             // vssadmin.exe
@@ -344,7 +417,9 @@ int wmain(int argc, WCHAR* argv[]) {
         (bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
         (bPowerShell && bEncodedCommand)) {              // powershell.exe
 
-        wprintf(L"Raccine detected malicious activity\n");
+        LPCWSTR lpMessage = sCommandLine.c_str();
+        StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity=\n%s\n", lpMessage);
+        WriteEventLogEntryWithId((LPWSTR)wMessage, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
 
         // Collect PIDs to kill
         while (c < 1024) {
