@@ -1,0 +1,22 @@
+title: Raccine Blocked Malicious Activity
+id: ce1ae413-3a83-4424-a61d-25827480c173
+description: Detects Raccine blocking the execution of an executable that has been invoked with parameters that are on the blocklist
+date: 2020/10/17
+author: Florian Roth, John Lambert
+references:
+    - https://github.com/Neo23x0/Raccine
+tags:
+    - attack.execution
+    - attack.ta0002
+    - attack.t1059.003
+logsource:
+    product: windows
+    service: application
+detection:
+    selection:
+        Source: Raccine
+        EventID: 2
+    condition: selection
+falsepositives:
+    - Backup software triggering the blocks by accessing the volume shadow copies
+level: high
