@@ -394,7 +394,7 @@ int wmain(int argc, WCHAR* argv[]) {
         else if (_wcsicmp(L"catalog", argv[iCount]) == 0) {
             bCatalog = true;
         }
-        else if (_wcsicmp(L"-quiet", argv[iCount]) == 0) {
+        else if (_wcsicmp(L"-quiet", argv[iCount]) == 0 || _wcsicmp(L"/quiet", argv[iCount]) == 0) {
             bQuiet = true;
         }
         else if (_wcsicmp(L"recoveryenabled", argv[iCount]) == 0) {
@@ -456,7 +456,8 @@ int wmain(int argc, WCHAR* argv[]) {
         (bcdEdit && bRecoveryEnabled) ||                 // bcdedit.exe
         (bDiskShadow && bDelete && bShadows) ||          // diskshadow.exe
         (bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
-        (bPowerShell && bEncodedCommand)) {              // powershell.exe
+        (bPowerShell && bEncodedCommand) ||              // powershell.exe
+        (bDiskShadow && bDelete && bShadow)) {           // diskshadow.exe
 
         // Activate blocking
         bBlock = TRUE;
