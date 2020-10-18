@@ -457,7 +457,7 @@ int wmain(int argc, WCHAR* argv[]) {
         (bDiskShadow && bDelete && bShadows) ||          // diskshadow.exe
         (bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
         (bPowerShell && bEncodedCommand) ||              // powershell.exe
-        (bDiskShadow && bDelete && bShadow)) {           // diskshadow.exe
+        (bDiskShadow && bDelete && bShadows)) {          // diskshadow.exe
 
         // Activate blocking
         bBlock = TRUE;
