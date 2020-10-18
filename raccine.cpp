@@ -24,22 +24,15 @@
 
 #pragma comment(lib,"advapi32.lib")
 
+// Log Config and Flags
 BOOL g_fLogToEventLog = FALSE;
 BOOL g_fLogOnly = FALSE;
 #define RACCINE_REG_CONFIG  L"SOFTWARE\\Raccine"
 #define MAX_MESSAGE 1000
-
 #define RACCINE_DEFAULT_EVENTID  1
 #define RACCINE_EVENTID_MALICIOUS_ACTIVITY  2
 
 /// This function will optionally log messages to the eventlog
-/// To enable viewing in the eventlog run this command to create the message IDs for Raccine
-/// As admin:
-///  eventcreate.exe / L Application / T Information / id 1 / so Raccine / d "Raccine event message"
-///  eventcreate.exe / L Application / T Information / id 2 / so Raccine / d "Raccine event message"
-///
-/// To configure event logging, set this registry key to 2
-///  REG.EXE ADD HKCU\Software\Raccine / v Logging / t REG_DWORD / d 2
 void WriteEventLogEntryWithId(LPWSTR  pszMessage, DWORD dwEventId)
 {
     if (g_fLogToEventLog)
@@ -77,6 +70,7 @@ void WriteEventLogEntry(LPWSTR  pszMessage)
     WriteEventLogEntryWithId(pszMessage, RACCINE_DEFAULT_EVENTID);
 }
 
+// Get Parent Process ID
 DWORD getppid(DWORD pid) {
     PROCESSENTRY32 pe32;
     HANDLE hSnapshot;
@@ -103,7 +97,8 @@ out:
     return ppid;
 }
 
-DWORD IntegrityLevel(HANDLE hProcess) {
+// Get integrity level of process
+DWORD getIntegrityLevel(HANDLE hProcess) {
 
     HANDLE hToken = INVALID_HANDLE_VALUE;
     DWORD dwIntegrityLevel = 0;
@@ -155,6 +150,7 @@ DWORD IntegrityLevel(HANDLE hProcess) {
     return 0;
 }
 
+// Check if process is in allowed list
 BOOL isallowlisted(DWORD pid) {
     WCHAR allowlist[3][MAX_PATH] = { L"wininit.exe", L"winlogon.exe", L"explorer.exe" };
     PROCESSENTRY32 pe32 = { 0 };
@@ -183,13 +179,13 @@ BOOL isallowlisted(DWORD pid) {
                     if (hProcess != NULL) {
                         wchar_t filePath[MAX_PATH] = { 0 };
                         if (GetModuleFileNameEx(hProcess, NULL, filePath, MAX_PATH)) {
-                            DWORD dwInLevel = IntegrityLevel(hProcess);
+                            DWORD dwInLevel = getIntegrityLevel(hProcess);
 
                             // Are they in the Windows directory?
                             if (_wcsnicmp(filePath, L"C:\\Windows\\System32\\", wcslen(L"C:\\Windows\\System32\\")) == 0) {
 
                                 // Is the process running as SYSTEM
-                                if (IntegrityLevel(hProcess) == 4) {
+                                if (getIntegrityLevel(hProcess) == 4) {
                                     CloseHandle(hProcess);
                                     CloseHandle(hSnapshot);
                                     return TRUE;
@@ -200,7 +196,7 @@ BOOL isallowlisted(DWORD pid) {
                             if (_wcsnicmp(filePath, L"C:\\Windows\\Explorer.exe", wcslen(L"C:\\Windows\\Explorer.exe")) == 0) {
 
                                 // Is the process running as MEDIUM (which Explorer does)
-                                if (IntegrityLevel(hProcess) == 2) {
+                                if (getIntegrityLevel(hProcess) == 2) {
                                     CloseHandle(hProcess);
                                     CloseHandle(hSnapshot);
                                     return TRUE;
@@ -224,7 +220,8 @@ out:
     return FALSE;
 }
 
-BOOL killprocess(DWORD dwProcessId, UINT uExitCode) {
+// Kill a process
+BOOL killProcess(DWORD dwProcessId, UINT uExitCode) {
     DWORD dwDesiredAccess = PROCESS_TERMINATE;
     BOOL  bInheritHandle = FALSE;
     HANDLE hProcess = OpenProcess(dwDesiredAccess, bInheritHandle, dwProcessId);
@@ -236,6 +233,7 @@ BOOL killprocess(DWORD dwProcessId, UINT uExitCode) {
     return result;
 }
 
+// Get timestamp
 std::string getTimeStamp() {
     struct tm buf;
     auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now() - std::chrono::hours(24));
@@ -246,6 +244,7 @@ std::string getTimeStamp() {
     return timestamp;
 }
 
+// Fomat a log lines
 std::wstring logFormat(int pid, const std::wstring cmdLine, const std::wstring comment = L"done") {
     std::string timeString = getTimeStamp();
     std::wstring timeStringW(timeString.begin(), timeString.end());
@@ -254,6 +253,7 @@ std::wstring logFormat(int pid, const std::wstring cmdLine, const std::wstring c
     return logLine;
 }
 
+// Log to file
 void logSend(const std::wstring logStr) {
     static FILE* logFile = 0;
     if (logFile == 0) 
@@ -285,12 +285,14 @@ int wmain(int argc, WCHAR* argv[]) {
 
     setlocale(LC_ALL, "");
 
+    // Main programs to monitor
     bool bVssadmin = false;
     bool bWmic = false;
     bool bWbadmin = false;
     bool bcdEdit = false;
     bool bPowerShell = false;
 
+    // Command line params
     bool bDelete = false;
     bool bShadow = false;
     bool bResize = false;
@@ -298,26 +300,25 @@ int wmain(int argc, WCHAR* argv[]) {
     bool bShadowCopy = false;
     bool bCatalog = false;
     bool bQuiet = false;
-
     bool bRecoveryEnabled = false;
     bool bIgnoreallFailures = false;
-
     bool bwin32ShadowCopy = false;
     bool bEncodedCommand = false;
 
+    // Encoded Command List (Base64)
     WCHAR encodedCommands[7][9] = { L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI", L"cwBhA", L"aWV4I", L"aQBlAHgA" };
-    //log
-    std::wstring sCommandLine = L"";
 
+    // Log
+    std::wstring sCommandLine = L"";
     std::wstring sListLogs(L"");
     WCHAR wMessage[MAX_MESSAGE] = { 0 };
 
-
+    // Append all original command line parameters to a string for later log messages
     for (int i = 1; i < argc; i++) sCommandLine.append(std::wstring(argv[i]).append(L" "));
 
     if (argc > 1)
     {
-        // check for invoked program 
+        // Check for invoked program 
         if ((_wcsicmp(L"vssadmin.exe", argv[1]) == 0) ||
             (_wcsicmp(L"vssadmin", argv[1]) == 0)) {
             bVssadmin = true;
@@ -340,22 +341,23 @@ int wmain(int argc, WCHAR* argv[]) {
         }
     }
 
-    // check for keywords in command line parameters
+    // Check for keywords in command line parameters
     for (int iCount = 1; iCount < argc; iCount++) {
 
-        //convert wchar to wide string so we can perform contains/find command
+        // Convert wchar to wide string so we can perform contains/find command
         wchar_t* convertedCh = argv[iCount];
         wchar_t* convertedChOrig = argv[iCount];    // original parameter (no tolower)
         wchar_t* convertedChPrev = argv[iCount - 1];  // previous parameter
-        // convert them to wide strings
+        // Convert them to wide strings
         std::wstring convertedArg(convertedCh);
         std::wstring convertedArgOrig(convertedChOrig);
         std::wstring convertedArgPrev(convertedChPrev);
 
-        // convert args to lowercase for case-insensitive comparisons
+        // Convert args to lowercase for case-insensitive comparisons
         transform(convertedArg.begin(), convertedArg.end(), convertedArg.begin(), ::tolower);
         transform(convertedArgPrev.begin(), convertedArgPrev.end(), convertedArgPrev.begin(), ::tolower);
 
+        // Simple flag checks
         if (_wcsicmp(L"delete", argv[iCount]) == 0) {
             bDelete = true;
         }
@@ -386,6 +388,8 @@ int wmain(int argc, WCHAR* argv[]) {
         else if (convertedArg.find(L"win32_shadowcopy") != std::string::npos) {
             bwin32ShadowCopy = true;
         }
+        // Special comparison of current argument with previous argument
+        // allows to check for e.g. -encodedCommand JABbaTheHuttandotherBase64characters
         else if (convertedArgPrev.find(L"-e") != std::string::npos || convertedArgPrev.find(L"/e") != std::string::npos) {
             for (uint8_t i = 0; i < ARRAYSIZE(encodedCommands); i++) {
                 if (convertedArgOrig.find(encodedCommands[i]) != std::string::npos) {
@@ -401,6 +405,7 @@ int wmain(int argc, WCHAR* argv[]) {
     HKEY hKey = NULL;
     if (ERROR_SUCCESS == RegOpenKeyEx(HKEY_CURRENT_USER, RACCINE_REG_CONFIG, 0, KEY_READ, &hKey))
     {
+        // Log Level
         DWORD dwLoggingLevel = 0;
         DWORD cbData = sizeof(dwLoggingLevel);
         if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"Logging", NULL, NULL, (LPBYTE)&dwLoggingLevel, &cbData))
@@ -410,6 +415,7 @@ int wmain(int argc, WCHAR* argv[]) {
                 g_fLogToEventLog = TRUE;
             }
         }
+        // Log Only
         DWORD dwLoggingOnly = 0;
         DWORD cbDataLO = sizeof(dwLoggingOnly);
         if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"LogOnly", NULL, NULL, (LPBYTE)&dwLoggingOnly, &cbDataLO))
@@ -422,8 +428,7 @@ int wmain(int argc, WCHAR* argv[]) {
         RegCloseKey(hKey);
     }
 
-    // OK this is not want we want 
-    // we want to kill the process responsible
+    // Check all combinations (our blocklist)
     if ((bVssadmin && bDelete && bShadow) ||             // vssadmin.exe
         (bVssadmin && bDelete && bShadowStorage) ||      // vssadmin.exe
         (bVssadmin && bResize && bShadowStorage) ||      // vssadmin.exe
@@ -434,6 +439,7 @@ int wmain(int argc, WCHAR* argv[]) {
         (bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
         (bPowerShell && bEncodedCommand)) {              // powershell.exe
 
+        // Log to the windows Eventlog
         LPCWSTR lpMessage = sCommandLine.c_str();
         if (!g_fLogOnly) {
             StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n", lpMessage);
@@ -448,8 +454,7 @@ int wmain(int argc, WCHAR* argv[]) {
             pid = getppid(pid);
             if (pid == 0) {
                 break;
-            }
-           
+            }     
             if (!isallowlisted(pid)) {
                 wprintf(L"\nCollecting PID %d for a kill\n", pid);
                 pids[c] = pid;
@@ -463,9 +468,11 @@ int wmain(int argc, WCHAR* argv[]) {
 
         // Loop over collected PIDs and try to kill the processes
         for (uint8_t i = c; i > 0; --i) {
+            // If no simulation flag is set
             if (!g_fLogOnly) {
+                // Kill
                 wprintf(L"Kill PID %d\n", pids[i - 1]);
-                killprocess(pids[i - 1], 1);
+                killProcess(pids[i - 1], 1);
                 sListLogs.append(logFormat(pids[i - 1], sCommandLine, L"Terminated"));
             }
             else {
@@ -474,13 +481,14 @@ int wmain(int argc, WCHAR* argv[]) {
                 sListLogs.append(logFormat(pids[i - 1], sCommandLine, L"Terminated (Simulated)"));
             }
         }
-
+        // Log events
         logSend(sListLogs);
+        // Finish message
         wprintf(L"\nRaccine v0.10.0 finished\n");
         Sleep(5000);
     }
     //
-    // Otherwise launch it
+    // Otherwise launch the process with its original parameters
     //
     else {
         DEBUG_EVENT debugEvent = { 0 };
