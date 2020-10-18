@@ -318,9 +318,22 @@ int wmain(int argc, WCHAR* argv[]) {
     bool bIgnoreallFailures = false;
     bool bwin32ShadowCopy = false;
     bool bEncodedCommand = false;
+    bool bOfficeDropper = false;
 
+    // SIGMA Coverage
+   
     // Encoded Command List (Base64)
+    // Sigma Rule: https://github.com/Neo23x0/sigma/blob/master/rules/windows/process_creation/win_susp_powershell_enc_cmd.yml
     WCHAR encodedCommands[7][9] = { L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI", L"cwBhA", L"aWV4I", L"aQBlAHgA" };
+    
+    // Office Dropper Rules
+    // Sigma Rule: https://github.com/Neo23x0/sigma/blob/master/rules/windows/process_creation/win_office_shell.yml
+    WCHAR OfficeDropperParents[6][14] = { L'winword.exe', L'excel.exe', L'powerpoint.exe', L'mspub.exe', L'visio.exe', L'outlook.exe' };
+    WCHAR OfficeDropperChildren[19][17] = { 
+        L"cmd.exe", L"powershell.exe", L"wscript.exe", L"cscript.exe", L"sh.exe", L"bash.exe", 
+        L"scrcons.exe", L"schtasks.exe", L"regsvr32.exe", L"hh.exe", L"wmic.exe", 
+        L"mshta.exe", L"rundll32.exe", L"msiexec.exe", L"forfiles.exe", L"scriptrunner.exe", 
+        L"mftrace.exe", L"AppVLP.exe", L"svchost.exe" };
 
     // Log
     std::wstring sCommandLine = L"";
@@ -330,6 +343,11 @@ int wmain(int argc, WCHAR* argv[]) {
     // Append all original command line parameters to a string for later log messages
     for (int i = 1; i < argc; i++) sCommandLine.append(std::wstring(argv[i]).append(L" "));
 
+    // Convert the original program name for better comparisons
+    wchar_t* origProgramCh = argv[1];
+    std::wstring convertedOrigProgram(origProgramCh);
+    
+    // Check the original program
     if (argc > 1)
     {
         // Check for invoked program 
@@ -356,6 +374,17 @@ int wmain(int argc, WCHAR* argv[]) {
         else if ((_wcsicmp(L"diskshadow.exe", argv[1]) == 0) ||
             (_wcsicmp(L"diskshadow", argv[1]) == 0)) {
             bDiskShadow = true;
+        }
+    }
+    // Office Shell
+    for (uint8_t i = 0; i < ARRAYSIZE(OfficeDropperChildren); i++) {
+        if (convertedOrigProgram.find(OfficeDropperChildren[i]) != std::string::npos) {
+            for (uint8_t i = 0; i < ARRAYSIZE(OfficeDropperParents); i++) {
+                // TODO: this needs the parent program instead
+                if (convertedOrigProgram.find(OfficeDropperParents[i]) != std::string::npos) {
+                    bOfficeDropper = true;
+                }
+            }
         }
     }
 
