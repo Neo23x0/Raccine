@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<policyDefinitions revision="1.0" schemaVersion="1.0">
+    <policyNamespaces>
+        <target prefix="Raccine" namespace="Raccine.Policies.Config" />
+        <using prefix="windows" namespace="Microsoft.Policies.Windows" />
+    </policyNamespaces>
+    <resources minRequiredRevision="1.0" />
+    <categories>
+        <category name="L_Raccine_GroupPolicyCategory" displayName="$(string.L_Raccine_GroupPolicyCategory)" >
+            <parentCategory ref="windows:System" />
+        </category>
+    </categories>
+    <policies>
+    <policy name="L_RaccineLogOnly" class="Machine" displayName="$(string.L_RaccineLogOnly)" explainText="$(string.L_RaccineLogOnlyExplain)" key="Software\Policies\Raccine" valueName="LogOnly">
+        <parentCategory ref="L_Raccine_GroupPolicyCategory" />
+        <supportedOn ref="windows:SUPPORTED_Windows_10_0" />
+        <enabledValue>
+            <decimal value="1" />
+        </enabledValue>
+        <disabledValue>
+            <decimal value="0" />
+        </disabledValue>
+    </policy>
+    <policy name="L_RaccineLogging" class="Machine" displayName="$(string.L_RaccineLogging)" explainText="$(string.L_RaccineLoggingExplain)" key="Software\Policies\Raccine" valueName="Logging">
+        <parentCategory ref="L_Raccine_GroupPolicyCategory" />
+        <supportedOn ref="windows:SUPPORTED_Windows_10_0" />
+        <enabledValue>
+            <decimal value="2" />
+        </enabledValue>
+        <disabledValue>
+            <decimal value="0" />
+        </disabledValue>
+    </policy>
+    </policies>
+</policyDefinitions>
