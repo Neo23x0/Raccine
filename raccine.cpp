@@ -154,6 +154,38 @@ DWORD getIntegrityLevel(HANDLE hProcess) {
     return 0;
 }
 
+// Get the image name of the process
+std::wstring getImageName(DWORD pid) {
+    PROCESSENTRY32 pe32 = { 0 };
+    HANDLE hSnapshot;
+    hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+    if (hSnapshot == INVALID_HANDLE_VALUE) {
+        goto out;
+    }
+
+    ZeroMemory(&pe32, sizeof(pe32));
+    pe32.dwSize = sizeof(pe32);
+
+    if (!Process32First(hSnapshot, &pe32)) {
+        goto out;
+    }
+
+    do {
+        if (pe32.th32ProcessID == pid) {
+            std::wstring imageName = std::wstring((wchar_t*)pe32.szExeFile);
+            return imageName;
+        }
+    } while (Process32Next(hSnapshot, &pe32));
+
+out:
+    if (hSnapshot != INVALID_HANDLE_VALUE) {
+        CloseHandle(hSnapshot);
+    }
+    return L"(unavailable)";
+}
+
+
 // Check if process is in allowed list
 BOOL isallowlisted(DWORD pid) {
     WCHAR allowlist[3][MAX_PATH] = { L"wininit.exe", L"winlogon.exe", L"explorer.exe" };
@@ -257,10 +289,10 @@ std::wstring logFormat(const std::wstring cmdLine, const std::wstring comment = 
 }
 
 // Format the activity log lines
-std::wstring logFormatAction(int pid, const std::wstring cmdLine, const std::wstring comment = L"done") {
+std::wstring logFormatAction(int pid, const std::wstring imageName, const std::wstring cmdLine, const std::wstring comment = L"done") {
     std::string timeString = getTimeStamp();
     std::wstring timeStringW(timeString.begin(), timeString.end());
-    std::wstring logLine = timeStringW + L" DETECTED_CMD: '" + cmdLine + L"' PID: " + std::to_wstring(pid) + L" ACTION: " + comment + L"\n";
+    std::wstring logLine = timeStringW + L" DETECTED_CMD: '" + cmdLine + L"' IMAGE: '" + imageName + L"' PID: " + std::to_wstring(pid) + L" ACTION: " + comment + L"\n";
     return logLine;
 }
 
@@ -502,33 +534,37 @@ int wmain(int argc, WCHAR* argv[]) {
         // Collect PIDs to kill
         while (c < 1024) {
             pid = getParentPid(pid);
+            std::wstring imageName = L"(unavailable)";
+            imageName = getImageName(pid);
             if (pid == 0) {
                 break;
             }     
             if (!isallowlisted(pid)) {
-                wprintf(L"\nCollecting PID %d for a kill\n", pid);
+                wprintf(L"\nCollecting IMAGE %s with PID %d for a kill\n", imageName.c_str(), pid);
                 pids[c] = pid;
                 c++;
             }
             else {
-                wprintf(L"\nProcess with PID %d is on allowlist\n", pid);
-                sListLogs.append(logFormatAction(pid, sCommandLine, L"Whitelisted"));
+                wprintf(L"\nProcess IMAGE %s with PID %d is on allowlist\n", imageName.c_str(), pid);
+                sListLogs.append(logFormatAction(pid, imageName, sCommandLine, L"Whitelisted"));
             }
         }
 
         // Loop over collected PIDs and try to kill the processes
         for (uint8_t i = c; i > 0; --i) {
+            std::wstring imageName = L"(unavailable)";
+            imageName = getImageName(pids[i - 1]);
             // If no simulation flag is set
             if (!g_fLogOnly) {
                 // Kill
-                wprintf(L"Kill PID %d\n", pids[i - 1]);
+                wprintf(L"Kill process IMAGE %s with PID %d\n", imageName.c_str(), pids[i - 1]);
                 killProcess(pids[i - 1], 1);
-                sListLogs.append(logFormatAction(pids[i - 1], sCommandLine, L"Terminated"));
+                sListLogs.append(logFormatAction(pids[i - 1], imageName, sCommandLine, L"Terminated"));
             }
             else {
                 // Simulated kill
-                wprintf(L"Simulated Kill PID %d\n", pids[i - 1]);
-                sListLogs.append(logFormatAction(pids[i - 1], sCommandLine, L"Terminated (Simulated)"));
+                wprintf(L"Simulated Kill IMAGE %s with PID %d\n", imageName.c_str(), pids[i - 1]);
+                sListLogs.append(logFormatAction(pids[i - 1], imageName, sCommandLine, L"Terminated (Simulated)"));
             }
         }
         // Finish message
