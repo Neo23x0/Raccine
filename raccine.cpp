@@ -25,6 +25,7 @@
 #pragma comment(lib,"advapi32.lib")
 
 BOOL g_fLogToEventLog = FALSE;
+BOOL g_fLogOnly = FALSE;
 #define RACCINE_REG_CONFIG  L"SOFTWARE\\Raccine"
 #define MAX_MESSAGE 1000
 
@@ -389,7 +390,9 @@ int wmain(int argc, WCHAR* argv[]) {
         }
     }
 
-    // Query for logging level.  A value of 1 or more indicates to log key events to the event log
+    // Registry Settings
+    // Query for logging level. A value of 1 or more indicates to log key events to the event log
+    // Query for logging only mode. A value of 1 or more indicates to suppress process kills
     HKEY hKey = NULL;
     if (ERROR_SUCCESS == RegOpenKeyEx(HKEY_CURRENT_USER, RACCINE_REG_CONFIG, 0, KEY_READ, &hKey))
     {
@@ -397,9 +400,18 @@ int wmain(int argc, WCHAR* argv[]) {
         DWORD cbData = sizeof(dwLoggingLevel);
         if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"Logging", NULL, NULL, (LPBYTE)&dwLoggingLevel, &cbData))
         {
-            if (dwLoggingLevel > 1)
+            if (dwLoggingLevel > 0)
             {
                 g_fLogToEventLog = TRUE;
+            }
+        }
+        DWORD dwLoggingOnly = 0;
+        DWORD cbDataLO = sizeof(dwLoggingOnly);
+        if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"LogOnly", NULL, NULL, (LPBYTE)&dwLoggingOnly, &cbDataLO))
+        {
+            if (dwLoggingOnly > 0)
+            {
+                g_fLogOnly = TRUE;
             }
         }
         RegCloseKey(hKey);
@@ -418,7 +430,12 @@ int wmain(int argc, WCHAR* argv[]) {
         (bPowerShell && bEncodedCommand)) {              // powershell.exe
 
         LPCWSTR lpMessage = sCommandLine.c_str();
-        StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n", lpMessage);
+        if (!g_fLogOnly) {
+            StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n", lpMessage);
+        }
+        else {
+            StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n(simulation mode)", lpMessage);
+        }
         WriteEventLogEntryWithId((LPWSTR)wMessage, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
 
         // Collect PIDs to kill
@@ -441,13 +458,20 @@ int wmain(int argc, WCHAR* argv[]) {
 
         // Loop over collected PIDs and try to kill the processes
         for (uint8_t i = c; i > 0; --i) {
-            wprintf(L"Kill PID %d\n", pids[i - 1]);
-            killprocess(pids[i - 1], 1);
-            sListLogs.append(logFormat(pids[i - 1], sCommandLine, L"Terminated"));
+            if (!g_fLogOnly) {
+                wprintf(L"Kill PID %d\n", pids[i - 1]);
+                killprocess(pids[i - 1], 1);
+                sListLogs.append(logFormat(pids[i - 1], sCommandLine, L"Terminated"));
+            }
+            else {
+                // Simulated kill
+                wprintf(L"Simulated Kill PID %d\n", pids[i - 1]);
+                sListLogs.append(logFormat(pids[i - 1], sCommandLine, L"Terminated (Simulated)"));
+            }
         }
 
         logSend(sListLogs);
-        wprintf(L"\nRaccine v0.9.0 finished\n");
+        wprintf(L"\nRaccine v0.10.0 finished\n");
         Sleep(5000);
     }
     //

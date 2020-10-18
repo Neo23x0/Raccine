@@ -45,7 +45,7 @@ IF "%PROCESSOR_ARCHITECTURE%" EQU "x86" (
 :MENU
 CLS
 ECHO.
-ECHO ..........................................................
+ECHO ..............................................................................
 :::     ___               _         
 :::    / _ \___ _________(_)__  ___ 
 :::   / , _/ _ `/ __/ __/ / _ \/ -_)
@@ -55,21 +55,21 @@ for /f "delims=: tokens=*" %%A in ('findstr /b ::: "%~f0"') do @echo(%%A
 ECHO   A Simple Ransomware and Emotet Vaccine
 ECHO   Installer by Florian Roth, October 2020  
 ECHO.                       
-ECHO ----------------------------------------------------------
+ECHO ------------------------------------------------------------------------------
 ECHO   WARNING! Raccine could break your backup solution 
-ECHO ..........................................................
+ECHO ..............................................................................
 ECHO.
-ECHO   1 - Install Raccine for all possible methods (full)
-ECHO   2 - Install Raccine for Vssadmin and BcdEdit only (soft)
-ECHO   3 - Install Raccine to block all Emotet infections only
+ECHO   1 - Install Raccine for all possible methods
+ECHO   2 - Install Raccine for all possible methods (simulation mode, logging only)
+ECHO   3 - Install Raccine for Vssadmin and BcdEdit only
 ECHO   U - Uninstall Raccine
 ECHO   E - EXIT
 ECHO.
 
 SET /P M=" Select 1, 2, 3, or E then press ENTER: "
 IF %M%==1 GOTO FULL
-IF %M%==2 GOTO SOFT
-IF %M%==3 GOTO EMOTET
+IF %M%==2 GOTO FULL_SIMU
+IF %M%==3 GOTO SOFT
 IF %M%==U GOTO UNINSTALL
 IF %M%==u GOTO UNINSTALL
 IF %M%==E GOTO EOF
@@ -94,6 +94,7 @@ ECHO Registering Eventlog Events
 eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine event message" 2> nul
 eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message" 2> nul
 REG.EXE ADD HKCU\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
+REG.EXE ADD HKCU\Software\Raccine /v LogOnly /t REG_DWORD /d 0 /F
 ECHO Copying Raccine%ARCH%.exe to C:\Windows\Raccine.exe ...
 COPY Raccine%ARCH%.exe C:\Windows\Raccine.exe
 IF '%errorlevel%' NEQ '0' (
@@ -101,6 +102,36 @@ IF '%errorlevel%' NEQ '0' (
 ) ELSE (
     ECHO.
     ECHO Successfully installed. Your system has been raccinated.
+)
+TIMEOUT /t 7
+GOTO MENU
+
+:: Full (Simulation Mode)
+:FULL_SIMU
+ECHO.
+ECHO Installing Registry patches ...
+REGEDIT.EXE /S raccine-reg-patch-vssadmin.reg
+IF '%errorlevel%' NEQ '0' (
+    ECHO Something went wrong. Sorry.
+    GOTO MENU
+)
+REGEDIT.EXE /S raccine-reg-patch-wmic.reg 
+REGEDIT.EXE /S raccine-reg-patch-wbadmin.reg
+REGEDIT.EXE /S raccine-reg-patch-bcdedit.reg
+REGEDIT.EXE /S raccine-reg-patch-powershell.reg
+ECHO Registering Eventlog Events
+eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine event message" 2> nul
+eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message" 2> nul
+REG.EXE ADD HKCU\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
+REG.EXE ADD HKCU\Software\Raccine /v LogOnly /t REG_DWORD /d 2 /F
+ECHO Copying Raccine%ARCH%.exe to C:\Windows\Raccine.exe ...
+COPY Raccine%ARCH%.exe C:\Windows\Raccine.exe
+IF '%errorlevel%' NEQ '0' (
+    ECHO Something went wrong. Sorry.
+) ELSE (
+    ECHO.
+    ECHO Successfully installed. Your system has been raccinated.
+    ECHO Warning: Simulation mode only! 
 )
 TIMEOUT /t 7
 GOTO MENU
@@ -130,30 +161,6 @@ IF '%errorlevel%' NEQ '0' (
 TIMEOUT /t 7
 GOTO MENU
 
-:: Emotet
-:EMOTET
-ECHO.
-ECHO Installing Registry patches ...
-REGEDIT.EXE /S raccine-reg-patch-powershell.reg
-IF '%errorlevel%' NEQ '0' (
-    ECHO Something went wrong. Sorry.
-    GOTO MENU
-)
-ECHO Registering Eventlog Events
-eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine event message" 2> nul
-eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message" 2> nul
-REG.EXE ADD HKCU\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
-ECHO Copying Raccine%ARCH%.exe to C:\Windows\Raccine.exe ...
-COPY Raccine%ARCH%.exe C:\Windows\Raccine.exe
-IF '%errorlevel%' NEQ '0' (
-    ECHO Something went wrong. Sorry.
-) ELSE (
-    ECHO.
-    ECHO Successfully installed. Your system is now immune to weaponized Emotet documents.
-)
-TIMEOUT /t 7
-GOTO MENU
-
 :: Uninstall
 :UNINSTALL
 ECHO.
@@ -161,6 +168,7 @@ ECHO Uninstalling Registry patch ...
 REGEDIT.EXE /S raccine-reg-patch-uninstall.reg
 ECHO Removing Registry key ...
 REG.EXE DELETE HKCU\Software\Raccine /F
+REG.EXE DELETE HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\EventLog\Application\Raccine /F
 ECHO Removing Raccine.exe from the Windows folder ...
 DEL /Q C:\Windows\Raccine.exe
 IF '%errorlevel%' NEQ '0' (
