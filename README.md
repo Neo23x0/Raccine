@@ -126,7 +126,7 @@ REG.EXE ADD HKCU\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
 
 ## Deploy Configuration via GPO
 
-The folder `GPO` includes `Raccine.ADMX` and `Raccine.ADML`. In deployment this file goes in `C:\Windows\PolicyDefinitions`. The accompanying `Raccine.ADML` files goes in `C:\Windows\PolicyDefinitions\en-US`. 
+The folder `GPO` includes `Raccine.ADMX` and `Raccine.ADML`. In deployment the `Raccine.ADMX` file goes in `C:\Windows\PolicyDefinitions`. The accompanying `Raccine.ADML` files goes in `C:\Windows\PolicyDefinitions\en-US`. 
 
 To use: Open `GPEDIT.MSC` > Computer Configuration > Administrative Templates > System > Raccine
 
