@@ -124,6 +124,10 @@ REG.EXE ADD HKCU\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
 2. Remove `Raccine.exe` from the `C:\Windows` folder
 3. Run `REG.EXE DELETE HKCU\Software\Raccine /F`
 
+### Upgrade
+
+We recommend an uninstall and reinstall to upgrade. An uninstall removes all registry keys with configurations. 
+
 ## Deploy Configuration via GPO
 
 The folder `GPO` includes `Raccine.ADMX` and `Raccine.ADML`. In deployment the `Raccine.ADMX` file goes in `C:\Windows\PolicyDefinitions`. The accompanying `Raccine.ADML` files goes in `C:\Windows\PolicyDefinitions\en-US`. 
