@@ -124,6 +124,14 @@ REG.EXE ADD HKCU\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
 2. Remove `Raccine.exe` from the `C:\Windows` folder
 3. Run `REG.EXE DELETE HKCU\Software\Raccine /F`
 
+## Deploy Configuration via GPO
+
+The folder `GPO` includes `Raccine.ADMX` and `Raccine.ADML`. In deployment this file goes in `C:\Windows\PolicyDefinitions`. The accompanying `Raccine.ADML` files goes in `C:\Windows\PolicyDefinitions\en-US`. 
+
+To use: Open `GPEDIT.MSC` > Computer Configuration > Administrative Templates > System > Raccine
+
+After configuring the changes, you may need to bump gpo by running `gpupdate.exe`.
+
 ## Logfile
 
 A logfile with all interceptions and actions taken is written to `C:\ProgramData\Raccine_log.txt` 
