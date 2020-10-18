@@ -31,6 +31,7 @@
 BOOL g_fLogToEventLog = FALSE;
 BOOL g_fLogOnly = FALSE;
 #define RACCINE_REG_CONFIG  L"SOFTWARE\\Raccine"
+#define RACCINE_REG_POICY_CONFIG  L"SOFTWARE\\Policies\\Raccine"
 #define MAX_MESSAGE 1000
 #define RACCINE_DEFAULT_EVENTID  1
 #define RACCINE_EVENTID_MALICIOUS_ACTIVITY  2
@@ -287,6 +288,47 @@ void logSend(const std::wstring logStr) {
     }
 }
 
+//
+//  Query for config in HKLM and HKLM\Software\Policies override by GPO
+//
+void InitializeLoggingSettings()
+{
+    // Registry Settings
+    // Query for logging level. A value of 1 or more indicates to log key events to the event log
+    // Query for logging only mode. A value of 1 or more indicates to suppress process kills
+
+    const wchar_t* LoggingKeys[] = { RACCINE_REG_CONFIG , RACCINE_REG_POICY_CONFIG };
+
+    HKEY hKey = NULL;
+    for (int i = 0; i < ARRAYSIZE(LoggingKeys); i++)
+    {
+        if (ERROR_SUCCESS == RegOpenKeyEx(HKEY_LOCAL_MACHINE, LoggingKeys[i], 0, KEY_READ, &hKey))
+        {
+            // Log Level
+            DWORD dwLoggingLevel = 0;
+            DWORD cbData = sizeof(dwLoggingLevel);
+            if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"Logging", NULL, NULL, (LPBYTE)&dwLoggingLevel, &cbData))
+            {
+                if (dwLoggingLevel > 0)
+                {
+                    g_fLogToEventLog = TRUE;
+                }
+            }
+            // Log Only
+            DWORD dwLoggingOnly = 0;
+            DWORD cbDataLO = sizeof(dwLoggingOnly);
+            if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"LogOnly", NULL, NULL, (LPBYTE)&dwLoggingOnly, &cbDataLO))
+            {
+                if (dwLoggingOnly > 0)
+                {
+                    g_fLogOnly = TRUE;
+                }
+            }
+            RegCloseKey(hKey);
+        }
+    }
+}
+
 int wmain(int argc, WCHAR* argv[]) {
 
     DWORD pids[1024] = { 0 };
@@ -417,34 +459,7 @@ int wmain(int argc, WCHAR* argv[]) {
         }
     }
 
-    // Registry Settings
-    // Query for logging level. A value of 1 or more indicates to log key events to the event log
-    // Query for logging only mode. A value of 1 or more indicates to suppress process kills
-    HKEY hKey = NULL;
-    if (ERROR_SUCCESS == RegOpenKeyEx(HKEY_CURRENT_USER, RACCINE_REG_CONFIG, 0, KEY_READ, &hKey))
-    {
-        // Log Level
-        DWORD dwLoggingLevel = 0;
-        DWORD cbData = sizeof(dwLoggingLevel);
-        if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"Logging", NULL, NULL, (LPBYTE)&dwLoggingLevel, &cbData))
-        {
-            if (dwLoggingLevel > 0)
-            {
-                g_fLogToEventLog = TRUE;
-            }
-        }
-        // Log Only
-        DWORD dwLoggingOnly = 0;
-        DWORD cbDataLO = sizeof(dwLoggingOnly);
-        if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"LogOnly", NULL, NULL, (LPBYTE)&dwLoggingOnly, &cbDataLO))
-        {
-            if (dwLoggingOnly > 0)
-            {
-                g_fLogOnly = TRUE;
-            }
-        }
-        RegCloseKey(hKey);
-    }
+    InitializeLoggingSettings();
 
     // Check all combinations (our blocklist)
     if ((bVssadmin && bDelete && bShadows) ||             // vssadmin.exe
