@@ -118,7 +118,7 @@ REG.EXE ADD HKCU\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
 
 (For systems with i386 architecture use `Raccine_x86.exe` and rename it to `Raccine.exe`)
 
-## Manual Uninstall 
+### Manual Uninstall 
 
 1. Run `raccine-reg-patch-uninstall.reg` 
 2. Remove `Raccine.exe` from the `C:\Windows` folder
