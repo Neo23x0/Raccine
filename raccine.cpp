@@ -483,15 +483,18 @@ int wmain(int argc, WCHAR* argv[]) {
         // Log to the windows Eventlog
         LPCWSTR lpMessage = sCommandLine.c_str();
         if (!g_fLogOnly) {
+            // Eventlog
             StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n", lpMessage);
+            // Log to the text log file
+            sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity"));
         }
         else {
+            // Eventlog
             StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n(simulation mode)", lpMessage);
+            // Log to the text log file
+            sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity (simulation mode)"));
         }
         WriteEventLogEntryWithId((LPWSTR)wMessage, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
-
-        // Log to the text log file
-        sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity"));
     }
 
     // If block and not simulation mode
