@@ -24,6 +24,9 @@
 
 #pragma comment(lib,"advapi32.lib")
 
+// Version
+#define VERSION "0.10.1"
+
 // Log Config and Flags
 BOOL g_fLogToEventLog = FALSE;
 BOOL g_fLogOnly = FALSE;
@@ -245,11 +248,18 @@ std::string getTimeStamp() {
 }
 
 // Fomat a log lines
-std::wstring logFormat(int pid, const std::wstring cmdLine, const std::wstring comment = L"done") {
+std::wstring logFormat(const std::wstring cmdLine, const std::wstring comment = L"done") {
+    std::string timeString = getTimeStamp();
+    std::wstring timeStringW(timeString.begin(), timeString.end());
+    std::wstring logLine = timeStringW + L" DETECTED_CMD: '" + cmdLine + L" COMMENT: " + comment + L"\n";
+    return logLine;
+}
+
+// Format the activity log lines
+std::wstring logFormatAction(int pid, const std::wstring cmdLine, const std::wstring comment = L"done") {
     std::string timeString = getTimeStamp();
     std::wstring timeStringW(timeString.begin(), timeString.end());
     std::wstring logLine = timeStringW + L" DETECTED_CMD: '" + cmdLine + L"' PID: " + std::to_wstring(pid) + L" ACTION: " + comment + L"\n";
-    // wprintf(L"Detection logged\n");
     return logLine;
 }
 
@@ -284,6 +294,9 @@ int wmain(int argc, WCHAR* argv[]) {
     DWORD pid = GetCurrentProcessId();
 
     setlocale(LC_ALL, "");
+
+    // Block marker
+    bool bBlock = false;
 
     // Main programs to monitor
     bool bVssadmin = false;
@@ -439,6 +452,12 @@ int wmain(int argc, WCHAR* argv[]) {
         (bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
         (bPowerShell && bEncodedCommand)) {              // powershell.exe
 
+        // Activate blocking
+        bBlock = TRUE;
+    }
+
+    // If activity that should be block has been registered (always log)
+    if (bBlock) {
         // Log to the windows Eventlog
         LPCWSTR lpMessage = sCommandLine.c_str();
         if (!g_fLogOnly) {
@@ -449,6 +468,12 @@ int wmain(int argc, WCHAR* argv[]) {
         }
         WriteEventLogEntryWithId((LPWSTR)wMessage, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
 
+        // Log to the text log file
+        sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity"));
+    }
+
+    // If block and not simulation mode
+    if (bBlock && !g_fLogOnly) {
         // Collect PIDs to kill
         while (c < 1024) {
             pid = getppid(pid);
@@ -462,7 +487,7 @@ int wmain(int argc, WCHAR* argv[]) {
             }
             else {
                 wprintf(L"\nProcess with PID %d is on allowlist\n", pid);
-                sListLogs.append(logFormat(pid, sCommandLine, L"Whitelisted"));
+                sListLogs.append(logFormatAction(pid, sCommandLine, L"Whitelisted"));
             }
         }
 
@@ -473,24 +498,24 @@ int wmain(int argc, WCHAR* argv[]) {
                 // Kill
                 wprintf(L"Kill PID %d\n", pids[i - 1]);
                 killProcess(pids[i - 1], 1);
-                sListLogs.append(logFormat(pids[i - 1], sCommandLine, L"Terminated"));
+                sListLogs.append(logFormatAction(pids[i - 1], sCommandLine, L"Terminated"));
             }
             else {
                 // Simulated kill
                 wprintf(L"Simulated Kill PID %d\n", pids[i - 1]);
-                sListLogs.append(logFormat(pids[i - 1], sCommandLine, L"Terminated (Simulated)"));
+                sListLogs.append(logFormatAction(pids[i - 1], sCommandLine, L"Terminated (Simulated)"));
             }
         }
-        // Log events
-        logSend(sListLogs);
         // Finish message
-        wprintf(L"\nRaccine v0.10.0 finished\n");
+        printf("\nRaccine v%s finished\n", VERSION);
         Sleep(5000);
     }
-    //
+    
     // Otherwise launch the process with its original parameters
-    //
-    else {
+    // Conditions:
+    // a.) not block or
+    // b.) simulation mode
+    if ( !bBlock || g_fLogOnly ) {
         DEBUG_EVENT debugEvent = { 0 };
         std::wstring sCommandLineStr = L"";
 
@@ -507,5 +532,9 @@ int wmain(int argc, WCHAR* argv[]) {
             CloseHandle(processInfo.hThread);
         }
     }
+
+    // Log events
+    logSend(sListLogs);
+
     return 0;
 }
