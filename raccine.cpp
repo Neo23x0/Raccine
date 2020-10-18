@@ -25,7 +25,7 @@
 #pragma comment(lib,"advapi32.lib")
 
 // Version
-#define VERSION "0.10.1"
+#define VERSION "0.10.2"
 
 // Log Config and Flags
 BOOL g_fLogToEventLog = FALSE;
@@ -304,10 +304,11 @@ int wmain(int argc, WCHAR* argv[]) {
     bool bWbadmin = false;
     bool bcdEdit = false;
     bool bPowerShell = false;
+    bool bDiskshadow = false;
 
     // Command line params
     bool bDelete = false;
-    bool bShadow = false;
+    bool bShadows = false;
     bool bResize = false;
     bool bShadowStorage = false;
     bool bShadowCopy = false;
@@ -352,6 +353,10 @@ int wmain(int argc, WCHAR* argv[]) {
             (_wcsicmp(L"powershell", argv[1]) == 0)) {
             bPowerShell = true;
         }
+        else if ((_wcsicmp(L"diskshadow.exe", argv[1]) == 0) ||
+            (_wcsicmp(L"diskshadow", argv[1]) == 0)) {
+            bDiskshadow = true;
+        }
     }
 
     // Check for keywords in command line parameters
@@ -375,7 +380,7 @@ int wmain(int argc, WCHAR* argv[]) {
             bDelete = true;
         }
         else if (_wcsicmp(L"shadows", argv[iCount]) == 0) {
-            bShadow = true;
+            bShadows = true;
         }
         else if (_wcsicmp(L"shadowstorage", argv[iCount]) == 0) {
             bShadowStorage = true;
@@ -442,13 +447,14 @@ int wmain(int argc, WCHAR* argv[]) {
     }
 
     // Check all combinations (our blocklist)
-    if ((bVssadmin && bDelete && bShadow) ||             // vssadmin.exe
+    if ((bVssadmin && bDelete && bShadows) ||             // vssadmin.exe
         (bVssadmin && bDelete && bShadowStorage) ||      // vssadmin.exe
         (bVssadmin && bResize && bShadowStorage) ||      // vssadmin.exe
         (bWmic && bDelete && bShadowCopy) ||             // wmic.exe
         (bWbadmin && bDelete && bCatalog && bQuiet) || 	 // wbadmin.exe 
         (bcdEdit && bIgnoreallFailures) ||               // bcdedit.exe
         (bcdEdit && bRecoveryEnabled) ||                 // bcdedit.exe
+        (bDiskshadow && bDelete && bShadows) ||          // diskshadow.exe
         (bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
         (bPowerShell && bEncodedCommand)) {              // powershell.exe
 

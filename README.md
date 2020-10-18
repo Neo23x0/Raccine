@@ -37,7 +37,7 @@ Disadvantages / Blind Spots:
 
 Malicious combinations:
 
-- `delete` and `shadows` (vssadmin)
+- `delete` and `shadows` (vssadmin, diskshadow)
 - `resize` and `shadowstorage` (vssadmin)
 - `delete` and `shadowstorage` (vssadmin)
 - `delete` and `shadowcopy` (wmic)
@@ -88,6 +88,8 @@ If you have a solid security monitoring that logs all process executions, you co
 - 0.8.0 - Creates a log file with all intercepted requests and actions performed `C:\ProgramData\Raccine_log.txt`
 - 0.9.0 - Logs to Windows Eventlog by @JohnLaTwC
 - 0.10.0 - Simulation mode only
+- 0.10.1 - Fix for Simulation mode
+- 0.10.2 - Includes `diskshadow.exe delete shadows` command
 
 ## Installation
 
