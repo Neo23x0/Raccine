@@ -98,8 +98,8 @@ DWORD getppid(DWORD pid) {
         }
     } while (Process32Next(hSnapshot, &pe32));
 
+    CloseHandle(hSnapshot);
 out:
-    if (hSnapshot != INVALID_HANDLE_VALUE) CloseHandle(hSnapshot);
     return ppid;
 }
 
@@ -256,20 +256,25 @@ std::wstring logFormat(int pid, const std::wstring cmdLine, const std::wstring c
 
 void logSend(const std::wstring logStr) {
     static FILE* logFile = 0;
-    if (logFile == 0) {
-        #pragma warning(suppress : 4996)
-        logFile = fopen("C:\\ProgramData\\Raccine_log.txt", "at");
-        #pragma warning(suppress : 4996)
-        if (!logFile) logFile = fopen("C:\\ProgramData\\Raccine_log.txt", "wt");
-        if (!logFile) {
+    if (logFile == 0) 
+    {
+        errno_t err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine_log.txt", L"at");
+        if (err != 0) 
+            err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine_log.txt", L"wt");
+            
+        if (err != 0) {
             wprintf(L"\nCan not open C:\\ProgramData\\Raccine_log.txt for writing.\n");
             return;   // bail out if we can't log
         }
     }
     //transform(logStr.begin(), logStr.end(), logStr.begin(), ::tolower);
-    fwprintf(logFile, L"%s", logStr.c_str());
-    fflush(logFile);
-    fclose(logFile);
+    if (logFile != 0)
+    {
+        fwprintf(logFile, L"%s", logStr.c_str());
+        fflush(logFile);
+        fclose(logFile);
+        logFile = 0;
+    }
 }
 
 int wmain(int argc, WCHAR* argv[]) {
