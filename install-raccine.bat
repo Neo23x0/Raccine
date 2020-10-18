@@ -166,9 +166,6 @@ GOTO MENU
 ECHO.
 ECHO Uninstalling Registry patch ...
 REGEDIT.EXE /S raccine-reg-patch-uninstall.reg
-ECHO Removing Registry key ...
-REG.EXE DELETE HKCU\Software\Raccine /F
-REG.EXE DELETE HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\EventLog\Application\Raccine /F
 ECHO Removing Raccine.exe from the Windows folder ...
 DEL /Q C:\Windows\Raccine.exe
 IF '%errorlevel%' NEQ '0' (
