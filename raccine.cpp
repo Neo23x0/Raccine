@@ -153,6 +153,38 @@ DWORD getIntegrityLevel(HANDLE hProcess) {
     return 0;
 }
 
+// Get the image name of the process
+std::wstring getImageName(DWORD pid) {
+    PROCESSENTRY32 pe32 = { 0 };
+    HANDLE hSnapshot;
+    hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+    if (hSnapshot == INVALID_HANDLE_VALUE) {
+        goto out;
+    }
+
+    ZeroMemory(&pe32, sizeof(pe32));
+    pe32.dwSize = sizeof(pe32);
+
+    if (!Process32First(hSnapshot, &pe32)) {
+        goto out;
+    }
+
+    do {
+        if (pe32.th32ProcessID == pid) {
+            std::wstring imageName = std::wstring((wchar_t*)pe32.szExeFile);
+            return imageName;
+        }
+    } while (Process32Next(hSnapshot, &pe32));
+
+out:
+    if (hSnapshot != INVALID_HANDLE_VALUE) {
+        CloseHandle(hSnapshot);
+    }
+    return L"";
+}
+
+
 // Check if process is in allowed list
 BOOL isallowlisted(DWORD pid) {
     WCHAR allowlist[3][MAX_PATH] = { L"wininit.exe", L"winlogon.exe", L"explorer.exe" };
@@ -291,7 +323,11 @@ int wmain(int argc, WCHAR* argv[]) {
 
     DWORD pids[1024] = { 0 };
     uint8_t c = 0;
+
+    // Evaluations
     DWORD pid = GetCurrentProcessId();
+    DWORD ppid = getParentPid(pid);
+    std::wstring ws_ParentImage = getImageName(ppid);
 
     setlocale(LC_ALL, "");
 
@@ -330,7 +366,7 @@ int wmain(int argc, WCHAR* argv[]) {
     
     // Office Dropper Rules
     // Sigma Rule: https://github.com/Neo23x0/sigma/blob/master/rules/windows/process_creation/win_office_shell.yml
-    WCHAR OfficeDropperParents[6][14] = { L'winword.exe', L'excel.exe', L'powerpoint.exe', L'mspub.exe', L'visio.exe', L'outlook.exe' };
+    WCHAR OfficeDropperParents[6][15] = { L"winword.exe", L"excel.exe", L"powerpoint.exe", L"mspub.exe", L"visio.exe", L"outlook.exe" };
     WCHAR OfficeDropperChildren[19][17] = { 
         L"cmd.exe", L"powershell.exe", L"wscript.exe", L"cscript.exe", L"sh.exe", L"bash.exe", 
         L"scrcons.exe", L"schtasks.exe", L"regsvr32.exe", L"hh.exe", L"wmic.exe", 
@@ -383,7 +419,7 @@ int wmain(int argc, WCHAR* argv[]) {
         if (convertedOrigProgram.find(OfficeDropperChildren[i]) != std::string::npos) {
             for (uint8_t i = 0; i < ARRAYSIZE(OfficeDropperParents); i++) {
                 // TODO: this needs the parent program instead
-                if (convertedOrigProgram.find(OfficeDropperParents[i]) != std::string::npos) {
+                if (ws_ParentImage.find(OfficeDropperParents[i]) != std::string::npos) {
                     bOfficeDropper = true;
                 }
             }
