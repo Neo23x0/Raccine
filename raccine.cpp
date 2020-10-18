@@ -74,7 +74,7 @@ void WriteEventLogEntry(LPWSTR  pszMessage)
 }
 
 // Get Parent Process ID
-DWORD getppid(DWORD pid) {
+DWORD getParentPid(DWORD pid) {
     PROCESSENTRY32 pe32;
     HANDLE hSnapshot;
     DWORD ppid = 0;
@@ -483,7 +483,7 @@ int wmain(int argc, WCHAR* argv[]) {
     if (bBlock && !g_fLogOnly) {
         // Collect PIDs to kill
         while (c < 1024) {
-            pid = getppid(pid);
+            pid = getParentPid(pid);
             if (pid == 0) {
                 break;
             }     
