@@ -25,7 +25,7 @@
 #pragma comment(lib,"advapi32.lib")
 
 // Version
-#define VERSION "0.10.2"
+#define VERSION "0.10.3"
 
 // Log Config and Flags
 BOOL g_fLogToEventLog = FALSE;
