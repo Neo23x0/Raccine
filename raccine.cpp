@@ -290,6 +290,7 @@ int wmain(int argc, WCHAR* argv[]) {
     bool bWbadmin = false;
     bool bcdEdit = false;
     bool bPowerShell = false;
+    bool bDiskShadow = false;
 
     bool bDelete = false;
     bool bShadow = false;
@@ -338,6 +339,10 @@ int wmain(int argc, WCHAR* argv[]) {
             (_wcsicmp(L"powershell", argv[1]) == 0)) {
             bPowerShell = true;
         }
+        else if ((_wcsicmp(L"diskshadow.exe", argv[1]) == 0) ||
+            (_wcsicmp(L"diskshadow", argv[1]) == 0)) {
+            bDiskShadow = true;
+        }
     }
 
     // check for keywords in command line parameters
@@ -374,7 +379,7 @@ int wmain(int argc, WCHAR* argv[]) {
         else if (_wcsicmp(L"catalog", argv[iCount]) == 0) {
             bCatalog = true;
         }
-        else if (_wcsicmp(L"-quiet", argv[iCount]) == 0) {
+        else if (_wcsicmp(L"-quiet", argv[iCount]) == 0 || _wcsicmp(L"/quiet", argv[iCount]) == 0) {
             bQuiet = true;
         }
         else if (_wcsicmp(L"recoveryenabled", argv[iCount]) == 0) {
@@ -432,7 +437,8 @@ int wmain(int argc, WCHAR* argv[]) {
         (bcdEdit && bIgnoreallFailures) ||               // bcdedit.exe
         (bcdEdit && bRecoveryEnabled) ||                 // bcdedit.exe
         (bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
-        (bPowerShell && bEncodedCommand)) {              // powershell.exe
+        (bPowerShell && bEncodedCommand) ||              // powershell.exe
+        (bDiskShadow && bDelete && bShadow)) {           // diskshadow.exe
 
         LPCWSTR lpMessage = sCommandLine.c_str();
         if (!g_fLogOnly) {
