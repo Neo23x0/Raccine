@@ -317,6 +317,8 @@ int wmain(int argc, WCHAR* argv[]) {
     bool bRecoveryEnabled = false;
     bool bIgnoreallFailures = false;
     bool bwin32ShadowCopy = false;
+
+    // Special checks
     bool bEncodedCommand = false;
     bool bOfficeDropper = false;
 
