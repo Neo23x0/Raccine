@@ -304,7 +304,7 @@ int wmain(int argc, WCHAR* argv[]) {
     bool bWbadmin = false;
     bool bcdEdit = false;
     bool bPowerShell = false;
-    bool bDiskshadow = false;
+    bool bDiskShadow = false;
 
     // Command line params
     bool bDelete = false;
@@ -355,7 +355,7 @@ int wmain(int argc, WCHAR* argv[]) {
         }
         else if ((_wcsicmp(L"diskshadow.exe", argv[1]) == 0) ||
             (_wcsicmp(L"diskshadow", argv[1]) == 0)) {
-            bDiskshadow = true;
+            bDiskShadow = true;
         }
     }
 
@@ -454,7 +454,7 @@ int wmain(int argc, WCHAR* argv[]) {
         (bWbadmin && bDelete && bCatalog && bQuiet) || 	 // wbadmin.exe 
         (bcdEdit && bIgnoreallFailures) ||               // bcdedit.exe
         (bcdEdit && bRecoveryEnabled) ||                 // bcdedit.exe
-        (bDiskshadow && bDelete && bShadows) ||          // diskshadow.exe
+        (bDiskShadow && bDelete && bShadows) ||          // diskshadow.exe
         (bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
         (bPowerShell && bEncodedCommand)) {              // powershell.exe
 
