@@ -35,7 +35,7 @@
 #define VERSION L"0.10.3"
 
 // Log Config and Flags
-BOOL g_fLogSettings = 0;
+int g_fLogSettings = 0;
 BOOL g_fLogOnly = FALSE;
 #define RACCINE_REG_CONFIG  L"SOFTWARE\\Raccine"
 #define RACCINE_REG_POICY_CONFIG  L"SOFTWARE\\Policies\\Raccine"
@@ -60,8 +60,8 @@ HINSTANCE g_hInst = 0;
 HBITMAP g_hBitmap = NULL;
 #define ID_EDITCHILD 100
 
-#define DEFAULT_HEIGHT 300
-#define DEFAULT_WIDTH  500
+#define DEFAULT_HEIGHT 200
+#define DEFAULT_WIDTH  400
 
 
 //void RegisterNotificationIcon(LPWSTR szInfo, LPWSTR szInfoTitle)
@@ -476,7 +476,7 @@ void InitializeLoggingSettings()
             DWORD cbData = sizeof(dwLoggingLevel);
             if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"Logging", NULL, NULL, (LPBYTE)&dwLoggingLevel, &cbData))
             {
-                g_fLogSettings = dwLoggingLevel;  ///This can be a bitmask
+                g_fLogSettings = dwLoggingLevel;  // This can be a bitmask
             }
             // Log Only
             DWORD dwLoggingOnly = 0;
@@ -509,6 +509,7 @@ DWORD WINAPI WorkerThread(LPVOID lpParameter)
 
     setlocale(LC_ALL, "");
 
+    /*
     if (BIT_MASK(g_fLogSettings, RACCINE_LOG_TO_CONSOLE))
     {
         // create the console
@@ -519,6 +520,7 @@ DWORD WINAPI WorkerThread(LPVOID lpParameter)
             SetConsoleTitle(L"Racine Logging Console");
         }
     }
+    */
 
     // Block marker
     bool bBlock = false;
