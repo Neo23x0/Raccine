@@ -614,7 +614,6 @@ DWORD WINAPI WorkerThread(LPVOID lpParameter)
         (bWbadmin && bDelete && bCatalog && bQuiet) || 	 // wbadmin.exe 
         (bcdEdit && bIgnoreallFailures) ||               // bcdedit.exe
         (bcdEdit && bRecoveryEnabled) ||                 // bcdedit.exe
-        (bDiskShadow && bDelete && bShadows) ||          // diskshadow.exe
         (bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
         (bPowerShell && bEncodedCommand) ||              // powershell.exe
         (bDiskShadow && bDelete && bShadows)) {          // diskshadow.exe
