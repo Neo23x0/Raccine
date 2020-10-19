@@ -34,16 +34,17 @@
 #define VERSION L"0.10.3"
 
 // Log Config and Flags
-int g_fLogSettings = 0;
-BOOL g_fLogOnly = FALSE;
+int g_fGuiSettings = 0;
+BOOL g_fSimulationOnly = FALSE;
+BOOL g_fLogging = TRUE;
 #define RACCINE_REG_CONFIG  L"SOFTWARE\\Raccine"
 #define RACCINE_REG_POICY_CONFIG  L"SOFTWARE\\Policies\\Raccine"
 #define MAX_MESSAGE 1000
 #define RACCINE_DEFAULT_EVENTID  1
 #define RACCINE_EVENTID_MALICIOUS_ACTIVITY  2
 
-#define RACCINE_LOG_TO_CONSOLE  0x1
-#define RACCINE_LOG_TO_EVENTLOG 0x2
+#define RACCINE_SHOW_CONSOLE  0x1
+#define RACCINE_SHOW_ALERT 0x2
 
 std::wstring sListLogs(L"");
 
@@ -171,8 +172,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 /// This function will optionally log messages to the eventlog
 void WriteEventLogEntryWithId(LPWSTR  pszMessage, DWORD dwEventId)
 {
-    if (g_fLogSettings & RACCINE_LOG_TO_EVENTLOG)
-    {
+    if (g_fLogging) {
         HANDLE hEventSource = NULL;
         LPCWSTR lpszStrings[2] = { NULL, NULL };
 
@@ -398,32 +398,34 @@ std::wstring logFormatAction(int pid, const std::wstring cmdLine, const std::wst
 
 // Log to file
 void logSend(const std::wstring logStr) {
-    static FILE* logFile = 0;
-    if (logFile == 0) 
-    {
-        errno_t err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine_log.txt", L"at");
-        if (err != 0) 
-            err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine_log.txt", L"wt");
-            
-        if (err != 0) {
-            wprintf(L"\nCan not open C:\\ProgramData\\Raccine_log.txt for writing.\n");
-            return;   // bail out if we can't log
+    if (g_fLogging) {
+        static FILE* logFile = 0;
+        if (logFile == 0)
+        {
+            errno_t err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine_log.txt", L"at");
+            if (err != 0)
+                err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine_log.txt", L"wt");
+
+            if (err != 0) {
+                wprintf(L"\nCan not open C:\\ProgramData\\Raccine_log.txt for writing.\n");
+                return;   // bail out if we can't log
+            }
         }
-    }
-    //transform(logStr.begin(), logStr.end(), logStr.begin(), ::tolower);
-    if (logFile != 0)
-    {
-        fwprintf(logFile, L"%s", logStr.c_str());
-        fflush(logFile);
-        fclose(logFile);
-        logFile = 0;
+        //transform(logStr.begin(), logStr.end(), logStr.begin(), ::tolower);
+        if (logFile != 0)
+        {
+            fwprintf(logFile, L"%s", logStr.c_str());
+            fflush(logFile);
+            fclose(logFile);
+            logFile = 0;
+        }
     }
 }
 
 //
 //  Query for config in HKLM and HKLM\Software\Policies override by GPO
 //
-void InitializeLoggingSettings()
+void InitializeSettings()
 {
     // Registry Settings
     // Query for logging level. A value of 1 or more indicates to log key events to the event log
@@ -436,21 +438,31 @@ void InitializeLoggingSettings()
     {
         if (ERROR_SUCCESS == RegOpenKeyEx(HKEY_LOCAL_MACHINE, LoggingKeys[i], 0, KEY_READ, &hKey))
         {
-            // Log Level
-            DWORD dwLoggingLevel = 0;
-            DWORD cbData = sizeof(dwLoggingLevel);
-            if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"Logging", NULL, NULL, (LPBYTE)&dwLoggingLevel, &cbData))
+            // GUI Settings
+            DWORD dwGuiSettings = 0;
+            DWORD cbDataGUI = sizeof(dwGuiSettings);
+            if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"GUI", NULL, NULL, (LPBYTE)&dwGuiSettings, &cbDataGUI))
             {
-                g_fLogSettings = dwLoggingLevel;  // This can be a bitmask
+                g_fGuiSettings = dwGuiSettings;  // This can be a bitmask
             }
-            // Log Only
+            // Logging Settings
             DWORD dwLoggingOnly = 0;
             DWORD cbDataLO = sizeof(dwLoggingOnly);
-            if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"LogOnly", NULL, NULL, (LPBYTE)&dwLoggingOnly, &cbDataLO))
+            if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"Logging", NULL, NULL, (LPBYTE)&dwLoggingOnly, &cbDataLO))
             {
                 if (dwLoggingOnly > 0)
                 {
-                    g_fLogOnly = TRUE;
+                    g_fLogging = TRUE;
+                }
+            }
+            // Simulation Only
+            DWORD dwSimulationOnly = 0;
+            DWORD cbDataSIM = sizeof(dwSimulationOnly);
+            if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"SimulationOnly", NULL, NULL, (LPBYTE)&dwSimulationOnly, &cbDataSIM))
+            {
+                if (dwLoggingOnly > 0)
+                {
+                    g_fSimulationOnly = TRUE;
                 }
             }
             RegCloseKey(hKey);
@@ -474,7 +486,7 @@ DWORD WINAPI WorkerThread(LPVOID lpParameter)
 
     setlocale(LC_ALL, "");
 
-    if (g_fLogSettings & RACCINE_LOG_TO_CONSOLE)
+    if (g_fGuiSettings & RACCINE_SHOW_CONSOLE)
     {
         // create the console
         if (AllocConsole())
@@ -626,7 +638,7 @@ DWORD WINAPI WorkerThread(LPVOID lpParameter)
     if (bBlock) {
         // Log to the windows Eventlog
         LPCWSTR lpMessage = sCommandLine.c_str();
-        if (!g_fLogOnly) {
+        if (!g_fSimulationOnly) {
             // Eventlog
             StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n", lpMessage);
             // Log to the text log file
@@ -639,14 +651,17 @@ DWORD WINAPI WorkerThread(LPVOID lpParameter)
             // Log to the text log file
             sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity (simulation mode)"));
         }
-        RaccineAlert();
-        // add the notification icon
-        //RegisterNotificationIcon(wMessage, (LPWSTR)L"Raccine Alert");
+        if (g_fGuiSettings & RACCINE_SHOW_ALERT) {
+            RaccineAlert();
+            // add the notification icon
+            //RegisterNotificationIcon(wMessage, (LPWSTR)L"Raccine Alert");
+        }
+        // Add eventlog entry
         WriteEventLogEntryWithId((LPWSTR)wMessage, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
     }
 
     // If block and not simulation mode
-    if (bBlock && !g_fLogOnly) {
+    if (bBlock && !g_fSimulationOnly) {
         // Collect PIDs to kill
         while (c < 1024) {
             pid = getParentPid(pid);
@@ -667,7 +682,7 @@ DWORD WINAPI WorkerThread(LPVOID lpParameter)
         // Loop over collected PIDs and try to kill the processes
         for (uint8_t i = c; i > 0; --i) {
             // If no simulation flag is set
-            if (!g_fLogOnly) {
+            if (!g_fSimulationOnly) {
                 // Kill
                 wprintf(L"Kill PID %d\n", pids[i - 1]);
                 killProcess(pids[i - 1], 1);
@@ -688,7 +703,7 @@ DWORD WINAPI WorkerThread(LPVOID lpParameter)
     // Conditions:
     // a.) not block or
     // b.) simulation mode
-    if (!bBlock || g_fLogOnly) {
+    if (!bBlock || g_fSimulationOnly) {
         DEBUG_EVENT debugEvent = { 0 };
         std::wstring sCommandLineStr = L"";
 
@@ -722,7 +737,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 {
     g_hInst = hInstance;
 
-    InitializeLoggingSettings();
+    InitializeSettings();
 
     WNDCLASSEX wcex = { sizeof(wcex) };
     wcex.style = CS_HREDRAW | CS_VREDRAW;
