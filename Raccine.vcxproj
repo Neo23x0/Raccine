@@ -122,7 +122,7 @@
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -147,8 +147,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
+    <ClInclude Include="SPLASH.h" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="RaccineLogo.bmp" />
     <Image Include="Raccine.ico" />
   </ItemGroup>
   <ItemGroup>

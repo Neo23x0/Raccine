@@ -21,14 +21,21 @@
 #include <iomanip>
 #include <sstream>
 #include <strsafe.h>
+#include <shellapi.h>
+
+#include "resource.h"
+
+#define BIT_MASK(a, b) (((unsigned) -1 >> (31 - (b))) & ~((1U << (a)) - 1))
 
 #pragma comment(lib,"advapi32.lib")
-
+#pragma comment(lib,"shell32.lib")
+#pragma comment(lib,"user32.lib")
+#pragma comment(lib,"gdi32.lib")
 // Version
-#define VERSION "0.10.3"
+#define VERSION L"0.10.3"
 
 // Log Config and Flags
-BOOL g_fLogToEventLog = FALSE;
+BOOL g_fLogSettings = 0;
 BOOL g_fLogOnly = FALSE;
 #define RACCINE_REG_CONFIG  L"SOFTWARE\\Raccine"
 #define RACCINE_REG_POICY_CONFIG  L"SOFTWARE\\Policies\\Raccine"
@@ -36,10 +43,170 @@ BOOL g_fLogOnly = FALSE;
 #define RACCINE_DEFAULT_EVENTID  1
 #define RACCINE_EVENTID_MALICIOUS_ACTIVITY  2
 
+#define RACCINE_LOG_TO_CONSOLE  0x1
+#define RACCINE_LOG_TO_EVENTLOG 0x2
+
+std::wstring sListLogs(L"");
+
+// UX defines and globals
+#define RACCINE_TOOLTIP L"Raccine Notification"
+#define APPWM_ICONNOTIFY (WM_APP + 1)
+#define APPWM_ALERT (WM_APP + 2)
+
+wchar_t const szWindowClass[] = L"RaccineNotificationIcon";
+
+HWND g_Hwnd = 0;
+HINSTANCE g_hInst = 0;
+HBITMAP g_hBitmap = NULL;
+#define ID_EDITCHILD 100
+
+#define DEFAULT_HEIGHT 300
+#define DEFAULT_WIDTH  500
+
+
+//void RegisterNotificationIcon(LPWSTR szInfo, LPWSTR szInfoTitle)
+//{
+//    HWND hwnd = g_Hwnd;
+//    HICON hIcon = LoadIcon(g_hInst, MAKEINTRESOURCE(IDCICON));
+//
+//    SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+//    SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+//
+//    //Notification
+//    NOTIFYICONDATA nid = {};
+//    nid.cbSize = sizeof(nid);
+//    nid.hWnd = g_Hwnd;
+//    nid.uID = 1;
+//    nid.uFlags = NIF_ICON | NIF_MESSAGE;
+//    nid.uCallbackMessage = APPWM_ICONNOTIFY;
+//    nid.hIcon = hIcon;
+//    size_t cchInfo = 0;
+//    size_t cchInfoTitle = 0;
+//    if (FAILED(StringCchLength(szInfo, 256, &cchInfo)))
+//        return;
+//
+//    if (FAILED(StringCchLength(szInfoTitle, 256, &cchInfoTitle)))
+//        return;
+//
+//    StringCchCopyW(nid.szInfo, cchInfo, szInfo);
+//    StringCchCopyW(nid.szInfoTitle, cchInfoTitle, szInfoTitle);
+//    // This text will be shown as the icon's tooltip.
+//    StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), RACCINE_TOOLTIP);
+//
+//    // Show the notification.
+//    Shell_NotifyIcon(NIM_ADD, &nid);
+//}
+
+LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+
+    HWND static hwndEdit = 0;
+    BITMAP static bitmap = { 0 };
+
+    switch (uMsg)
+    {
+        case WM_CREATE:
+        {
+            //SetWindowLongPtr(hwnd, GWL_STYLE, WS_POPUP);
+            g_hBitmap = (HBITMAP)LoadBitmap(g_hInst, MAKEINTRESOURCE(IDCLOGO));
+
+            if (!g_hBitmap)
+                return 0;
+            GetObject(g_hBitmap, sizeof(bitmap), &bitmap);
+
+            RECT rc = { 0 };
+            GetWindowRect(hwnd, &rc);
+            int xPos = (GetSystemMetrics(SM_CXSCREEN) - rc.right) / 2;
+            int yPos = (GetSystemMetrics(SM_CYSCREEN) - rc.bottom) / 2;
+
+            hwndEdit = CreateWindowEx(
+                0, L"EDIT",   // predefined class 
+                NULL,         // no window title 
+                WS_CHILD | WS_VISIBLE | WS_VSCROLL |
+                ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL,
+                0, 0, 0, 0,   // set size in WM_SIZE message 
+                hwnd,         // parent window 
+                (HMENU)ID_EDITCHILD,   // edit control ID 
+                (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
+                NULL);        // pointer not needed 
+
+            int nHeight = -MulDiv(10, GetDeviceCaps(GetDC(hwnd), LOGPIXELSY), 72);
+
+            HFONT hFont = CreateFont(nHeight, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, ANSI_CHARSET,
+                OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+                DEFAULT_PITCH | FF_DONTCARE, TEXT("Consolas"));
+            SendMessage(hwndEdit, WM_SETFONT, (WPARAM)hFont, TRUE);
+
+            SetWindowPos(hwnd, 0, xPos, yPos, bitmap.bmWidth + DEFAULT_WIDTH, bitmap.bmHeight + DEFAULT_HEIGHT, SWP_NOZORDER);
+
+            break;
+        }
+        case WM_PAINT:
+        {
+            PAINTSTRUCT     ps = { 0 };
+            HDC             hdc = NULL;
+            HDC             hdcMem = NULL;
+            HGDIOBJ         oldBitmap = NULL;
+
+            hdc = BeginPaint(hwnd, &ps);
+
+            hdcMem = CreateCompatibleDC(hdc);
+            oldBitmap = SelectObject(hdcMem, g_hBitmap);
+
+            BitBlt(hdc, 0, 0, bitmap.bmWidth, bitmap.bmHeight, hdcMem, 0, 0, SRCCOPY);
+
+            SelectObject(hdcMem, oldBitmap);
+            DeleteDC(hdcMem);
+
+            EndPaint(hwnd, &ps);
+            break;
+        }
+        case WM_APPCOMMAND:
+        {
+            if (lParam == APPWM_ALERT)
+            {
+                SendMessage(hwndEdit, WM_SETTEXT, 0, (LPARAM)sListLogs.c_str());
+                return 0;
+            }
+        }
+        case WM_SETFOCUS:
+        {
+            SetFocus(hwndEdit);
+            return 0;
+        }
+        case WM_SIZE:
+        {
+            // Make the edit control the size of the window's client area. 
+
+            MoveWindow(hwndEdit,
+                0, bitmap.bmHeight,    // starting x- and y-coordinates 
+                LOWORD(lParam),        // width of client area 
+                HIWORD(lParam),        // height of client area 
+                TRUE);                 // repaint window 
+            return 0;
+        }
+        case APPWM_ICONNOTIFY:
+        {
+            switch (lParam)
+            {
+            case WM_LBUTTONUP:
+                //...
+                break;
+            case WM_RBUTTONUP:
+                //...
+                break;
+            }
+            return 0;
+        }
+    }
+
+    return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
 /// This function will optionally log messages to the eventlog
 void WriteEventLogEntryWithId(LPWSTR  pszMessage, DWORD dwEventId)
 {
-    if (g_fLogToEventLog)
+    if (BIT_MASK(g_fLogSettings, RACCINE_LOG_TO_EVENTLOG))
     {
         HANDLE hEventSource = NULL;
         LPCWSTR lpszStrings[2] = { NULL, NULL };
@@ -154,38 +321,6 @@ DWORD getIntegrityLevel(HANDLE hProcess) {
     return 0;
 }
 
-// Get the image name of the process
-std::wstring getImageName(DWORD pid) {
-    PROCESSENTRY32 pe32 = { 0 };
-    HANDLE hSnapshot;
-    hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-
-    if (hSnapshot == INVALID_HANDLE_VALUE) {
-        goto out;
-    }
-
-    ZeroMemory(&pe32, sizeof(pe32));
-    pe32.dwSize = sizeof(pe32);
-
-    if (!Process32First(hSnapshot, &pe32)) {
-        goto out;
-    }
-
-    do {
-        if (pe32.th32ProcessID == pid) {
-            std::wstring imageName = std::wstring((wchar_t*)pe32.szExeFile);
-            return imageName;
-        }
-    } while (Process32Next(hSnapshot, &pe32));
-
-out:
-    if (hSnapshot != INVALID_HANDLE_VALUE) {
-        CloseHandle(hSnapshot);
-    }
-    return L"(unavailable)";
-}
-
-
 // Check if process is in allowed list
 BOOL isallowlisted(DWORD pid) {
     WCHAR allowlist[3][MAX_PATH] = { L"wininit.exe", L"winlogon.exe", L"explorer.exe" };
@@ -289,10 +424,10 @@ std::wstring logFormat(const std::wstring cmdLine, const std::wstring comment = 
 }
 
 // Format the activity log lines
-std::wstring logFormatAction(int pid, const std::wstring imageName, const std::wstring cmdLine, const std::wstring comment = L"done") {
+std::wstring logFormatAction(int pid, const std::wstring cmdLine, const std::wstring comment = L"done") {
     std::string timeString = getTimeStamp();
     std::wstring timeStringW(timeString.begin(), timeString.end());
-    std::wstring logLine = timeStringW + L" DETECTED_CMD: '" + cmdLine + L"' IMAGE: '" + imageName + L"' PID: " + std::to_wstring(pid) + L" ACTION: " + comment + L"\n";
+    std::wstring logLine = timeStringW + L" DETECTED_CMD: '" + cmdLine + L"' PID: " + std::to_wstring(pid) + L" ACTION: " + comment + L"\n";
     return logLine;
 }
 
@@ -341,10 +476,7 @@ void InitializeLoggingSettings()
             DWORD cbData = sizeof(dwLoggingLevel);
             if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"Logging", NULL, NULL, (LPBYTE)&dwLoggingLevel, &cbData))
             {
-                if (dwLoggingLevel > 0)
-                {
-                    g_fLogToEventLog = TRUE;
-                }
+                g_fLogSettings = dwLoggingLevel;  ///This can be a bitmask
             }
             // Log Only
             DWORD dwLoggingOnly = 0;
@@ -361,13 +493,32 @@ void InitializeLoggingSettings()
     }
 }
 
-int wmain(int argc, WCHAR* argv[]) {
+void RaccineAlert()
+{
+    SendMessage(g_Hwnd, WM_APPCOMMAND, 0, APPWM_ALERT);
+    ShowWindow(g_Hwnd, SW_SHOW);
+}
 
+DWORD WINAPI WorkerThread(LPVOID lpParameter)
+{
     DWORD pids[1024] = { 0 };
     uint8_t c = 0;
     DWORD pid = GetCurrentProcessId();
+    int argc = 0;
+    LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
 
     setlocale(LC_ALL, "");
+
+    if (BIT_MASK(g_fLogSettings, RACCINE_LOG_TO_CONSOLE))
+    {
+        // create the console
+        if (AllocConsole())
+        {
+            FILE* pCout;
+            freopen_s(&pCout, "CONOUT$", "w", stdout);
+            SetConsoleTitle(L"Racine Logging Console");
+        }
+    }
 
     // Block marker
     bool bBlock = false;
@@ -398,7 +549,6 @@ int wmain(int argc, WCHAR* argv[]) {
 
     // Log
     std::wstring sCommandLine = L"";
-    std::wstring sListLogs(L"");
     WCHAR wMessage[MAX_MESSAGE] = { 0 };
 
     // Append all original command line parameters to a string for later log messages
@@ -519,6 +669,7 @@ int wmain(int argc, WCHAR* argv[]) {
             StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n", lpMessage);
             // Log to the text log file
             sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity"));
+
         }
         else {
             // Eventlog
@@ -526,6 +677,9 @@ int wmain(int argc, WCHAR* argv[]) {
             // Log to the text log file
             sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity (simulation mode)"));
         }
+        RaccineAlert();
+        // add the notification icon
+        //RegisterNotificationIcon(wMessage, (LPWSTR)L"Raccine Alert");
         WriteEventLogEntryWithId((LPWSTR)wMessage, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
     }
 
@@ -534,49 +688,45 @@ int wmain(int argc, WCHAR* argv[]) {
         // Collect PIDs to kill
         while (c < 1024) {
             pid = getParentPid(pid);
-            std::wstring imageName = L"(unavailable)";
-            imageName = getImageName(pid);
             if (pid == 0) {
                 break;
-            }     
+            }
             if (!isallowlisted(pid)) {
-                wprintf(L"\nCollecting IMAGE %s with PID %d for a kill\n", imageName.c_str(), pid);
+                wprintf(L"\nCollecting PID %d for a kill\n", pid);
                 pids[c] = pid;
                 c++;
             }
             else {
-                wprintf(L"\nProcess IMAGE %s with PID %d is on allowlist\n", imageName.c_str(), pid);
-                sListLogs.append(logFormatAction(pid, imageName, sCommandLine, L"Whitelisted"));
+                wprintf(L"\nProcess with PID %d is on allowlist\n", pid);
+                sListLogs.append(logFormatAction(pid, sCommandLine, L"Whitelisted"));
             }
         }
 
         // Loop over collected PIDs and try to kill the processes
         for (uint8_t i = c; i > 0; --i) {
-            std::wstring imageName = L"(unavailable)";
-            imageName = getImageName(pids[i - 1]);
             // If no simulation flag is set
             if (!g_fLogOnly) {
                 // Kill
-                wprintf(L"Kill process IMAGE %s with PID %d\n", imageName.c_str(), pids[i - 1]);
+                wprintf(L"Kill PID %d\n", pids[i - 1]);
                 killProcess(pids[i - 1], 1);
-                sListLogs.append(logFormatAction(pids[i - 1], imageName, sCommandLine, L"Terminated"));
+                sListLogs.append(logFormatAction(pids[i - 1], sCommandLine, L"Terminated"));
             }
             else {
                 // Simulated kill
-                wprintf(L"Simulated Kill IMAGE %s with PID %d\n", imageName.c_str(), pids[i - 1]);
-                sListLogs.append(logFormatAction(pids[i - 1], imageName, sCommandLine, L"Terminated (Simulated)"));
+                wprintf(L"Simulated Kill PID %d\n", pids[i - 1]);
+                sListLogs.append(logFormatAction(pids[i - 1], sCommandLine, L"Terminated (Simulated)"));
             }
         }
         // Finish message
-        printf("\nRaccine v%s finished\n", VERSION);
+        wprintf(L"\nRaccine v%s finished\n", VERSION);
         Sleep(5000);
     }
-    
+
     // Otherwise launch the process with its original parameters
     // Conditions:
     // a.) not block or
     // b.) simulation mode
-    if ( !bBlock || g_fLogOnly ) {
+    if (!bBlock || g_fLogOnly) {
         DEBUG_EVENT debugEvent = { 0 };
         std::wstring sCommandLineStr = L"";
 
@@ -597,5 +747,67 @@ int wmain(int argc, WCHAR* argv[]) {
     // Log events
     logSend(sListLogs);
 
+    if (argv)
+    {
+        LocalFree(argv);
+        argv = NULL;
+    }
+
+    return 0;
+}
+
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nShowCmd)
+{
+    g_hInst = hInstance;
+
+    WNDCLASSEX wcex = { sizeof(wcex) };
+    wcex.style = CS_HREDRAW | CS_VREDRAW;
+    wcex.lpfnWndProc = WndProc;
+    wcex.hInstance = hInstance;
+    wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDCICON));
+    wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wcex.lpszMenuName = NULL;
+    wcex.lpszClassName = szWindowClass;
+    RegisterClassEx(&wcex);
+
+    
+    HWND hwnd = CreateWindow(szWindowClass, RACCINE_TOOLTIP, WS_VISIBLE | WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT, 0, DEFAULT_WIDTH, DEFAULT_HEIGHT, NULL, NULL, hInstance, NULL);
+
+    g_Hwnd = hwnd;
+    SendMessage(g_Hwnd, WM_APPCOMMAND, 0, APPWM_ALERT);
+
+    DWORD dwThreadId = 0;
+    HANDLE hWorkerThread = CreateThread(
+        NULL,
+        0,
+        WorkerThread,
+        NULL,
+        0,
+        &dwThreadId);
+
+    if (hWorkerThread == NULL)
+        goto cleanup;
+
+    if (hwnd)
+    {
+        ShowWindow(hwnd, SW_HIDE);
+
+        // Main message loop:
+        MSG msg;
+        while (GetMessage(&msg, NULL, 0, 0))
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+    }
+
+    WaitForSingleObject(hWorkerThread, INFINITE);
+
+cleanup:
+
+    if (hWorkerThread)
+        CloseHandle(hWorkerThread);
     return 0;
 }
