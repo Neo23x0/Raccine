@@ -25,12 +25,11 @@
 
 #include "resource.h"
 
-#define BIT_MASK(a, b) (((unsigned) -1 >> (31 - (b))) & ~((1U << (a)) - 1))
-
 #pragma comment(lib,"advapi32.lib")
 #pragma comment(lib,"shell32.lib")
 #pragma comment(lib,"user32.lib")
 #pragma comment(lib,"gdi32.lib")
+
 // Version
 #define VERSION L"0.10.3"
 
@@ -62,40 +61,6 @@ HBITMAP g_hBitmap = NULL;
 
 #define DEFAULT_HEIGHT 200
 #define DEFAULT_WIDTH  400
-
-
-//void RegisterNotificationIcon(LPWSTR szInfo, LPWSTR szInfoTitle)
-//{
-//    HWND hwnd = g_Hwnd;
-//    HICON hIcon = LoadIcon(g_hInst, MAKEINTRESOURCE(IDCICON));
-//
-//    SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-//    SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
-//
-//    //Notification
-//    NOTIFYICONDATA nid = {};
-//    nid.cbSize = sizeof(nid);
-//    nid.hWnd = g_Hwnd;
-//    nid.uID = 1;
-//    nid.uFlags = NIF_ICON | NIF_MESSAGE;
-//    nid.uCallbackMessage = APPWM_ICONNOTIFY;
-//    nid.hIcon = hIcon;
-//    size_t cchInfo = 0;
-//    size_t cchInfoTitle = 0;
-//    if (FAILED(StringCchLength(szInfo, 256, &cchInfo)))
-//        return;
-//
-//    if (FAILED(StringCchLength(szInfoTitle, 256, &cchInfoTitle)))
-//        return;
-//
-//    StringCchCopyW(nid.szInfo, cchInfo, szInfo);
-//    StringCchCopyW(nid.szInfoTitle, cchInfoTitle, szInfoTitle);
-//    // This text will be shown as the icon's tooltip.
-//    StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), RACCINE_TOOLTIP);
-//
-//    // Show the notification.
-//    Shell_NotifyIcon(NIM_ADD, &nid);
-//}
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -206,7 +171,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 /// This function will optionally log messages to the eventlog
 void WriteEventLogEntryWithId(LPWSTR  pszMessage, DWORD dwEventId)
 {
-    if (BIT_MASK(g_fLogSettings, RACCINE_LOG_TO_EVENTLOG))
+    if (g_fLogSettings & RACCINE_LOG_TO_EVENTLOG)
     {
         HANDLE hEventSource = NULL;
         LPCWSTR lpszStrings[2] = { NULL, NULL };
@@ -509,8 +474,7 @@ DWORD WINAPI WorkerThread(LPVOID lpParameter)
 
     setlocale(LC_ALL, "");
 
-    /*
-    if (BIT_MASK(g_fLogSettings, RACCINE_LOG_TO_CONSOLE))
+    if (g_fLogSettings & RACCINE_LOG_TO_CONSOLE)
     {
         // create the console
         if (AllocConsole())
@@ -520,7 +484,6 @@ DWORD WINAPI WorkerThread(LPVOID lpParameter)
             SetConsoleTitle(L"Racine Logging Console");
         }
     }
-    */
 
     // Block marker
     bool bBlock = false;
@@ -643,8 +606,6 @@ DWORD WINAPI WorkerThread(LPVOID lpParameter)
         }
     }
 
-    InitializeLoggingSettings();
-
     // Check all combinations (our blocklist)
     if ((bVssadmin && bDelete && bShadows) ||             // vssadmin.exe
         (bVssadmin && bDelete && bShadowStorage) ||      // vssadmin.exe
@@ -758,9 +719,11 @@ DWORD WINAPI WorkerThread(LPVOID lpParameter)
     return 0;
 }
 
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nShowCmd)
+int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nShowCmd)
 {
     g_hInst = hInstance;
+
+    InitializeLoggingSettings();
 
     WNDCLASSEX wcex = { sizeof(wcex) };
     wcex.style = CS_HREDRAW | CS_VREDRAW;
@@ -773,7 +736,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
     wcex.lpszClassName = szWindowClass;
     RegisterClassEx(&wcex);
 
-    
     HWND hwnd = CreateWindow(szWindowClass, RACCINE_TOOLTIP, WS_VISIBLE | WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, 0, DEFAULT_WIDTH, DEFAULT_HEIGHT, NULL, NULL, hInstance, NULL);
 
