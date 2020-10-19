@@ -62,14 +62,16 @@ ECHO.
 ECHO   1 - Install Raccine for all possible methods
 ECHO   2 - Install Raccine for all possible methods (simulation mode, logging only)
 ECHO   3 - Install Raccine for Vssadmin and BcdEdit only
+ECHo   4 - Run Windows Hardening Script (select 4 for more information)
 ECHO   U - Uninstall Raccine
 ECHO   E - EXIT
 ECHO.
 
-SET /P M=" Select 1, 2, 3, or E then press ENTER: "
+SET /P M=" Select an option and then press ENTER: "
 IF %M%==1 GOTO FULL
 IF %M%==2 GOTO FULL_SIMU
 IF %M%==3 GOTO SOFT
+IF %M%==4 GOTO HARDENING
 IF %M%==U GOTO UNINSTALL
 IF %M%==u GOTO UNINSTALL
 IF %M%==E GOTO EOF
@@ -162,6 +164,21 @@ IF '%errorlevel%' NEQ '0' (
 )
 TIMEOUT /t 7
 GOTO MENU
+
+
+:: Run Hardening Script
+:HARDENING 
+ECHO.
+ECHO Running the Hardening script ...
+ECHO.
+CALL windows-hardening.bat
+IF '%errorlevel%' NEQ '0' (
+    ECHO Something went wrong. Sorry.
+    GOTO MENU
+)
+TIMEOUT /t 30
+GOTO MENU
+
 
 :: Uninstall
 :UNINSTALL
