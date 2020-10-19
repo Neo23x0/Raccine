@@ -46,6 +46,19 @@ IF %M%==e GOTO EOF
 :: Show extensions of known file types (makes double extensions like .doc.exe visible to the user)
 REG.EXE ADD HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /v HideFileExt /t REG_DWORD /d 0 /f
 
+:: Disable OLE
+:: https://twitter.com/keydet89/status/1318150271919288321
+reg add "HKCU\Software\Policies\Microsoft\Office\12.0\Word\Security" /v PackagerPrompt /t REG_DWORD /d 2 /f
+reg add "HKCU\Software\Policies\Microsoft\Office\14.0\Word\Security" /v PackagerPrompt /t REG_DWORD /d 2 /f
+reg add "HKCU\Software\Policies\Microsoft\Office\15.0\Word\Security" /v PackagerPrompt /t REG_DWORD /d 2 /f
+reg add "HKCU\Software\Policies\Microsoft\Office\15.0\Excel\Security" /v PackagerPrompt /t REG_DWORD /d 2 /f
+reg add "HKCU\Software\Policies\Microsoft\Office\15.0\PowerPoint\Security" /v PackagerPrompt /t REG_DWORD /d 2 /f
+reg add "HKCU\Software\Policies\Microsoft\Office\15.0\Publisher\Security" /v PackagerPrompt /t REG_DWORD /d 2 /f
+reg add "HKCU\Software\Policies\Microsoft\Office\16.0\Word\Security" /v PackagerPrompt /t REG_DWORD /d 2 /f
+reg add "HKCU\Software\Policies\Microsoft\Office\16.0\Excel\Security" /v PackagerPrompt /t REG_DWORD /d 2 /f
+reg add "HKCU\Software\Policies\Microsoft\Office\16.0\PowerPoint\Security" /v PackagerPrompt /t REG_DWORD /d 2 /f
+reg add "HKCU\Software\Policies\Microsoft\Office\16.0\Publisher\Security" /v PackagerPrompt /t REG_DWORD /d 2 /f
+
 ::
 ::#######################################################################
 ::
