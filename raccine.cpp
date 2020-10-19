@@ -175,7 +175,7 @@ void WriteEventLogEntryWithId(LPWSTR pszMessage, DWORD dwEventId)
     // always print the message to the console
     wprintf(pszMessage);
   
-    if (!g_fLogSettings) {
+    if (!g_fLogging) {
         return;
     }
 
