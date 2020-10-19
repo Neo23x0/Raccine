@@ -43,8 +43,8 @@ BOOL g_fLogging = TRUE;
 #define RACCINE_DEFAULT_EVENTID  1
 #define RACCINE_EVENTID_MALICIOUS_ACTIVITY  2
 
-#define RACCINE_SHOW_CONSOLE  0x1
-#define RACCINE_SHOW_ALERT 0x2
+#define RACCINE_SHOW_ALERT 0x1
+#define RACCINE_SHOW_CONSOLE 0x2
 
 std::wstring sListLogs(L"");
 
@@ -460,7 +460,7 @@ void InitializeSettings()
             DWORD cbDataSIM = sizeof(dwSimulationOnly);
             if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"SimulationOnly", NULL, NULL, (LPBYTE)&dwSimulationOnly, &cbDataSIM))
             {
-                if (dwLoggingOnly > 0)
+                if (dwSimulationOnly > 0)
                 {
                     g_fSimulationOnly = TRUE;
                 }
