@@ -1,0 +1,7 @@
+Windows Registry Editor Version 5.00
+
+; RYUK Ransomware
+; Source: https://thedfirreport.com/2020/10/18/ryuk-in-5-hours/
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\xxx.exe]
+"Debugger"="notepad.exe"

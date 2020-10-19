@@ -123,6 +123,7 @@ REGEDIT.EXE /S raccine-reg-patch-wbadmin.reg
 REGEDIT.EXE /S raccine-reg-patch-bcdedit.reg
 REGEDIT.EXE /S raccine-reg-patch-powershell.reg
 REGEDIT.EXE /S raccine-reg-patch-diskshadow.reg
+REGEDIT.EXE /S raccine-reg-patch-ransomware.reg
 ECHO Registering Eventlog Events
 eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine event message" 2> nul
 eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message" 2> nul
