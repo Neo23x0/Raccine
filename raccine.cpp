@@ -155,12 +155,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             switch (lParam)
             {
-            case WM_LBUTTONUP:
-                //...
-                break;
-            case WM_RBUTTONUP:
-                //...
-                break;
+                case WM_LBUTTONUP:
+                    //...
+                    break;
+                case WM_RBUTTONUP:
+                    //...
+                    break;
             }
             return 0;
         }
@@ -174,7 +174,7 @@ void WriteEventLogEntryWithId(LPWSTR pszMessage, DWORD dwEventId)
 {
     // always print the message to the console
     wprintf(pszMessage);
-  
+
     if (!g_fLogging) {
         return;
     }
@@ -360,7 +360,7 @@ BOOL killProcess(DWORD dwProcessId, UINT uExitCode) {
 
 // Get timestamp
 std::string getTimeStamp() {
-    struct tm buf{};
+    struct tm buf {};
     auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now() - std::chrono::hours(24));
     localtime_s(&buf, &time);
     std::stringstream ss;
@@ -390,7 +390,7 @@ void logSend(const std::wstring& logStr) {
     if (!g_fLogging) {
         return;
     }
-    
+
     static FILE* logFile = nullptr;
     if (logFile == nullptr)
     {
