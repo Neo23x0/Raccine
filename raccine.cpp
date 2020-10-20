@@ -541,6 +541,13 @@ std::wstring logFormat(const std::wstring cmdLine, const std::wstring comment = 
     return logLine;
 }
 
+std::wstring logFormatLine(const std::wstring line = L"") {
+    std::string timeString = getTimeStamp();
+    std::wstring timeStringW(timeString.begin(), timeString.end());
+    std::wstring logLine = timeStringW + L" " + line + L"\n";
+    return logLine;
+}
+
 // Format the activity log lines
 std::wstring logFormatAction(int pid, const std::wstring imageName, const std::wstring cmdLine, const std::wstring comment = L"done") {
     std::string timeString = getTimeStamp();
@@ -554,12 +561,12 @@ void logSend(const std::wstring logStr) {
     static FILE* logFile = 0;
     if (logFile == 0) 
     {
-        errno_t err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine_log.txt", L"at");
+        errno_t err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine\\Raccine_log.txt", L"at");
         if (err != 0) 
-            err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine_log.txt", L"wt");
+            err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine\\Raccine_log.txt", L"wt");
             
         if (err != 0) {
-            wprintf(L"\nCan not open C:\\ProgramData\\Raccine_log.txt for writing.\n");
+            wprintf(L"\nCan not open C:\\ProgramData\\Raccine\\Raccine_log.txt for writing.\n");
             return;   // bail out if we can't log
         }
     }
