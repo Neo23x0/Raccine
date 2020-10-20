@@ -83,6 +83,19 @@ struct EventSourceHandleTraits
     }
 };
 
+// Handle wrapper for handles from CreateThread
+struct ThreadHandleTraits
+{
+    typedef HANDLE HandleType;
+    inline static const HANDLE InvalidValue = NULL;
+
+    static void Close(HANDLE value)
+    {
+        CloseHandle(value);
+    }
+};
+
 using SnapshotHandleWrapper = HandleWrapper< SnapshotHandleTraits>;
 using ProcessHandleWrapper = HandleWrapper< ProcessHandleTraits>;
 using EventSourceHandleWrapper = HandleWrapper< EventSourceHandleTraits>;
+using ThreadHandleWrapper = HandleWrapper< ThreadHandleTraits>;

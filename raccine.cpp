@@ -1001,7 +1001,7 @@ DWORD WINAPI WorkerThread(LPVOID lpParameter)
         STARTUPINFO info = { sizeof(info) };
         PROCESS_INFORMATION processInfo = { 0 };
 
-        if (CreateProcess(NULL, (LPWSTR)sCommandLineStr.c_str(), NULL, NULL, TRUE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &info, &processInfo))
+        if (CreateProcessW(NULL, (LPWSTR)sCommandLineStr.c_str(), NULL, NULL, TRUE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &info, &processInfo))
         {
             DebugActiveProcessStop(processInfo.dwProcessId);
             WaitForSingleObject(processInfo.hProcess, INFINITE);
@@ -1035,7 +1035,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     wcex.hInstance = hInstance;
     wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDCICON));
     wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wcex.hbrBackground = reinterpret_cast<HBRUSH>((COLOR_WINDOW + 1));
     wcex.lpszMenuName = NULL;
     wcex.lpszClassName = szWindowClass;
     RegisterClassEx(&wcex);
@@ -1044,10 +1044,10 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         CW_USEDEFAULT, 0, DEFAULT_WIDTH, DEFAULT_HEIGHT, NULL, NULL, hInstance, NULL);
 
     g_Hwnd = hwnd;
-    SendMessage(g_Hwnd, WM_APPCOMMAND, 0, APPWM_ALERT);
+    SendMessageW(g_Hwnd, WM_APPCOMMAND, 0, APPWM_ALERT);
 
     DWORD dwThreadId = 0;
-    const HANDLE hWorkerThread = CreateThread(
+    const ThreadHandleWrapper hWorkerThread = CreateThread(
         NULL,
         0,
         WorkerThread,
@@ -1055,15 +1055,16 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         0,
         &dwThreadId);
 
-    if (hWorkerThread == NULL)
-        goto cleanup;
+    if (!hWorkerThread) {
+        return 0;
+    }
 
     if (hwnd)
     {
         ShowWindow(hwnd, SW_HIDE);
 
         // Main message loop:
-        MSG msg;
+        MSG msg{};
         while (GetMessage(&msg, NULL, 0, 0))
         {
             TranslateMessage(&msg);
@@ -1071,9 +1072,5 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         }
     }
 
-cleanup:
-
-    if (hWorkerThread)
-        CloseHandle(hWorkerThread);
     return 0;
 }
