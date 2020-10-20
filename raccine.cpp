@@ -494,7 +494,7 @@ int wmain(int argc, WCHAR* argv[]) {
     InitializeLoggingSettings();
 
     // Check all combinations (our blocklist)
-    if ((bVssadmin && bDelete && bShadows) ||             // vssadmin.exe
+    if ((bVssadmin && bDelete && bShadows) ||            // vssadmin.exe
         (bVssadmin && bDelete && bShadowStorage) ||      // vssadmin.exe
         (bVssadmin && bResize && bShadowStorage) ||      // vssadmin.exe
         (bWmic && bDelete && bShadowCopy) ||             // wmic.exe
