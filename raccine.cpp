@@ -808,13 +808,16 @@ int wmain(int argc, WCHAR* argv[]) {
             StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n", lpMessage);
             // Log to the text log file
             sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity"));
+            WriteEventLogEntryWithId((LPWSTR)wMessage, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
         }
         else {
             // Eventlog
             StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n(simulation mode)", lpMessage);
             // Log to the text log file
             sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity (simulation mode)"));
+            WriteEventLogEntryWithId((LPWSTR)wMessage, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
         }
+        // YARA Matches Detected
         if (fYaraRuleMatched)
         {
             if (szYaraOutput != NULL)
@@ -823,13 +826,11 @@ int wmain(int argc, WCHAR* argv[]) {
                 StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"\r\nYara matches:\r\n%s", szYaraOutput);
                 WriteEventLogEntryWithId((LPWSTR)wMessage, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
                 sListLogs.append(logFormatLine(szYaraOutput));
-                sListLogs.append(L"\r\n");
-
                 LocalFree(szYaraOutput);
                 szYaraOutput = NULL;
             }
         }
-        WriteEventLogEntryWithId((LPWSTR)wMessage, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
+
     }
 
     // If block and not simulation mode
