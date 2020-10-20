@@ -392,6 +392,7 @@ int wmain(int argc, WCHAR* argv[]) {
     bool bIgnoreallFailures = false;
     bool bwin32ShadowCopy = false;
     bool bEncodedCommand = false;
+    bool bVersion = false;
 
     // Encoded Command List (Base64)
     WCHAR encodedCommands[11][9] = { L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI", L"cwBhA", L"aWV4I", L"aQBlAHgA", 
@@ -481,6 +482,9 @@ int wmain(int argc, WCHAR* argv[]) {
         else if (convertedArg.find(L"win32_shadowcopy") != std::string::npos) {
             bwin32ShadowCopy = true;
         }
+        else if (_wcsicmp(L"-version", argv[iCount]) == 0 || _wcsicmp(L"/version", argv[iCount]) == 0) {
+            bVersion = true;
+        }
         // Special comparison of current argument with previous argument
         // allows to check for e.g. -encodedCommand JABbaTheHuttandotherBase64characters
         else if (convertedArgPrev.find(L"-e") != std::string::npos || convertedArgPrev.find(L"/e") != std::string::npos) {
@@ -502,6 +506,7 @@ int wmain(int argc, WCHAR* argv[]) {
         (bWbadmin && bDelete && bCatalog && bQuiet) || 	 // wbadmin.exe 
         (bcdEdit && bIgnoreallFailures) ||               // bcdedit.exe
         (bcdEdit && bRecoveryEnabled) ||                 // bcdedit.exe
+        (bPowerShell && bVersion) ||                     // powershell.exe
         (bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
         (bPowerShell && bEncodedCommand) ||              // powershell.exe
         (bDiskShadow && bDelete && bShadows)) {          // diskshadow.exe
