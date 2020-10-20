@@ -672,12 +672,12 @@ void logSend(const std::wstring logStr) {
         static FILE* logFile = 0;
         if (logFile == 0)
         {
-            errno_t err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine_log.txt", L"at");
+            errno_t err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine\\Raccine_log.txt", L"at");
             if (err != 0)
-                err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine_log.txt", L"wt");
+                err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine\\Raccine_log.txt", L"wt");
 
             if (err != 0) {
-                wprintf(L"\nCan not open C:\\ProgramData\\Raccine_log.txt for writing.\n");
+                wprintf(L"\nCan not open C:\\ProgramData\\Raccine\\Raccine_log.txt for writing.\n");
                 return;   // bail out if we can't log
             }
         }

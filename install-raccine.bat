@@ -113,6 +113,8 @@ GOTO MENU
 :: Full (Simulation Mode)
 :FULL_SIMU
 ECHO.
+ECHO Creating data directory %ProgramData%\Raccine ...
+MKDIR "%ProgramData%\Raccine"
 ECHO Installing Registry patches ...
 REGEDIT.EXE /S raccine-reg-patch-vssadmin.reg
 IF '%errorlevel%' NEQ '0' (
@@ -130,6 +132,7 @@ eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine even
 REG.EXE ADD HKLM\Software\Raccine /v GUI /t REG_DWORD /d 1 /F
 REG.EXE ADD HKLM\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
 REG.EXE ADD HKLM\Software\Raccine /v SimulationOnly /t REG_DWORD /d 2 /F
+REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /v %ProgramData%\Raccine /F
 ECHO Copying Raccine%ARCH%.exe to C:\Windows\Raccine.exe ...
 COPY Raccine%ARCH%.exe C:\Windows\Raccine.exe
 IF '%errorlevel%' NEQ '0' (
@@ -145,6 +148,8 @@ GOTO MENU
 :: Soft
 :SOFT 
 ECHO.
+ECHO Creating data directory %ProgramData%\Raccine ...
+MKDIR "%ProgramData%\Raccine"
 ECHO Installing Registry patches ...
 REGEDIT.EXE /S raccine-reg-patch-vssadmin.reg
 IF '%errorlevel%' NEQ '0' (
@@ -155,7 +160,10 @@ REGEDIT.EXE /S raccine-reg-patch-bcdedit.reg
 ECHO Registering Eventlog Events
 eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine event message" 2> nul
 eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message" 2> nul
+REG.EXE ADD HKLM\Software\Raccine /v GUI /t REG_DWORD /d 1 /F
 REG.EXE ADD HKLM\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
+REG.EXE ADD HKLM\Software\Raccine /v SimulationOnly /t REG_DWORD /d 0 /F
+REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /v %ProgramData%\Raccine /F
 ECHO Copying Raccine%ARCH%.exe to C:\Windows\Raccine.exe ...
 COPY Raccine%ARCH%.exe C:\Windows\Raccine.exe
 IF '%errorlevel%' NEQ '0' (
@@ -185,6 +193,8 @@ GOTO MENU
 :: Uninstall
 :UNINSTALL
 ECHO.
+ECHO Removing Raccine folder ...
+@RD /S /Q "%ProgramData%\Raccine"
 ECHO Uninstalling Registry patches ...
 REGEDIT.EXE /S raccine-reg-patch-uninstall.reg
 ECHO Removing Raccine.exe from the Windows folder ...
