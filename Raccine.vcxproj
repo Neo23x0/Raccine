@@ -160,6 +160,7 @@
     <ClCompile Include="Raccine.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="HandleWrapper.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SPLASH.h" />
   </ItemGroup>
