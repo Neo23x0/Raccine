@@ -1,7 +1,10 @@
 :: Source: https://gist.github.com/mackwage/08604751462126599d7e52f233490efe
 :: Modified to be less intrusive by Florian Roth in October 2020
 :: I've disabled some of the original actions with REM statements
-
+@ECHO OFF
+SET __COMPAT_LAYER=RunAsInvoker
+SETLOCAL EnableDelayedExpansion
+CLS 
 :MENU
 CLS
 ECHO.
