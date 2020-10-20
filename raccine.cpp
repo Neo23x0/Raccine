@@ -30,11 +30,10 @@
 #define VERSION "0.10.3"
 
 // Log Config and Flags
-BOOL g_fLogToEventLog = FALSE;
 BOOL g_fLogOnly = FALSE;
 #define RACCINE_REG_CONFIG  L"SOFTWARE\\Raccine"
 #define RACCINE_REG_POICY_CONFIG  L"SOFTWARE\\Policies\\Raccine"
-#define MAX_MESSAGE 1000
+constexpr UINT MAX_MESSAGE = 1000;
 #define RACCINE_DEFAULT_EVENTID  1
 #define RACCINE_EVENTID_MALICIOUS_ACTIVITY  2
 
@@ -47,23 +46,21 @@ LPWSTR* g_aszRuleFiles = { 0 };
 int g_cRuleCount = 0;
 #define YARA_INSTANCE  L"runyara.bat"
 #define YARA_RESULTS_SUFFIX L".out"
-#define TIMEOUT  1000*5
+constexpr UINT TIMEOUT = 5000;
 
-#define MAX_YARA_RULE_FILES 200
+constexpr UINT MAX_YARA_RULE_FILES = 200;
 #define RACCINE_REG_CONFIG  L"SOFTWARE\\Raccine"
 #define RACCINE_REG_POICY_CONFIG  L"SOFTWARE\\Policies\\Raccine"
 #define RACCINE_YARA_RULES_PATH L"RulesDir"
-#define MAX_MESSAGE 1000
 #define RACCINE_DEFAULT_EVENTID  1
 #define RACCINE_EVENTID_MALICIOUS_ACTIVITY  2
 
 
-//
-// By default it looks in %PROGRAMDATA%\Raccine, unless overridden by RulesDir in the registry
-//
-
 /// <summary>
 /// Initialize the set of Yara rules. Look in the configured directory (which can be overridden in the registry).
+///
+/// By default it looks in %PROGRAMDATA%\Raccine, unless overridden by RulesDir in the registry
+///
 /// </summary>
 /// <returns></returns>
 BOOL InitializeYaraRules()
@@ -90,15 +87,19 @@ BOOL InitializeYaraRules()
     {
         do
         {
+            if (g_cRuleCount >= MAX_YARA_RULE_FILES)
+            {
+                wprintf(L"Yara rule count has exceeded max of %d rules\n", MAX_YARA_RULE_FILES);
+                break;
+            }
+
             DWORD nSize = MAX_PATH;
             LPWSTR szRulePath = (LPWSTR)LocalAlloc(LPTR, (nSize + 1) * sizeof WCHAR );
             if (!szRulePath)
                 goto cleanup;
 
-            //wprintf(L"The file found is %s\n", FindFileData.cFileName);
             StringCchPrintf(szRulePath, nSize, L"%s\\%s", g_wYaraRulesDir, FindFileData.cFileName);
             g_aszRuleFiles[g_cRuleCount++] = szRulePath;
-            //wprintf(L"Rule count %d\n", g_cRuleCount);
             
         } while (FindNextFile(hFind, &FindFileData));
         fRetVal = TRUE;
@@ -116,10 +117,10 @@ cleanup:
 /// <param name="szTestFile">The temp file containing the command line to test</param>
 /// <param name="ppszYaraOutput">Output parameter.  A string containing the Yara match text. If not NULL, call LocalFree to release the memory</param>
 /// <param name="lpCommandLine">The input command line</param>
-/// <returns></returns>
-
-BOOL TestYaraRulesOnFile(LPWSTR szTestFile, _Outptr_opt_ LPWSTR* ppszYaraOutput, LPWSTR lpCommandLine)
+/// <returns>TRUE if at least one Yara rule matched</returns>
+BOOL TestYaraRulesOnFile(LPWSTR szTestFile, LPWSTR* ppszYaraOutput, LPWSTR lpCommandLine)
 {
+
     BOOL fRetVal = FALSE;
     WCHAR wYaraCommandLine[1000] = { 0 };
     WCHAR wYaraOutputFile[MAX_PATH] = { 0 };
@@ -128,11 +129,9 @@ BOOL TestYaraRulesOnFile(LPWSTR szTestFile, _Outptr_opt_ LPWSTR* ppszYaraOutput,
     LPWSTR szFinalString = NULL;
     DWORD cchFinalStringMaxSize = 2000;
 
-    //wprintf(L"Rule Count: %d\n", g_cRuleCount);
     for (int i = 0; i < g_cRuleCount; i++)
     {
         LPWSTR szYaraRule = g_aszRuleFiles[i];
-        //wprintf(L"Running: %s\\%s %s %s\n", g_wRaccineDirectory, YARA_INSTANCE, szYaraRule, szTestFile);
         StringCchPrintf(wYaraCommandLine, ARRAYSIZE(wYaraCommandLine), L"%s\\%s %s %s", g_wRaccineDirectory, YARA_INSTANCE, szYaraRule, szTestFile);
 
         if (!CreateProcess(
@@ -241,9 +240,9 @@ BOOL EvaluateYaraRules(LPWSTR lpCommandLine, _Outptr_opt_ LPWSTR* ppszYaraOutput
 {
     BOOL fRetVal = FALSE;
     WCHAR wTestFilename[MAX_PATH] = { 0 };
-    size_t len = wcslen(lpCommandLine) + 1;
+    int len = static_cast<int>(wcslen(lpCommandLine));
     HANDLE hTempFile = INVALID_HANDLE_VALUE;
-    LPSTR lpAnsiCmdLine = (LPSTR)LocalAlloc(LPTR, len);
+    LPSTR lpAnsiCmdLine = (LPSTR)LocalAlloc(LPTR, len + 1);
     if (!lpAnsiCmdLine)
     {
         return FALSE;
@@ -271,7 +270,7 @@ BOOL EvaluateYaraRules(LPWSTR lpCommandLine, _Outptr_opt_ LPWSTR* ppszYaraOutput
             CP_ACP,
             0,
             lpCommandLine,
-            wcslen(lpCommandLine),
+            len,
             lpAnsiCmdLine,
             len + 1,
             NULL,
@@ -297,32 +296,30 @@ BOOL EvaluateYaraRules(LPWSTR lpCommandLine, _Outptr_opt_ LPWSTR* ppszYaraOutput
 /// This function will optionally log messages to the eventlog
 void WriteEventLogEntryWithId(LPWSTR  pszMessage, DWORD dwEventId)
 {
-    if (g_fLogToEventLog)
+    HANDLE hEventSource = NULL;
+    LPCWSTR lpszStrings[2] = { NULL, NULL };
+
+    hEventSource = RegisterEventSource(NULL, L"Raccine");
+    if (hEventSource)
     {
-        HANDLE hEventSource = NULL;
-        LPCWSTR lpszStrings[2] = { NULL, NULL };
-
-        hEventSource = RegisterEventSource(NULL, L"Raccine");
-        if (hEventSource)
-        {
-            lpszStrings[0] = pszMessage;
-            lpszStrings[1] = NULL;
+        lpszStrings[0] = pszMessage;
+        lpszStrings[1] = NULL;
 
 
-            ReportEvent(hEventSource,  // Event log handle
-                EVENTLOG_INFORMATION_TYPE,                 // Event type
-                0,                     // Event category
-                dwEventId,                     // Event identifier
-                NULL,                  // No security identifier
-                1,  // Size of lpszStrings array
-                0,                     // No binary data
-                lpszStrings,           // Array of strings
-                NULL                   // No binary data
-            );
+        ReportEvent(hEventSource,  // Event log handle
+            EVENTLOG_INFORMATION_TYPE,                 // Event type
+            0,                     // Event category
+            dwEventId,                     // Event identifier
+            NULL,                  // No security identifier
+            1,  // Size of lpszStrings array
+            0,                     // No binary data
+            lpszStrings,           // Array of strings
+            NULL                   // No binary data
+        );
 
-            DeregisterEventSource(hEventSource);
-        }
+        DeregisterEventSource(hEventSource);
     }
+    
     // always print the message to the console
     wprintf(pszMessage);
 }
@@ -594,6 +591,8 @@ void InitializeLoggingSettings()
     // Query for logging level. A value of 1 or more indicates to log key events to the event log
     // Query for logging only mode. A value of 1 or more indicates to suppress process kills
 
+    ExpandEnvironmentStrings(RACCINE_DIRECTORY, g_wRaccineDirectory, ARRAYSIZE(g_wRaccineDirectory) - 1);
+
     StringCchCopy(g_wYaraRulesDir, ARRAYSIZE(g_wYaraRulesDir), g_wRaccineDirectory);
 
     const wchar_t* LoggingKeys[] = { RACCINE_REG_CONFIG , RACCINE_REG_POICY_CONFIG };
@@ -603,16 +602,6 @@ void InitializeLoggingSettings()
     {
         if (ERROR_SUCCESS == RegOpenKeyEx(HKEY_LOCAL_MACHINE, LoggingKeys[i], 0, KEY_READ, &hKey))
         {
-            // Log Level
-            DWORD dwLoggingLevel = 0;
-            DWORD cbData = sizeof(dwLoggingLevel);
-            if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"Logging", NULL, NULL, (LPBYTE)&dwLoggingLevel, &cbData))
-            {
-                if (dwLoggingLevel > 0)
-                {
-                    g_fLogToEventLog = TRUE;
-                }
-            }
             // Log Only
             DWORD dwLoggingOnly = 0;
             DWORD cbDataLO = sizeof(dwLoggingOnly);
@@ -624,7 +613,7 @@ void InitializeLoggingSettings()
                 }
             }
             // Yara rules dir
-            cbData = sizeof(g_wYaraRulesDir);
+            DWORD cbData = sizeof(g_wYaraRulesDir);
             if (ERROR_SUCCESS == RegQueryValueExW(hKey, RACCINE_YARA_RULES_PATH, NULL, NULL, (LPBYTE)g_wYaraRulesDir, &cbData))
             {
                 ;
@@ -709,8 +698,7 @@ int wmain(int argc, WCHAR* argv[]) {
 
     InitializeLoggingSettings();
 
-    ExpandEnvironmentStrings(RACCINE_DIRECTORY, g_wRaccineDirectory, ARRAYSIZE(g_wRaccineDirectory) - 1);
-
+    
     // YARA
     if (!InitializeYaraRules())
     {
@@ -830,7 +818,6 @@ int wmain(int argc, WCHAR* argv[]) {
                 szYaraOutput = NULL;
             }
         }
-
     }
 
     // If block and not simulation mode
