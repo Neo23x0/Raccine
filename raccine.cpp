@@ -72,7 +72,8 @@ BOOL InitializeYaraRules()
     WCHAR wYaraPattern[MAX_PATH] = { 0 };
     WIN32_FIND_DATA FindFileData = { 0 };
     HANDLE hFind = INVALID_HANDLE_VALUE;
-
+    
+    //wprintf(L"Checking dir: %s\n", g_wYaraRulesDir);
     if (FAILED(StringCchCat(wYaraPattern, ARRAYSIZE(wYaraPattern) - 1, g_wYaraRulesDir)))
         return FALSE;
 
@@ -97,6 +98,7 @@ BOOL InitializeYaraRules()
             //wprintf(L"The file found is %s\n", FindFileData.cFileName);
             StringCchPrintf(szRulePath, nSize, L"%s\\%s", g_wYaraRulesDir, FindFileData.cFileName);
             g_aszRuleFiles[g_cRuleCount++] = szRulePath;
+            //wprintf(L"Rule count %d\n", g_cRuleCount);
             
         } while (FindNextFile(hFind, &FindFileData));
         fRetVal = TRUE;
@@ -126,9 +128,11 @@ BOOL TestYaraRulesOnFile(LPWSTR szTestFile, _Outptr_opt_ LPWSTR* ppszYaraOutput,
     LPWSTR szFinalString = NULL;
     DWORD cchFinalStringMaxSize = 2000;
 
+    //wprintf(L"Rule Count: %d\n", g_cRuleCount);
     for (int i = 0; i < g_cRuleCount; i++)
     {
         LPWSTR szYaraRule = g_aszRuleFiles[i];
+        //wprintf(L"Running: %s\\%s %s %s\n", g_wRaccineDirectory, YARA_INSTANCE, szYaraRule, szTestFile);
         StringCchPrintf(wYaraCommandLine, ARRAYSIZE(wYaraCommandLine), L"%s\\%s %s %s", g_wRaccineDirectory, YARA_INSTANCE, szYaraRule, szTestFile);
 
         if (!CreateProcess(
@@ -215,6 +219,7 @@ BOOL TestYaraRulesOnFile(LPWSTR szTestFile, _Outptr_opt_ LPWSTR* ppszYaraOutput,
 
                 CloseHandle(hOutputFile);
             }
+
             DeleteFile(wYaraOutputFile);
         }
 
@@ -702,6 +707,16 @@ int wmain(int argc, WCHAR* argv[]) {
         }
     }
 
+    InitializeLoggingSettings();
+
+    ExpandEnvironmentStrings(RACCINE_DIRECTORY, g_wRaccineDirectory, ARRAYSIZE(g_wRaccineDirectory) - 1);
+
+    // YARA
+    if (!InitializeYaraRules())
+    {
+        wprintf(L"Fatal error during InitializeYaraRules(). Yara rules will not be used.");
+    }
+
     LPWSTR szYaraOutput = NULL;  // if assigned, call LocalFree on it.
     BOOL fYaraRuleMatched = EvaluateYaraRules((LPWSTR)sCommandLine.c_str(), &szYaraOutput);
     if (fYaraRuleMatched)
@@ -766,8 +781,6 @@ int wmain(int argc, WCHAR* argv[]) {
             }
         }
     }
-
-    InitializeLoggingSettings();
 
     // Check all combinations (our blocklist)
     if ((bVssadmin && bDelete && bShadows) ||             // vssadmin.exe

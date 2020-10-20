@@ -105,7 +105,7 @@ eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine even
 eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message" 2> nul
 REG.EXE ADD HKLM\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
 REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 0 /F
-REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /v %ProgramData%\Raccine\yara /F
+REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d %ProgramData%\Raccine\yara /F
 ECHO Copying Raccine%ARCH%.exe to C:\Windows\Raccine.exe ...
 COPY Raccine%ARCH%.exe C:\Windows\Raccine.exe
 IF '%errorlevel%' NEQ '0' (
@@ -143,7 +143,7 @@ eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine even
 eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message" 2> nul
 REG.EXE ADD HKLM\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
 REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 2 /F
-REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /v %ProgramData%\Raccine\yara /F
+REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d %ProgramData%\Raccine\yara /F
 ECHO Copying Raccine%ARCH%.exe to C:\Windows\Raccine.exe ...
 COPY Raccine%ARCH%.exe C:\Windows\Raccine.exe
 IF '%errorlevel%' NEQ '0' (
@@ -178,7 +178,7 @@ eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine even
 REG.EXE ADD HKLM\Software\Raccine /v GUI /t REG_DWORD /d 1 /F
 REG.EXE ADD HKLM\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
 REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 0 /F
-REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /v %ProgramData%\Raccine\yara /F
+REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d "%ProgramData%\Raccine\yara" /F
 ECHO Copying Raccine%ARCH%.exe to C:\Windows\Raccine.exe ...
 COPY Raccine%ARCH%.exe C:\Windows\Raccine.exe
 IF '%errorlevel%' NEQ '0' (
