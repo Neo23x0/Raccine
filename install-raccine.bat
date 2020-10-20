@@ -76,6 +76,7 @@ IF %M%==U GOTO UNINSTALL
 IF %M%==u GOTO UNINSTALL
 IF %M%==E GOTO EOF
 IF %M%==e GOTO EOF
+GOTO MENU
 
 :: Installer actions
 
@@ -111,7 +112,7 @@ IF '%errorlevel%' NEQ '0' (
     ECHO.
     ECHO Successfully installed. Your system has been raccinated.
 )
-TIMEOUT /t 7
+TIMEOUT /t 30
 GOTO MENU
 
 :: Full (Simulation Mode)
@@ -150,7 +151,7 @@ IF '%errorlevel%' NEQ '0' (
     ECHO Successfully installed. Your system has been raccinated.
     ECHO Warning: Simulation mode only! 
 )
-TIMEOUT /t 7
+TIMEOUT /t 30
 GOTO MENU
 
 :: Soft
@@ -183,7 +184,7 @@ IF '%errorlevel%' NEQ '0' (
     ECHO.
     ECHO Successfully installed. Your system has been raccinated.
 )
-TIMEOUT /t 7
+TIMEOUT /t 30
 GOTO MENU
 
 
@@ -216,7 +217,7 @@ IF '%errorlevel%' NEQ '0' (
     ECHO.
     ECHO Successfully uninstalled!
 )
-TIMEOUT /t 7
+TIMEOUT /t 30
 GOTO MENU
 
 :EOF
