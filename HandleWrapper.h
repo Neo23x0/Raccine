@@ -95,7 +95,20 @@ struct ThreadHandleTraits
     }
 };
 
+// Handle wrapper for handles from FindFirstFileW
+struct FindFileHandleTraits
+{
+    typedef HANDLE HandleType;
+    inline static const HANDLE InvalidValue = INVALID_HANDLE_VALUE;
+
+    static void Close(HANDLE value)
+    {
+        FindClose(value);
+    }
+};
+
 using SnapshotHandleWrapper = HandleWrapper< SnapshotHandleTraits>;
 using ProcessHandleWrapper = HandleWrapper< ProcessHandleTraits>;
 using EventSourceHandleWrapper = HandleWrapper< EventSourceHandleTraits>;
 using ThreadHandleWrapper = HandleWrapper< ThreadHandleTraits>;
+using FindFileHandleWrapper = HandleWrapper< FindFileHandleTraits>;

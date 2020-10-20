@@ -87,10 +87,8 @@ HBITMAP g_hBitmap = NULL;
 /// <returns></returns>
 BOOL InitializeYaraRules()
 {
-    BOOL fRetVal = FALSE;
     WCHAR wYaraPattern[MAX_PATH] = { 0 };
-    WIN32_FIND_DATA FindFileData = { 0 };
-    HANDLE hFind = INVALID_HANDLE_VALUE;
+    WIN32_FIND_DATA FindFileData{};
 
     if (FAILED(StringCchCat(wYaraPattern, ARRAYSIZE(wYaraPattern) - 1, g_wYaraRulesDir)))
         return FALSE;
@@ -103,28 +101,26 @@ BOOL InitializeYaraRules()
     if (!g_aszRuleFiles)
         return FALSE;
 
-    hFind = FindFirstFile(wYaraPattern, &FindFileData);
-    if (hFind != INVALID_HANDLE_VALUE)
-    {
-        do
-        {
-            DWORD nSize = MAX_PATH;
-            LPWSTR szRulePath = (LPWSTR)LocalAlloc(LPTR, (nSize + 1) * sizeof WCHAR);
-            if (!szRulePath)
-                goto cleanup;
-
-            //wprintf(L"The file found is %s\n", FindFileData.cFileName);
-            StringCchPrintf(szRulePath, nSize, L"%s\\%s", g_wYaraRulesDir, FindFileData.cFileName);
-            g_aszRuleFiles[g_cRuleCount++] = szRulePath;
-
-        } while (FindNextFile(hFind, &FindFileData));
-        fRetVal = TRUE;
+    FindFileHandleWrapper hFind = FindFirstFileW(wYaraPattern, &FindFileData);
+    if (!hFind) {
+        return FALSE;
     }
 
-cleanup:
-    if (hFind != INVALID_HANDLE_VALUE)
-        FindClose(hFind);
-    return fRetVal;
+    do
+    {
+        constexpr DWORD nSize = MAX_PATH;
+        const LPWSTR szRulePath = (LPWSTR)LocalAlloc(LPTR, (nSize + 1) * sizeof WCHAR);
+        if (!szRulePath) {
+            return FALSE;
+        }
+
+        //wprintf(L"The file found is %s\n", FindFileData.cFileName);
+        StringCchPrintfW(szRulePath, nSize, L"%s\\%s", g_wYaraRulesDir, FindFileData.cFileName);
+        g_aszRuleFiles[g_cRuleCount++] = szRulePath;
+
+    } while (FindNextFileW(hFind, &FindFileData));
+
+    return TRUE;
 }
 
 /// <summary>
