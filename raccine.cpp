@@ -589,6 +589,8 @@ void InitializeLoggingSettings()
     // Query for logging level. A value of 1 or more indicates to log key events to the event log
     // Query for logging only mode. A value of 1 or more indicates to suppress process kills
 
+    StringCchCopy(g_wYaraRulesDir, ARRAYSIZE(g_wYaraRulesDir), g_wRaccineDirectory);
+
     const wchar_t* LoggingKeys[] = { RACCINE_REG_CONFIG , RACCINE_REG_POICY_CONFIG };
 
     HKEY hKey = NULL;
@@ -616,10 +618,17 @@ void InitializeLoggingSettings()
                     g_fLogOnly = TRUE;
                 }
             }
+            // Yara rules dir
+            cbData = sizeof(g_wYaraRulesDir);
+            if (ERROR_SUCCESS == RegQueryValueExW(hKey, RACCINE_YARA_RULES_PATH, NULL, NULL, (LPBYTE)g_wYaraRulesDir, &cbData))
+            {
+                ;
+            }
             RegCloseKey(hKey);
         }
     }
 }
+
 
 int wmain(int argc, WCHAR* argv[]) {
 
