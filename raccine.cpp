@@ -721,16 +721,14 @@ void InitializeSettings()
             DWORD cbDataSIM = sizeof(dwSimulationOnly);
             if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"SimulationOnly", NULL, NULL, (LPBYTE)&dwSimulationOnly, &cbDataSIM))
             {
-                if (dwSimulationOnly > 0) {
-                    // Yara rules dir
-                    cbData = sizeof(g_wYaraRulesDir);
-                }
-
-                if (ERROR_SUCCESS == RegQueryValueExW(hKey, RACCINE_YARA_RULES_PATH, NULL, NULL, (LPBYTE)g_wYaraRulesDir, &cbData))
+                if (dwSimulationOnly > 0)
+            // Yara rules dir
+            cbData = sizeof(g_wYaraRulesDir);
+            if (ERROR_SUCCESS == RegQueryValueExW(hKey, RACCINE_YARA_RULES_PATH, NULL, NULL, (LPBYTE)g_wYaraRulesDir, &cbData))
                 {
                     g_fSimulationOnly = TRUE;
                 }
-                
+                ;
             }
             RegCloseKey(hKey);
         }
