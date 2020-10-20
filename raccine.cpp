@@ -5,22 +5,23 @@
 // Florian Roth, Ollie Whitehouse, Branislav Dalic, John Lambert
 // with help of Hilko Bengen
 
-#include <wchar.h>
-#include <windows.h>
-#include <tlhelp32.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdio.h>
-#include <locale.h>
-#include <psapi.h>
+#include <cwchar>
+#include <Windows.h>
+#include <TlHelp32.h>
+#include <cstdio>
+#include <cstring>
+#include <clocale>
+#include <Psapi.h>
 #include <string>
-#include <vector>
+#include <array>
 #include <algorithm>
 #include <chrono>
 #include <ctime>
 #include <iomanip>
 #include <sstream>
 #include <strsafe.h>
+
+#include "HandleWrapper.h"
 
 #pragma comment(lib,"advapi32.lib")
 
@@ -37,36 +38,33 @@ BOOL g_fLogOnly = FALSE;
 #define RACCINE_EVENTID_MALICIOUS_ACTIVITY  2
 
 /// This function will optionally log messages to the eventlog
-void WriteEventLogEntryWithId(LPWSTR  pszMessage, DWORD dwEventId)
+void WriteEventLogEntryWithId(LPWSTR pszMessage, DWORD dwEventId)
 {
-    if (g_fLogToEventLog)
-    {
-        HANDLE hEventSource = NULL;
-        LPCWSTR lpszStrings[2] = { NULL, NULL };
-
-        hEventSource = RegisterEventSource(NULL, L"Raccine");
-        if (hEventSource)
-        {
-            lpszStrings[0] = pszMessage;
-            lpszStrings[1] = NULL;
-
-
-            ReportEvent(hEventSource,  // Event log handle
-                EVENTLOG_INFORMATION_TYPE,                 // Event type
-                0,                     // Event category
-                dwEventId,                     // Event identifier
-                NULL,                  // No security identifier
-                1,  // Size of lpszStrings array
-                0,                     // No binary data
-                lpszStrings,           // Array of strings
-                NULL                   // No binary data
-            );
-
-            DeregisterEventSource(hEventSource);
-        }
+    if (!g_fLogToEventLog) {
+        return;
     }
-    // always print the message to the console
-    //wprintf(pszMessage);
+
+    EventSourceHandleWrapper hEventSource = RegisterEventSourceW(NULL, L"Raccine");
+    if (!hEventSource) {
+        return;
+    }
+
+    LPCWSTR lpszStrings[2] = { NULL, NULL };
+
+    lpszStrings[0] = pszMessage;
+    lpszStrings[1] = NULL;
+
+
+    ReportEventW(hEventSource,  // Event log handle
+        EVENTLOG_INFORMATION_TYPE,                 // Event type
+        0,                     // Event category
+        dwEventId,                     // Event identifier
+        NULL,                  // No security identifier
+        1,  // Size of lpszStrings array
+        0,                     // No binary data
+        lpszStrings,           // Array of strings
+        NULL                   // No binary data
+    );
 }
 
 void WriteEventLogEntry(LPWSTR  pszMessage)
@@ -75,53 +73,51 @@ void WriteEventLogEntry(LPWSTR  pszMessage)
 }
 
 // Get Parent Process ID
-DWORD getParentPid(DWORD pid) {
-    PROCESSENTRY32 pe32;
-    HANDLE hSnapshot;
-    DWORD ppid = 0;
-    hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+DWORD getParentPid(DWORD pid)
+{
+    SnapshotHandleWrapper hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
-    if (hSnapshot == INVALID_HANDLE_VALUE) {
-        goto out;
+    if (!hSnapshot) {
+        return 0;
     }
+
+    PROCESSENTRY32W pe32{};
     ZeroMemory(&pe32, sizeof(pe32));
     pe32.dwSize = sizeof(pe32);
-    if (!Process32First(hSnapshot, &pe32)) {
-        goto out;
+    if (!Process32FirstW(hSnapshot, &pe32)) {
+        return 0;
     }
+
     do {
         if (pe32.th32ProcessID == pid) {
-            ppid = pe32.th32ParentProcessID;
-            break;
+            return pe32.th32ParentProcessID;
         }
-    } while (Process32Next(hSnapshot, &pe32));
+    } while (Process32NextW(hSnapshot, &pe32));
 
-    CloseHandle(hSnapshot);
-out:
-    return ppid;
+    return 0;
 }
 
 // Get integrity level of process
 DWORD getIntegrityLevel(HANDLE hProcess) {
 
     HANDLE hToken = INVALID_HANDLE_VALUE;
-    DWORD dwIntegrityLevel = 0;
+
+    if (!OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
+        return 0;
+    }
+
     PTOKEN_MANDATORY_LABEL pTIL;
     DWORD dwLengthNeeded = sizeof(pTIL);
-
-    if (!OpenProcessToken(hProcess, TOKEN_QUERY, &hToken))
-        return 0;
-    
     GetTokenInformation(hToken, TokenIntegrityLevel, NULL, 0, &dwLengthNeeded);
-    pTIL = (PTOKEN_MANDATORY_LABEL)LocalAlloc(0, dwLengthNeeded);
+    pTIL = static_cast<PTOKEN_MANDATORY_LABEL>(LocalAlloc(0, dwLengthNeeded));
     if (!pTIL) {
         return 0;
     }
 
     if (GetTokenInformation(hToken, TokenIntegrityLevel,
         pTIL, dwLengthNeeded, &dwLengthNeeded)) {
-        dwIntegrityLevel = *GetSidSubAuthority(pTIL->Label.Sid,
-            (DWORD)(UCHAR)(*GetSidSubAuthorityCount(pTIL->Label.Sid) - 1));
+        const DWORD dwIntegrityLevel = *GetSidSubAuthority(pTIL->Label.Sid,
+            static_cast<DWORD>(static_cast<UCHAR>(*GetSidSubAuthorityCount(pTIL->Label.Sid) - 1)));
 
         LocalFree(pTIL);
 
@@ -129,149 +125,134 @@ DWORD getIntegrityLevel(HANDLE hProcess) {
             // Low Integrity
             return 1;
         }
-        else if (dwIntegrityLevel >= SECURITY_MANDATORY_MEDIUM_RID &&
+
+        if (dwIntegrityLevel >= SECURITY_MANDATORY_MEDIUM_RID &&
             dwIntegrityLevel < SECURITY_MANDATORY_HIGH_RID) {
             // Medium Integrity
             return 2;
         }
-        else if (dwIntegrityLevel >= SECURITY_MANDATORY_HIGH_RID &&
+
+        if (dwIntegrityLevel >= SECURITY_MANDATORY_HIGH_RID &&
             dwIntegrityLevel < SECURITY_MANDATORY_SYSTEM_RID) {
             // High Integrity
             return 3;
         }
-        else if (dwIntegrityLevel >= SECURITY_MANDATORY_SYSTEM_RID) {
+
+        if (dwIntegrityLevel >= SECURITY_MANDATORY_SYSTEM_RID) {
             // System Integrity
             return 4;
         }
-        else {
-            return 0;
-        }
-    }
-    else {
-        LocalFree(pTIL);
+
         return 0;
     }
+
+    LocalFree(pTIL);
     return 0;
 }
 
 // Get the image name of the process
 std::wstring getImageName(DWORD pid) {
-    PROCESSENTRY32 pe32 = { 0 };
-    HANDLE hSnapshot;
-    hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    PROCESSENTRY32W pe32{};
+    SnapshotHandleWrapper hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
-    if (hSnapshot == INVALID_HANDLE_VALUE) {
-        goto out;
+    if (!hSnapshot) {
+        return L"(unavailable)";
     }
 
     ZeroMemory(&pe32, sizeof(pe32));
     pe32.dwSize = sizeof(pe32);
 
-    if (!Process32First(hSnapshot, &pe32)) {
-        goto out;
+    if (!Process32FirstW(hSnapshot, &pe32)) {
+        return L"(unavailable)";
     }
 
     do {
         if (pe32.th32ProcessID == pid) {
-            std::wstring imageName = std::wstring((wchar_t*)pe32.szExeFile);
-            return imageName;
+            return std::wstring(static_cast<wchar_t*>(pe32.szExeFile));
         }
-    } while (Process32Next(hSnapshot, &pe32));
+    } while (Process32NextW(hSnapshot, &pe32));
 
-out:
-    if (hSnapshot != INVALID_HANDLE_VALUE) {
-        CloseHandle(hSnapshot);
-    }
     return L"(unavailable)";
 }
 
 
 // Check if process is in allowed list
-BOOL isallowlisted(DWORD pid) {
-    WCHAR allowlist[3][MAX_PATH] = { L"wininit.exe", L"winlogon.exe", L"explorer.exe" };
-    PROCESSENTRY32 pe32 = { 0 };
-    HANDLE hSnapshot;
-    hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+bool isAllowListed(DWORD pid) {
+    const std::array<std::wstring, 3> allow_list{ L"wininit.exe", L"winlogon.exe", L"explorer.exe" };
 
-    if (hSnapshot == INVALID_HANDLE_VALUE) {
-        goto out;
+    PROCESSENTRY32W pe32{};
+    SnapshotHandleWrapper hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+    if (!hSnapshot) {
+        return false;
     }
 
     ZeroMemory(&pe32, sizeof(pe32));
     pe32.dwSize = sizeof(pe32);
 
-    if (!Process32First(hSnapshot, &pe32)) {
-        goto out;
+    if (!Process32FirstW(hSnapshot, &pe32)) {
+        return false;
     }
 
     do {
         if (pe32.th32ProcessID == pid) {
-            for (uint8_t i = 0; i < ARRAYSIZE(allowlist); i++) {
+            continue;
+        }
 
-                if (_wcsicmp((wchar_t*)pe32.szExeFile, allowlist[i]) == 0) {
-
-                    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe32.th32ProcessID);
-
-                    if (hProcess != NULL) {
-                        wchar_t filePath[MAX_PATH] = { 0 };
-                        if (GetModuleFileNameEx(hProcess, NULL, filePath, MAX_PATH)) {
-                            DWORD dwInLevel = getIntegrityLevel(hProcess);
-
-                            // Are they in the Windows directory?
-                            if (_wcsnicmp(filePath, L"C:\\Windows\\System32\\", wcslen(L"C:\\Windows\\System32\\")) == 0) {
-
-                                // Is the process running as SYSTEM
-                                if (getIntegrityLevel(hProcess) == 4) {
-                                    CloseHandle(hProcess);
-                                    CloseHandle(hSnapshot);
-                                    return TRUE;
-                                }
-                            }
-
-                            // Are you explorer running in the Windows dir
-                            if (_wcsnicmp(filePath, L"C:\\Windows\\Explorer.exe", wcslen(L"C:\\Windows\\Explorer.exe")) == 0) {
-
-                                // Is the process running as MEDIUM (which Explorer does)
-                                if (getIntegrityLevel(hProcess) == 2) {
-                                    CloseHandle(hProcess);
-                                    CloseHandle(hSnapshot);
-                                    return TRUE;
-                                }
-                            }
-                        }
-                        else {
-                            CloseHandle(hProcess);
-                        }
-                    }
-                } // _wcsicmp
-            }
+        ProcessHandleWrapper hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe32.th32ProcessID);
+        if (!hProcess) {
             break;
         }
-    } while (Process32Next(hSnapshot, &pe32));
 
-out:
-    if (hSnapshot != INVALID_HANDLE_VALUE) {
-        CloseHandle(hSnapshot);
-    }
-    return FALSE;
+        for (const std::wstring& allowed_name : allow_list) {
+            if (_wcsicmp(static_cast<wchar_t*>(pe32.szExeFile), allowed_name.c_str()) != 0) {
+                continue;
+            }
+
+            wchar_t filePath[MAX_PATH] = { 0 };
+            if (GetModuleFileNameEx(hProcess, NULL, filePath, MAX_PATH)) {
+                // Are they in the Windows directory?
+                const std::wstring system32_path = L"C:\\Windows\\System32\\";
+                if (_wcsnicmp(filePath, system32_path.c_str(), system32_path.length()) == 0) {
+
+                    // Is the process running as SYSTEM
+                    if (getIntegrityLevel(hProcess) == 4) {
+                        return true;
+                    }
+                }
+
+                // Are you explorer running in the Windows dir
+                const std::wstring explorer_path = L"C:\\Windows\\Explorer.exe";
+                if (_wcsnicmp(filePath, explorer_path.c_str(), explorer_path.length()) == 0) {
+
+                    // Is the process running as MEDIUM (which Explorer does)
+                    if (getIntegrityLevel(hProcess) == 2) {
+                        return true;
+                    }
+                }
+            }
+        }
+        break;
+    } while (Process32NextW(hSnapshot, &pe32));
+
+    return false;
 }
 
 // Kill a process
 BOOL killProcess(DWORD dwProcessId, UINT uExitCode) {
-    DWORD dwDesiredAccess = PROCESS_TERMINATE;
-    BOOL  bInheritHandle = FALSE;
-    HANDLE hProcess = OpenProcess(dwDesiredAccess, bInheritHandle, dwProcessId);
-    if (hProcess == NULL)
+    constexpr DWORD dwDesiredAccess = PROCESS_TERMINATE;
+    constexpr BOOL  bInheritHandle = FALSE;
+    ProcessHandleWrapper hProcess = OpenProcess(dwDesiredAccess, bInheritHandle, dwProcessId);
+    if (!hProcess) {
         return FALSE;
+    }
 
-    BOOL result = TerminateProcess(hProcess, uExitCode);
-    CloseHandle(hProcess);
-    return result;
+    return TerminateProcess(hProcess, uExitCode);
 }
 
 // Get timestamp
 std::string getTimeStamp() {
-    struct tm buf;
+    struct tm buf {};
     auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now() - std::chrono::hours(24));
     localtime_s(&buf, &time);
     std::stringstream ss;
@@ -280,43 +261,44 @@ std::string getTimeStamp() {
     return timestamp;
 }
 
-// Fomat a log lines
-std::wstring logFormat(const std::wstring cmdLine, const std::wstring comment = L"done") {
-    std::string timeString = getTimeStamp();
-    std::wstring timeStringW(timeString.begin(), timeString.end());
+// Format a log lines
+std::wstring logFormat(const std::wstring& cmdLine, const std::wstring& comment = L"done") {
+    const std::string timeString = getTimeStamp();
+    const std::wstring timeStringW(timeString.cbegin(), timeString.cend());
     std::wstring logLine = timeStringW + L" DETECTED_CMD: '" + cmdLine + L" COMMENT: " + comment + L"\n";
     return logLine;
 }
 
 // Format the activity log lines
-std::wstring logFormatAction(int pid, const std::wstring imageName, const std::wstring cmdLine, const std::wstring comment = L"done") {
-    std::string timeString = getTimeStamp();
-    std::wstring timeStringW(timeString.begin(), timeString.end());
+std::wstring logFormatAction(DWORD pid, const std::wstring& imageName, const std::wstring& cmdLine, const std::wstring& comment = L"done") {
+    const std::string timeString = getTimeStamp();
+    const std::wstring timeStringW(timeString.cbegin(), timeString.cend());
     std::wstring logLine = timeStringW + L" DETECTED_CMD: '" + cmdLine + L"' IMAGE: '" + imageName + L"' PID: " + std::to_wstring(pid) + L" ACTION: " + comment + L"\n";
     return logLine;
 }
 
 // Log to file
-void logSend(const std::wstring logStr) {
-    static FILE* logFile = 0;
-    if (logFile == 0) 
+void logSend(const std::wstring& logStr) {
+    static FILE* logFile = nullptr;
+    if (logFile == nullptr)
     {
         errno_t err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine\\Raccine_log.txt", L"at");
-        if (err != 0) 
+        if (err != 0) {
             err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine\\Raccine_log.txt", L"wt");
-            
+        }
+
         if (err != 0) {
             wprintf(L"\nCan not open C:\\ProgramData\\Raccine\\Raccine_log.txt for writing.\n");
             return;   // bail out if we can't log
         }
     }
     //transform(logStr.begin(), logStr.end(), logStr.begin(), ::tolower);
-    if (logFile != 0)
+    if (logFile != nullptr)
     {
         fwprintf(logFile, L"%s", logStr.c_str());
         fflush(logFile);
         fclose(logFile);
-        logFile = 0;
+        logFile = nullptr;
     }
 }
 
@@ -395,12 +377,12 @@ int wmain(int argc, WCHAR* argv[]) {
     bool bVersion = false;
 
     // Encoded Command List (Base64)
-    WCHAR encodedCommands[11][9] = { L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI", L"cwBhA", L"aWV4I", L"aQBlAHgA", 
+    WCHAR encodedCommands[11][9] = { L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI", L"cwBhA", L"aWV4I", L"aQBlAHgA",
                                      L"cwB", L"IAA", L"IAB", L"UwB" };
 
     // Log
-    std::wstring sCommandLine = L"";
-    std::wstring sListLogs(L"");
+    std::wstring sCommandLine;
+    std::wstring sListLogs;
     WCHAR wMessage[MAX_MESSAGE] = { 0 };
 
     // Append all original command line parameters to a string for later log messages
@@ -531,7 +513,7 @@ int wmain(int argc, WCHAR* argv[]) {
             // Log to the text log file
             sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity (simulation mode)"));
         }
-        WriteEventLogEntryWithId((LPWSTR)wMessage, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
+        WriteEventLogEntryWithId(static_cast<LPWSTR>(wMessage), RACCINE_EVENTID_MALICIOUS_ACTIVITY);
     }
 
     // If block and not simulation mode
@@ -539,12 +521,13 @@ int wmain(int argc, WCHAR* argv[]) {
         // Collect PIDs to kill
         while (c < 1024) {
             pid = getParentPid(pid);
-            std::wstring imageName = L"(unavailable)";
-            imageName = getImageName(pid);
             if (pid == 0) {
                 break;
-            }     
-            if (!isallowlisted(pid)) {
+            }
+
+            std::wstring imageName = getImageName(pid);
+
+            if (!isAllowListed(pid)) {
                 wprintf(L"\nCollecting IMAGE %s with PID %d for a kill\n", imageName.c_str(), pid);
                 pids[c] = pid;
                 c++;
@@ -557,8 +540,7 @@ int wmain(int argc, WCHAR* argv[]) {
 
         // Loop over collected PIDs and try to kill the processes
         for (uint8_t i = c; i > 0; --i) {
-            std::wstring imageName = L"(unavailable)";
-            imageName = getImageName(pids[i - 1]);
+            std::wstring imageName = getImageName(pids[i - 1]);
             // If no simulation flag is set
             if (!g_fLogOnly) {
                 // Kill
@@ -576,21 +558,22 @@ int wmain(int argc, WCHAR* argv[]) {
         printf("\nRaccine v%s finished\n", VERSION);
         Sleep(5000);
     }
-    
+
     // Otherwise launch the process with its original parameters
     // Conditions:
     // a.) not block or
     // b.) simulation mode
-    if ( !bBlock || g_fLogOnly ) {
-        DEBUG_EVENT debugEvent = { 0 };
-        std::wstring sCommandLineStr = L"";
+    if (!bBlock || g_fLogOnly) {
+        std::wstring sCommandLineStr;
 
-        for (int i = 1; i < argc; i++) sCommandLineStr.append(std::wstring(argv[i]).append(L" "));
+        for (int i = 1; i < argc; i++) {
+            sCommandLineStr.append(std::wstring(argv[i]).append(L" "));
+        }
 
         STARTUPINFO info = { sizeof(info) };
         PROCESS_INFORMATION processInfo = { 0 };
 
-        if (CreateProcess(NULL, (LPWSTR)sCommandLineStr.c_str(), NULL, NULL, TRUE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &info, &processInfo))
+        if (CreateProcessW(NULL, (LPWSTR)sCommandLineStr.c_str(), NULL, NULL, TRUE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &info, &processInfo))
         {
             DebugActiveProcessStop(processInfo.dwProcessId);
             WaitForSingleObject(processInfo.hProcess, INFINITE);
