@@ -124,6 +124,7 @@ REG.EXE ADD HKCU\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
 1. Run `raccine-reg-patch-uninstall.reg` 
 2. Remove `Raccine.exe` from the `C:\Windows` folder
 3. Run `REG.EXE DELETE HKCU\Software\Raccine /F`
+4. Remove `%ProgramData%\Raccine` folder
 
 ### Upgrade
 
@@ -139,7 +140,7 @@ After configuring the changes, you may need to bump gpo by running `gpupdate.exe
 
 ## Logfile
 
-A logfile with all interceptions and actions taken is written to `C:\ProgramData\Raccine_log.txt` 
+A logfile with all interceptions and actions taken is written to `C:\ProgramData\Raccine\Raccine_log.txt` 
 
 ![Log File](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/logfile.png)
 
