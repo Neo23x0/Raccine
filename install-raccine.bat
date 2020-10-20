@@ -82,6 +82,11 @@ IF %M%==e GOTO EOF
 :: Full
 :FULL
 ECHO.
+ECHO Creating data directory %ProgramData%\Raccine ...
+MKDIR "%ProgramData%\Raccine"
+ECHO Copying YARA rules to the directory ...
+COPY *.yar "%ProgramData%\Raccine"
+COPY runyara.bat "%ProgramData%\Raccine"
 ECHO Installing Registry patches ...
 REGEDIT.EXE /S raccine-reg-patch-vssadmin.reg
 IF '%errorlevel%' NEQ '0' (
@@ -114,6 +119,9 @@ GOTO MENU
 ECHO.
 ECHO Creating data directory %ProgramData%\Raccine ...
 MKDIR "%ProgramData%\Raccine"
+ECHO Copying YARA rules to the directory ...
+COPY *.yar "%ProgramData%\Raccine"
+COPY runyara.bat "%ProgramData%\Raccine"
 ECHO Installing Registry patches ...
 REGEDIT.EXE /S raccine-reg-patch-vssadmin.reg
 IF '%errorlevel%' NEQ '0' (
@@ -150,6 +158,9 @@ GOTO MENU
 ECHO.
 ECHO Creating data directory %ProgramData%\Raccine ...
 MKDIR "%ProgramData%\Raccine"
+ECHO Copying YARA rules to the directory ...
+COPY *.yar "%ProgramData%\Raccine"
+COPY runyara.bat "%ProgramData%\Raccine"
 ECHO Installing Registry patches ...
 REGEDIT.EXE /S raccine-reg-patch-vssadmin.reg
 IF '%errorlevel%' NEQ '0' (
