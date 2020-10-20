@@ -76,23 +76,26 @@ IF %M%==U GOTO UNINSTALL
 IF %M%==u GOTO UNINSTALL
 IF %M%==E GOTO EOF
 IF %M%==e GOTO EOF
+GOTO MENU
 
 :: Installer actions
 
 :: Full
 :FULL
 ECHO.
+ECHO Create Raccine directory ...
+MKDIR "%ProgramData%\Raccine"
 ECHO Installing Registry patches ...
-REGEDIT.EXE /S raccine-reg-patch-vssadmin.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-vssadmin.reg
 IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry.
     GOTO MENU
 )
-REGEDIT.EXE /S raccine-reg-patch-wmic.reg 
-REGEDIT.EXE /S raccine-reg-patch-wbadmin.reg
-REGEDIT.EXE /S raccine-reg-patch-bcdedit.reg
-REGEDIT.EXE /S raccine-reg-patch-powershell.reg
-REGEDIT.EXE /S raccine-reg-patch-diskshadow.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-wmic.reg 
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-wbadmin.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-powershell.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-diskshadow.reg
 ECHO Registering Eventlog Events
 eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine event message" 2> nul
 eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message" 2> nul
@@ -106,24 +109,26 @@ IF '%errorlevel%' NEQ '0' (
     ECHO.
     ECHO Successfully installed. Your system has been raccinated.
 )
-TIMEOUT /t 7
+TIMEOUT /t 30
 GOTO MENU
 
 :: Full (Simulation Mode)
 :FULL_SIMU
 ECHO.
+ECHO Create Raccine directory ...
+MKDIR "%ProgramData%\Raccine"
 ECHO Installing Registry patches ...
-REGEDIT.EXE /S raccine-reg-patch-vssadmin.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-vssadmin.reg
 IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry.
     GOTO MENU
 )
-REGEDIT.EXE /S raccine-reg-patch-wmic.reg 
-REGEDIT.EXE /S raccine-reg-patch-wbadmin.reg
-REGEDIT.EXE /S raccine-reg-patch-bcdedit.reg
-REGEDIT.EXE /S raccine-reg-patch-powershell.reg
-REGEDIT.EXE /S raccine-reg-patch-diskshadow.reg
-REGEDIT.EXE /S raccine-reg-patch-ransomware.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-wmic.reg 
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-wbadmin.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-powershell.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-diskshadow.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-ransomware.reg
 ECHO Registering Eventlog Events
 eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine event message" 2> nul
 eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message" 2> nul
@@ -138,19 +143,21 @@ IF '%errorlevel%' NEQ '0' (
     ECHO Successfully installed. Your system has been raccinated.
     ECHO Warning: Simulation mode only! 
 )
-TIMEOUT /t 7
+TIMEOUT /t 30
 GOTO MENU
 
 :: Soft
 :SOFT 
 ECHO.
+ECHO Create Raccine directory ...
+MKDIR "%ProgramData%\Raccine"
 ECHO Installing Registry patches ...
-REGEDIT.EXE /S raccine-reg-patch-vssadmin.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-vssadmin.reg
 IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry.
     GOTO MENU
 )
-REGEDIT.EXE /S raccine-reg-patch-bcdedit.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
 ECHO Registering Eventlog Events
 eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine event message" 2> nul
 eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message" 2> nul
@@ -163,7 +170,7 @@ IF '%errorlevel%' NEQ '0' (
     ECHO.
     ECHO Successfully installed. Your system has been raccinated.
 )
-TIMEOUT /t 7
+TIMEOUT /t 30
 GOTO MENU
 
 
@@ -172,7 +179,7 @@ GOTO MENU
 ECHO.
 ECHO Running the Hardening script ...
 ECHO.
-CALL windows-hardening.bat
+CALL scripts\windows-hardening.bat
 IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry.
     GOTO MENU
@@ -184,8 +191,10 @@ GOTO MENU
 :: Uninstall
 :UNINSTALL
 ECHO.
+ECHO Remove Raccine directory ...
+@RD /S /Q "%ProgramData%\Raccine"
 ECHO Uninstalling Registry patches ...
-REGEDIT.EXE /S raccine-reg-patch-uninstall.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-uninstall.reg
 ECHO Removing Raccine.exe from the Windows folder ...
 DEL /Q C:\Windows\Raccine.exe
 IF '%errorlevel%' NEQ '0' (
@@ -194,7 +203,7 @@ IF '%errorlevel%' NEQ '0' (
     ECHO.
     ECHO Successfully uninstalled!
 )
-TIMEOUT /t 7
+TIMEOUT /t 30
 GOTO MENU
 
 :EOF

@@ -66,7 +66,7 @@ void WriteEventLogEntryWithId(LPWSTR  pszMessage, DWORD dwEventId)
         }
     }
     // always print the message to the console
-    wprintf(pszMessage);
+    //wprintf(pszMessage);
 }
 
 void WriteEventLogEntry(LPWSTR  pszMessage)
@@ -301,12 +301,12 @@ void logSend(const std::wstring logStr) {
     static FILE* logFile = 0;
     if (logFile == 0) 
     {
-        errno_t err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine_log.txt", L"at");
+        errno_t err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine\\Raccine_log.txt", L"at");
         if (err != 0) 
-            err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine_log.txt", L"wt");
+            err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine\\Raccine_log.txt", L"wt");
             
         if (err != 0) {
-            wprintf(L"\nCan not open C:\\ProgramData\\Raccine_log.txt for writing.\n");
+            wprintf(L"\nCan not open C:\\ProgramData\\Raccine\\Raccine_log.txt for writing.\n");
             return;   // bail out if we can't log
         }
     }
@@ -394,7 +394,8 @@ int wmain(int argc, WCHAR* argv[]) {
     bool bEncodedCommand = false;
 
     // Encoded Command List (Base64)
-    WCHAR encodedCommands[10][9] = { L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI", L"cwBhA", L"aWV4I", L"aQBlAHgA", L"cwB", L"IAA", L"UWB" };
+    WCHAR encodedCommands[11][9] = { L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI", L"cwBhA", L"aWV4I", L"aQBlAHgA", 
+                                     L"cwB", L"IAA", L"IAB", L"UwB" };
 
     // Log
     std::wstring sCommandLine = L"";
