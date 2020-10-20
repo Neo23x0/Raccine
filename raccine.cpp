@@ -394,7 +394,7 @@ int wmain(int argc, WCHAR* argv[]) {
     bool bEncodedCommand = false;
 
     // Encoded Command List (Base64)
-    WCHAR encodedCommands[7][9] = { L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI", L"cwBhA", L"aWV4I", L"aQBlAHgA" };
+    WCHAR encodedCommands[10][9] = { L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI", L"cwBhA", L"aWV4I", L"aQBlAHgA", L"cwB", L"IAA", L"UWB" };
 
     // Log
     std::wstring sCommandLine = L"";
