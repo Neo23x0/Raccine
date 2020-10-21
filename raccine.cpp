@@ -28,7 +28,7 @@
 #pragma comment(lib,"shlwapi.lib")
 
 // Version
-#define VERSION "1.0.1 BETA"
+#define VERSION "1.0.2 BETA"
 
 // Log Config and Flags
 BOOL g_fLogOnly = FALSE;
