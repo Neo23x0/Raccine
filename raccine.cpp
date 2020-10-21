@@ -2,7 +2,7 @@
 // A Simple Ransomware Vaccine
 // https://github.com/Neo23x0/Raccine
 //
-// Florian Roth, Ollie Whitehouse, Branislav Dalic, John Lambert
+// Florian Roth, Ollie Whitehouse, Branislav Djalic, John Lambert
 // with help of Hilko Bengen
 
 #include <cwchar>
