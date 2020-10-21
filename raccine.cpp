@@ -21,7 +21,6 @@
 #include <sstream>
 #include <strsafe.h>
 
-#include <shellapi.h>
 #include "HandleWrapper.h"
 
 #pragma comment(lib,"advapi32.lib")
@@ -68,11 +67,8 @@ constexpr UINT MAX_YARA_RULE_FILES = 200;
 /// <returns></returns>
 BOOL InitializeYaraRules()
 {
-    BOOL fRetVal = FALSE;
     WCHAR wYaraPattern[MAX_PATH] = { 0 };
-    WIN32_FIND_DATA FindFileData = { 0 };
-    HANDLE hFind = INVALID_HANDLE_VALUE;
-    
+
     //wprintf(L"Checking dir: %s\n", g_wYaraRulesDir);
     if (FAILED(StringCchCat(wYaraPattern, ARRAYSIZE(wYaraPattern) - 1, g_wYaraRulesDir)))
         return FALSE;
@@ -82,36 +78,35 @@ BOOL InitializeYaraRules()
 
     //allocate array to hold paths to yara rule files
     g_aszRuleFiles = (LPWSTR*)LocalAlloc(LPTR, MAX_YARA_RULE_FILES * sizeof LPWSTR);
-    if (!g_aszRuleFiles)
-        return FALSE;  
-
-    hFind = FindFirstFile(wYaraPattern, &FindFileData);
-    if (hFind != INVALID_HANDLE_VALUE)
-    {
-        do
-        {
-            if (g_cRuleCount >= MAX_YARA_RULE_FILES)
-            {
-                wprintf(L"Yara rule count has exceeded max of %d rules\n", MAX_YARA_RULE_FILES);
-                break;
-            }
-
-            DWORD nSize = MAX_PATH;
-            LPWSTR szRulePath = (LPWSTR)LocalAlloc(LPTR, (nSize + 1) * sizeof WCHAR );
-            if (!szRulePath)
-                goto cleanup;
-
-            StringCchPrintf(szRulePath, nSize, L"%s\\%s", g_wYaraRulesDir, FindFileData.cFileName);
-            g_aszRuleFiles[g_cRuleCount++] = szRulePath;
-            
-        } while (FindNextFile(hFind, &FindFileData));
-        fRetVal = TRUE;
+    if (!g_aszRuleFiles) {
+        return FALSE;
     }
 
-cleanup:
-    if (hFind != INVALID_HANDLE_VALUE)
-        FindClose(hFind);
-    return fRetVal;
+    WIN32_FIND_DATA FindFileData{};
+    FindFileHandleWrapper hFind = FindFirstFileW(wYaraPattern, &FindFileData);
+    if (!hFind) {
+        return FALSE;
+    }
+
+    do
+    {
+        if (g_cRuleCount >= MAX_YARA_RULE_FILES) {
+            wprintf(L"Yara rule count has exceeded max of %d rules\n", MAX_YARA_RULE_FILES);
+            break;
+        }
+
+        constexpr DWORD nSize = MAX_PATH;
+        LPWSTR szRulePath = static_cast<LPWSTR>(LocalAlloc(LPTR, (nSize + 1) * sizeof WCHAR));
+        if (!szRulePath) {
+            return FALSE;
+        }
+
+        StringCchPrintfW(szRulePath, nSize, L"%s\\%s", g_wYaraRulesDir, FindFileData.cFileName);
+        g_aszRuleFiles[g_cRuleCount++] = szRulePath;
+
+    } while (FindNextFileW(hFind, &FindFileData));
+
+    return TRUE;
 }
 
 /// <summary>
@@ -130,7 +125,7 @@ BOOL TestYaraRulesOnFile(LPWSTR szTestFile, LPWSTR* ppszYaraOutput, LPWSTR lpCom
     PROCESS_INFORMATION pi = { 0 };
     STARTUPINFO si = { 0 };
     LPWSTR szFinalString = NULL;
-    DWORD cchFinalStringMaxSize = 2000;
+    constexpr DWORD cchFinalStringMaxSize = 2000;
 
     for (int i = 0; i < g_cRuleCount; i++)
     {
@@ -163,14 +158,12 @@ BOOL TestYaraRulesOnFile(LPWSTR szTestFile, LPWSTR* ppszYaraOutput, LPWSTR lpCom
 
         if (SUCCEEDED(StringCchPrintf(wYaraOutputFile, ARRAYSIZE(wYaraOutputFile), L"%s%s", szTestFile, YARA_RESULTS_SUFFIX)))
         {
-            HANDLE hOutputFile = CreateFile(wYaraOutputFile, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+            HANDLE hOutputFile = CreateFileW(wYaraOutputFile, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
             if (hOutputFile != INVALID_HANDLE_VALUE)
             {
-                DWORD dwSize = 0;
                 DWORD dwHighSize = 0;
-                dwSize = GetFileSize(
-                    hOutputFile,
-                    &dwHighSize
+                const DWORD dwSize = GetFileSize(hOutputFile,
+                                                 &dwHighSize
                 );
                 if (dwSize > 2)  //did we get a match?  allow for an empty newline or two . 
                 {
@@ -178,12 +171,12 @@ BOOL TestYaraRulesOnFile(LPWSTR szTestFile, LPWSTR* ppszYaraOutput, LPWSTR lpCom
 
                     if (!szFinalString)
                     {
-                        szFinalString = (LPWSTR)LocalAlloc(LPTR, cchFinalStringMaxSize * sizeof WCHAR);
+                        szFinalString = static_cast<LPWSTR>(LocalAlloc(LPTR, cchFinalStringMaxSize * sizeof WCHAR));
                     }
                     if (szFinalString)
                     {
-                        LPSTR szYaraOutput = (LPSTR)LocalAlloc(LPTR, (dwSize + 1) * sizeof CHAR);
-                        LPWSTR szYaraOutputWide = (LPWSTR)LocalAlloc(LPTR, (dwSize + 1) * sizeof WCHAR);
+                        LPSTR szYaraOutput = static_cast<LPSTR>(LocalAlloc(LPTR, (dwSize + 1) * sizeof CHAR));
+                        LPWSTR szYaraOutputWide = static_cast<LPWSTR>(LocalAlloc(LPTR, (dwSize + 1) * sizeof WCHAR));
                         DWORD cbRead = 0;
                         if (szYaraOutput && szYaraOutputWide)
                         {
@@ -216,13 +209,13 @@ BOOL TestYaraRulesOnFile(LPWSTR szTestFile, LPWSTR* ppszYaraOutput, LPWSTR lpCom
                         if (szYaraOutput)
                             LocalFree(szYaraOutput);
                     }
-         
+
                 }
 
                 CloseHandle(hOutputFile);
             }
 
-            DeleteFile(wYaraOutputFile);
+            DeleteFileW(wYaraOutputFile);
         }
 
         CloseHandle(pi.hProcess);
@@ -245,7 +238,7 @@ BOOL EvaluateYaraRules(LPWSTR lpCommandLine, _Outptr_opt_ LPWSTR* ppszYaraOutput
     WCHAR wTestFilename[MAX_PATH] = { 0 };
     int len = static_cast<int>(wcslen(lpCommandLine));
     HANDLE hTempFile = INVALID_HANDLE_VALUE;
-    LPSTR lpAnsiCmdLine = (LPSTR)LocalAlloc(LPTR, len + 1);
+    LPSTR lpAnsiCmdLine = static_cast<LPSTR>(LocalAlloc(LPTR, len + 1));
     if (!lpAnsiCmdLine)
     {
         return FALSE;
@@ -257,12 +250,12 @@ BOOL EvaluateYaraRules(LPWSTR lpCommandLine, _Outptr_opt_ LPWSTR* ppszYaraOutput
     {
         //  Creates the new file to write to for the upper-case version.
         hTempFile = CreateFile(wTestFilename, // file name 
-            GENERIC_WRITE,        // open for write 
-            0,                    // do not share 
-            NULL,                 // default security 
-            CREATE_ALWAYS,        // overwrite existing
-            FILE_ATTRIBUTE_NORMAL,// normal file 
-            NULL);                // no template 
+                               GENERIC_WRITE,        // open for write 
+                               0,                    // do not share 
+                               NULL,                 // default security 
+                               CREATE_ALWAYS,        // overwrite existing
+                               FILE_ATTRIBUTE_NORMAL,// normal file 
+                               NULL);                // no template 
         if (hTempFile == INVALID_HANDLE_VALUE)
         {
             return FALSE;
@@ -292,8 +285,8 @@ BOOL EvaluateYaraRules(LPWSTR lpCommandLine, _Outptr_opt_ LPWSTR* ppszYaraOutput
 
         DeleteFile(wTestFilename);
     }
-    cleanup:
-    return fRetVal;        
+cleanup:
+    return fRetVal;
 }
 
 /// This function will optionally log messages to the eventlog
@@ -310,15 +303,15 @@ void WriteEventLogEntryWithId(LPWSTR pszMessage, DWORD dwEventId)
     lpszStrings[1] = NULL;
 
 
-    ReportEventW(hEventSource,  // Event log handle
-        EVENTLOG_INFORMATION_TYPE,                 // Event type
-        0,                     // Event category
-        dwEventId,                     // Event identifier
-        NULL,                  // No security identifier
-        1,  // Size of lpszStrings array
-        0,                     // No binary data
-        lpszStrings,           // Array of strings
-        NULL                   // No binary data
+    ReportEventW(hEventSource,      // Event log handle
+                 EVENTLOG_INFORMATION_TYPE,  // Event type
+                 0,                          // Event category
+                 dwEventId,                  // Event identifier
+                 NULL,                       // No security identifier
+                 1,                          // Size of lpszStrings array
+                 0,                          // No binary data
+                 lpszStrings,                // Array of strings
+                 NULL                        // No binary data
     );
 }
 
@@ -362,7 +355,7 @@ DWORD getIntegrityLevel(HANDLE hProcess) {
     }
 
     PTOKEN_MANDATORY_LABEL pTIL;
-    DWORD dwLengthNeeded = sizeof(pTIL);
+    DWORD dwLengthNeeded = sizeof pTIL;
     GetTokenInformation(hToken, TokenIntegrityLevel, NULL, 0, &dwLengthNeeded);
     pTIL = static_cast<PTOKEN_MANDATORY_LABEL>(LocalAlloc(0, dwLengthNeeded));
     if (!pTIL) {
@@ -370,9 +363,9 @@ DWORD getIntegrityLevel(HANDLE hProcess) {
     }
 
     if (GetTokenInformation(hToken, TokenIntegrityLevel,
-        pTIL, dwLengthNeeded, &dwLengthNeeded)) {
+                            pTIL, dwLengthNeeded, &dwLengthNeeded)) {
         const DWORD dwIntegrityLevel = *GetSidSubAuthority(pTIL->Label.Sid,
-            static_cast<DWORD>(static_cast<UCHAR>(*GetSidSubAuthorityCount(pTIL->Label.Sid) - 1)));
+                                                           static_cast<DWORD>(static_cast<UCHAR>(*GetSidSubAuthorityCount(pTIL->Label.Sid) - 1)));
 
         LocalFree(pTIL);
 
@@ -524,9 +517,9 @@ std::wstring logFormat(const std::wstring& cmdLine, const std::wstring& comment 
     return logLine;
 }
 
-std::wstring logFormatLine(const std::wstring line = L"") {
-    std::string timeString = getTimeStamp();
-    std::wstring timeStringW(timeString.begin(), timeString.end());
+std::wstring logFormatLine(const std::wstring& line = L"") {
+    const std::string timeString = getTimeStamp();
+    const std::wstring timeStringW(timeString.cbegin(), timeString.cend());
     std::wstring logLine = timeStringW + L" " + line + L"\n";
     return logLine;
 }
@@ -542,10 +535,9 @@ std::wstring logFormatAction(DWORD pid, const std::wstring& imageName, const std
 // Log to file
 void logSend(const std::wstring& logStr) {
     static FILE* logFile = nullptr;
-    if (logFile == nullptr)
-    {
+    if (logFile == nullptr) {
         errno_t err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine\\Raccine_log.txt", L"at");
-        
+
         if (err != 0) {
             err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine\\Raccine_log.txt", L"wt");
         }
@@ -617,6 +609,35 @@ void InitializeSettings()
     }
 }
 
+void createChildProcessWithDebugger(std::wstring command_line)
+{
+    STARTUPINFO info = { sizeof(info) };
+    PROCESS_INFORMATION processInfo{};
+
+    constexpr LPCWSTR NO_APPLICATION_NAME = nullptr;
+    constexpr LPSECURITY_ATTRIBUTES DEFAULT_SECURITY_ATTRIBUTES = nullptr;
+    constexpr BOOL INHERIT_HANDLES = TRUE;
+    constexpr LPVOID USE_CALLER_ENVIRONMENT = nullptr;
+    constexpr LPCWSTR USE_CALLER_WORKING_DIRECTORY = nullptr;
+    const BOOL res = CreateProcessW(NO_APPLICATION_NAME,
+                                    static_cast<LPWSTR>(command_line.data()),
+                                    DEFAULT_SECURITY_ATTRIBUTES,
+                                    DEFAULT_SECURITY_ATTRIBUTES,
+                                    INHERIT_HANDLES,
+                                    DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS,
+                                    USE_CALLER_ENVIRONMENT,
+                                    USE_CALLER_WORKING_DIRECTORY,
+                                    &info,
+                                    &processInfo);
+    if (res == 0) {
+        return;
+    }
+
+    DebugActiveProcessStop(processInfo.dwProcessId);
+    WaitForSingleObject(processInfo.hProcess, INFINITE);
+    CloseHandle(processInfo.hProcess);
+    CloseHandle(processInfo.hThread);
+}
 
 int wmain(int argc, WCHAR* argv[]) {
 
@@ -671,30 +692,30 @@ int wmain(int argc, WCHAR* argv[]) {
             bVssadmin = true;
         }
         else if ((_wcsicmp(L"wmic.exe", argv[1]) == 0) ||
-            (_wcsicmp(L"wmic", argv[1]) == 0)) {
+                 (_wcsicmp(L"wmic", argv[1]) == 0)) {
             bWmic = true;
         }
         else if ((_wcsicmp(L"wbadmin.exe", argv[1]) == 0) ||
-            (_wcsicmp(L"wbadmin", argv[1]) == 0)) {
+                 (_wcsicmp(L"wbadmin", argv[1]) == 0)) {
             bWbadmin = true;
         }
         else if ((_wcsicmp(L"bcdedit.exe", argv[1]) == 0) ||
-            (_wcsicmp(L"bcdedit", argv[1]) == 0)) {
+                 (_wcsicmp(L"bcdedit", argv[1]) == 0)) {
             bcdEdit = true;
         }
         else if ((_wcsicmp(L"powershell.exe", argv[1]) == 0) ||
-            (_wcsicmp(L"powershell", argv[1]) == 0)) {
+                 (_wcsicmp(L"powershell", argv[1]) == 0)) {
             bPowerShell = true;
         }
         else if ((_wcsicmp(L"diskshadow.exe", argv[1]) == 0) ||
-            (_wcsicmp(L"diskshadow", argv[1]) == 0)) {
+                 (_wcsicmp(L"diskshadow", argv[1]) == 0)) {
             bDiskShadow = true;
         }
     }
 
     InitializeSettings();
 
-    
+
     // YARA
     if (!InitializeYaraRules())
     {
@@ -818,7 +839,7 @@ int wmain(int argc, WCHAR* argv[]) {
                 szYaraOutput = NULL;
             }
         }
-        
+
         // signal Event for UI to know an alert happened.  If no UI is running, this has no effect.
         if (g_fShowGui) {
             HANDLE hEvent = OpenEvent(EVENT_MODIFY_STATE, FALSE, L"RaccineAlertEvent");
@@ -887,16 +908,7 @@ int wmain(int argc, WCHAR* argv[]) {
             sCommandLineStr.append(std::wstring(argv[i]).append(L" "));
         }
 
-        STARTUPINFO info = { sizeof(info) };
-        PROCESS_INFORMATION processInfo = { 0 };
-
-        if (CreateProcessW(NULL, (LPWSTR)sCommandLineStr.c_str(), NULL, NULL, TRUE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &info, &processInfo))
-        {
-            DebugActiveProcessStop(processInfo.dwProcessId);
-            WaitForSingleObject(processInfo.hProcess, INFINITE);
-            CloseHandle(processInfo.hProcess);
-            CloseHandle(processInfo.hThread);
-        }
+        createChildProcessWithDebugger(sCommandLineStr);
     }
 
     // Log events
