@@ -62,7 +62,8 @@ ECHO.
 ECHO   1 - Install Raccine for all possible methods
 ECHO   2 - Install Raccine for all possible methods (simulation mode, logging only)
 ECHO   3 - Install Raccine for Vssadmin and BcdEdit only
-ECHo   4 - Run Windows Hardening Script (select 4 for more information)
+ECHO   4 - Disable GUI elements (alert window, settings tray icon)
+ECHo   5 - Run Windows Hardening Script (select 4 for more information)
 ECHO   U - Uninstall Raccine
 ECHO   E - EXIT
 ECHO.
@@ -71,7 +72,8 @@ SET /P M=" Select an option and then press ENTER: "
 IF %M%==1 GOTO FULL
 IF %M%==2 GOTO FULL_SIMU
 IF %M%==3 GOTO SOFT
-IF %M%==4 GOTO HARDENING
+IF %M%==4 GOTO DISABLEGUI
+IF %M%==5 GOTO HARDENING
 IF %M%==U GOTO UNINSTALL
 IF %M%==u GOTO UNINSTALL
 IF %M%==E GOTO EOF
@@ -83,16 +85,28 @@ GOTO MENU
 :: Full
 :FULL
 ECHO.
-ECHO Creating data directory %ProgramData%\Raccine ...
+:: Raccine GUI Elements
+ECHO Creating data directory "%ProgramFiles%\Raccine" ...
+MKDIR "%ProgramFiles%\Raccine"
+COPY RaccineElevatedCfg.exe "%ProgramFiles%\Raccine\"
+COPY RaccineSettings.exe "%ProgramFiles%\Raccine\"
+:: Raccine Program Files
+COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
+COPY yara\runyara.bat "%ProgramFiles%\Raccine\"
+COPY yara\yara64.exe "%ProgramFiles%\Raccine\"
+:: Setting the Path
+SETX /M Path "%PATH%;%ProgramFiles%\Raccine"
+:: Raccine Data
+ECHO Creating data directory "%ProgramData%\Raccine" ...
 MKDIR "%ProgramData%\Raccine"
 MKDIR "%ProgramData%\Raccine\yara"
 ECHO Copying YARA rules to the directory ...
 COPY yara\*.yar "%ProgramData%\Raccine\yara"
-COPY yara\runyara.bat "%ProgramData%\Raccine\"
+:: Registry Patches
 ECHO Installing Registry patches ...
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-vssadmin.reg
 IF '%errorlevel%' NEQ '0' (
-    ECHO Something went wrong. Sorry.
+    ECHO Something went wrong. Sorry. Installation failed.
     GOTO MENU
 )
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-wmic.reg 
@@ -103,33 +117,41 @@ REGEDIT.EXE /S reg-patches\raccine-reg-patch-diskshadow.reg
 ECHO Registering Eventlog Events
 eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine event message" 2> nul
 eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message" 2> nul
-REG.EXE ADD HKLM\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
+:: Registry Settings
 REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 0 /F
+REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 2 /F
 REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d %ProgramData%\Raccine\yara /F
-ECHO Copying Raccine%ARCH%.exe to C:\Windows\Raccine.exe ...
-COPY Raccine%ARCH%.exe C:\Windows\Raccine.exe
-IF '%errorlevel%' NEQ '0' (
-    ECHO Something went wrong. Sorry.
-) ELSE (
-    ECHO.
-    ECHO Successfully installed. Your system has been raccinated.
-)
+:: Registering and starting the GUI elements
+REG ADD "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /t REG_SZ /F /D "%ProgramFiles%\Raccine\RaccineSettings.exe"
+START "" "%ProgramFiles%\Raccine\RaccineSettings.exe"
 TIMEOUT /t 30
 GOTO MENU
 
-:: Full (Simulation Mode)
+:: Simulation Mode
 :FULL_SIMU
 ECHO.
-ECHO Creating data directory %ProgramData%\Raccine ...
+:: Raccine GUI Elements
+ECHO Creating data directory "%ProgramFiles%\Raccine" ...
+MKDIR "%ProgramFiles%\Raccine"
+COPY RaccineElevatedCfg.exe "%ProgramFiles%\Raccine\"
+COPY RaccineSettings.exe "%ProgramFiles%\Raccine\"
+:: Raccine Program Files
+COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
+COPY yara\runyara.bat "%ProgramFiles%\Raccine\"
+COPY yara\yara64.exe "%ProgramFiles%\Raccine\"
+:: Setting the Path
+SETX /M Path "%PATH%;%ProgramFiles%\Raccine"
+:: Raccine Data
+ECHO Creating data directory "%ProgramData%\Raccine" ...
 MKDIR "%ProgramData%\Raccine"
 MKDIR "%ProgramData%\Raccine\yara"
 ECHO Copying YARA rules to the directory ...
 COPY yara\*.yar "%ProgramData%\Raccine\yara"
-COPY yara\runyara.bat "%ProgramData%\Raccine"
+:: Registry Patches
 ECHO Installing Registry patches ...
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-vssadmin.reg
 IF '%errorlevel%' NEQ '0' (
-    ECHO Something went wrong. Sorry.
+    ECHO Something went wrong. Sorry. Installation failed.
     GOTO MENU
 )
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-wmic.reg 
@@ -137,59 +159,72 @@ REGEDIT.EXE /S reg-patches\raccine-reg-patch-wbadmin.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-powershell.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-diskshadow.reg
-REGEDIT.EXE /S reg-patches\raccine-reg-patch-ransomware.reg
 ECHO Registering Eventlog Events
 eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine event message" 2> nul
 eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message" 2> nul
-REG.EXE ADD HKLM\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
 REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 2 /F
+REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 2 /F
 REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d %ProgramData%\Raccine\yara /F
-ECHO Copying Raccine%ARCH%.exe to C:\Windows\Raccine.exe ...
-COPY Raccine%ARCH%.exe C:\Windows\Raccine.exe
-IF '%errorlevel%' NEQ '0' (
-    ECHO Something went wrong. Sorry.
-) ELSE (
-    ECHO.
-    ECHO Successfully installed. Your system has been raccinated.
-    ECHO Warning: Simulation mode only! 
-)
+:: Registering and starting the GUI elements
+REG ADD "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /t REG_SZ /F /D "%ProgramFiles%\Raccine\RaccineSettings.exe"
+START "" "%ProgramFiles%\Raccine\RaccineSettings.exe"
 TIMEOUT /t 30
 GOTO MENU
 
 :: Soft
 :SOFT 
 ECHO.
-ECHO Creating data directory %ProgramData%\Raccine ...
+:: Raccine GUI Elements
+ECHO Creating data directory "%ProgramFiles%\Raccine" ...
+MKDIR "%ProgramFiles%\Raccine"
+COPY RaccineElevatedCfg.exe "%ProgramFiles%\Raccine\"
+COPY RaccineSettings.exe "%ProgramFiles%\Raccine\"
+:: Raccine Program Files
+COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
+COPY yara\runyara.bat "%ProgramFiles%\Raccine\"
+COPY yara\yara64.exe "%ProgramFiles%\Raccine\"
+:: Setting the Path
+SETX /M Path "%PATH%;%ProgramFiles%\Raccine"
+:: Raccine Data
+ECHO Creating data directory "%ProgramData%\Raccine" ...
 MKDIR "%ProgramData%\Raccine"
 MKDIR "%ProgramData%\Raccine\yara"
 ECHO Copying YARA rules to the directory ...
 COPY yara\*.yar "%ProgramData%\Raccine\yara"
-COPY yara\runyara.bat "%ProgramData%\Raccine"
+:: Registry Patches
 ECHO Installing Registry patches ...
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-vssadmin.reg
 IF '%errorlevel%' NEQ '0' (
-    ECHO Something went wrong. Sorry.
+    ECHO Something went wrong. Sorry. Installation failed.
     GOTO MENU
 )
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
 ECHO Registering Eventlog Events
 eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine event message" 2> nul
 eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message" 2> nul
-REG.EXE ADD HKLM\Software\Raccine /v GUI /t REG_DWORD /d 1 /F
-REG.EXE ADD HKLM\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
 REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 0 /F
-REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d "%ProgramData%\Raccine\yara" /F
-ECHO Copying Raccine%ARCH%.exe to C:\Windows\Raccine.exe ...
-COPY Raccine%ARCH%.exe C:\Windows\Raccine.exe
-IF '%errorlevel%' NEQ '0' (
-    ECHO Something went wrong. Sorry.
-) ELSE (
-    ECHO.
-    ECHO Successfully installed. Your system has been raccinated.
-)
+REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 2 /F
+REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d %ProgramData%\Raccine\yara /F
+:: Registering and starting the GUI elements
+REG ADD "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /t REG_SZ /F /D "%ProgramFiles%\Raccine\RaccineSettings.exe"
+START "" "%ProgramFiles%\Raccine\RaccineSettings.exe"
 TIMEOUT /t 30
 GOTO MENU
 
+:: Disable GUI Elements
+:DISABLEGUI 
+ECHO.
+ECHO Disabling the GUI elements ...
+ECHO.
+REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 2 /F
+TASKKILL /F /IM RaccineSettings.exe
+REG DELETE "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /F
+IF '%errorlevel%' NEQ '0' (
+    ECHO Something went wrong. Sorry.
+    GOTO MENU
+)
+TIMEOUT /t 30
+GOTO MENU
 
 :: Run Hardening Script
 :HARDENING 
@@ -204,22 +239,24 @@ IF '%errorlevel%' NEQ '0' (
 TIMEOUT /t 30
 GOTO MENU
 
-
 :: Uninstall
 :UNINSTALL
 ECHO.
-ECHO Removing Raccine folder ...
+ECHO Removing Raccine folders ...
 @RD /S /Q "%ProgramData%\Raccine"
+@RD /S /Q "%ProgramFiles%\Raccine"
+ECHO LEGACY: Removing Raccine.exe from the Windows folder (succeeds only if previously installed) ...
+DEL /Q C:\Windows\Raccine.exe
 ECHO Uninstalling Registry patches ...
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-uninstall.reg
-ECHO Removing Raccine.exe from the Windows folder ...
-DEL /Q C:\Windows\Raccine.exe
 IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry.
 ) ELSE (
     ECHO.
     ECHO Successfully uninstalled!
 )
+TASKKILL /F /IM RaccineSettings.exe
+REG DELETE "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /F
 TIMEOUT /t 30
 GOTO MENU
 

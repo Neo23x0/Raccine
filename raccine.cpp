@@ -31,14 +31,17 @@
 
 // Log Config and Flags
 BOOL g_fLogOnly = FALSE;
+BOOL g_fShowGui = FALSE;
 #define RACCINE_REG_CONFIG  L"SOFTWARE\\Raccine"
 #define RACCINE_REG_POICY_CONFIG  L"SOFTWARE\\Policies\\Raccine"
 constexpr UINT MAX_MESSAGE = 1000;
 #define RACCINE_DEFAULT_EVENTID  1
 #define RACCINE_EVENTID_MALICIOUS_ACTIVITY  2
 
-#define RACCINE_DIRECTORY  L"%PROGRAMDATA%\\Raccine"
-WCHAR g_wRaccineDirectory[MAX_PATH] = { 0 };  // ENV expanded RACCINE_DIRECTORY
+#define RACCINE_DATA_DIRECTORY  L"%PROGRAMDATA%\\Raccine"
+#define RACCINE_PROGRAM_DIRECTORY  L"%PROGRAMFILES%\\Raccine"
+WCHAR g_wRaccineDataDirectory[MAX_PATH] = { 0 };  // ENV expanded RACCINE_DATA_DIRECTORY
+WCHAR g_wRaccineProgramDirectory[MAX_PATH] = { 0 };  // ENV expanded RACCINE_PROGRAM_DIRECTORY
 
 // YARA Matching
 WCHAR g_wYaraRulesDir[MAX_PATH] = { 0 };
@@ -132,7 +135,7 @@ BOOL TestYaraRulesOnFile(LPWSTR szTestFile, LPWSTR* ppszYaraOutput, LPWSTR lpCom
     for (int i = 0; i < g_cRuleCount; i++)
     {
         LPWSTR szYaraRule = g_aszRuleFiles[i];
-        StringCchPrintf(wYaraCommandLine, ARRAYSIZE(wYaraCommandLine), L"%s\\%s %s %s", g_wRaccineDirectory, YARA_INSTANCE, szYaraRule, szTestFile);
+        StringCchPrintf(wYaraCommandLine, ARRAYSIZE(wYaraCommandLine), L"%s\\%s %s %s", g_wRaccineProgramDirectory, YARA_INSTANCE, szYaraRule, szTestFile);
 
         if (!CreateProcess(
             NULL,
@@ -247,7 +250,7 @@ BOOL EvaluateYaraRules(LPWSTR lpCommandLine, _Outptr_opt_ LPWSTR* ppszYaraOutput
     {
         return FALSE;
     }
-    ExpandEnvironmentStrings(RACCINE_DIRECTORY, wTestFilename, ARRAYSIZE(wTestFilename) - 1);
+    ExpandEnvironmentStrings(RACCINE_DATA_DIRECTORY, wTestFilename, ARRAYSIZE(wTestFilename) - 1);
 
     int c = GetTempFileName(wTestFilename, L"Raccine", 0, wTestFilename);
     if (c != 0)
@@ -296,10 +299,6 @@ BOOL EvaluateYaraRules(LPWSTR lpCommandLine, _Outptr_opt_ LPWSTR* ppszYaraOutput
 /// This function will optionally log messages to the eventlog
 void WriteEventLogEntryWithId(LPWSTR pszMessage, DWORD dwEventId)
 {
-    if (!g_fLogToEventLog) {
-        return;
-    }
-
     EventSourceHandleWrapper hEventSource = RegisterEventSourceW(NULL, L"Raccine");
     if (!hEventSource) {
         return;
@@ -569,15 +568,16 @@ void logSend(const std::wstring& logStr) {
 //
 //  Query for config in HKLM and HKLM\Software\Policies override by GPO
 //
-void InitializeLoggingSettings()
+void InitializeSettings()
 {
     // Registry Settings
     // Query for logging level. A value of 1 or more indicates to log key events to the event log
     // Query for logging only mode. A value of 1 or more indicates to suppress process kills
 
-    ExpandEnvironmentStrings(RACCINE_DIRECTORY, g_wRaccineDirectory, ARRAYSIZE(g_wRaccineDirectory) - 1);
+    ExpandEnvironmentStrings(RACCINE_DATA_DIRECTORY, g_wRaccineDataDirectory, ARRAYSIZE(g_wRaccineDataDirectory) - 1);
+    ExpandEnvironmentStrings(RACCINE_PROGRAM_DIRECTORY, g_wRaccineProgramDirectory, ARRAYSIZE(g_wRaccineProgramDirectory) - 1);
 
-    StringCchCopy(g_wYaraRulesDir, ARRAYSIZE(g_wYaraRulesDir), g_wRaccineDirectory);
+    StringCchCopy(g_wYaraRulesDir, ARRAYSIZE(g_wYaraRulesDir), g_wRaccineDataDirectory);
 
     const wchar_t* LoggingKeys[] = { RACCINE_REG_CONFIG , RACCINE_REG_POICY_CONFIG };
 
@@ -594,6 +594,16 @@ void InitializeLoggingSettings()
                 if (dwLoggingOnly > 0)
                 {
                     g_fLogOnly = TRUE;
+                }
+            }
+            // Show Gui
+            DWORD dwShowGui = 0;
+            DWORD cbDataGUI = sizeof(dwShowGui);
+            if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"ShowGui", NULL, NULL, (LPBYTE)&dwShowGui, &cbDataGUI))
+            {
+                if (dwShowGui > 0)
+                {
+                    g_fShowGui = TRUE;
                 }
             }
             // Yara rules dir
@@ -682,7 +692,7 @@ int wmain(int argc, WCHAR* argv[]) {
         }
     }
 
-    InitializeLoggingSettings();
+    InitializeSettings();
 
     
     // YARA
@@ -810,15 +820,17 @@ int wmain(int argc, WCHAR* argv[]) {
         }
         
         // signal Event for UI to know an alert happened.  If no UI is running, this has no effect.
-        HANDLE hEvent = OpenEvent(EVENT_MODIFY_STATE, FALSE, L"RaccineAlertEvent");
-        if (hEvent != NULL)
-        {
-            if (!SetEvent(hEvent))
+        if (g_fShowGui) {
+            HANDLE hEvent = OpenEvent(EVENT_MODIFY_STATE, FALSE, L"RaccineAlertEvent");
+            if (hEvent != NULL)
             {
-                ;//didn't go through
+                if (!SetEvent(hEvent))
+                {
+                    ;//didn't go through
+                }
+                CloseHandle(hEvent);
             }
-            CloseHandle(hEvent);
-        }        
+        }
     }
 
     // If block and not simulation mode
