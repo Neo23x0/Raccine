@@ -36,8 +36,8 @@ ECHO.
 SET /P M=" Select one of the options and  then press ENTER: "
 IF %M%==1 GOTO HARD 
 IF %M%==2 GOTO SOFT 
-IF %M%==E GOTO EOF
-IF %M%==e GOTO EOF
+IF %M%==E GOTO EXIT
+IF %M%==e GOTO EXIT
 
 :HARD
 ::#######################################################################
@@ -460,6 +460,12 @@ Netsh.exe advfirewall firewall add rule name="Block hh.exe netconns" program="%s
 
 GOTO EOF
 
+:EXIT
+:: Show exit message
+ECHO Exiting...
+TIMEOUT /t 10
+
 :EOF
 :: Other sections have been removed
 ECHO Successfully applied harding script. The system is now less susceptible to phishing attacks.
+TIMEOUT /t 10
