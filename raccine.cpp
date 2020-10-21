@@ -26,7 +26,7 @@
 #pragma comment(lib,"advapi32.lib")
 
 // Version
-#define VERSION "1.0 BETA"
+#define VERSION "1.0.1 BETA"
 
 // Log Config and Flags
 BOOL g_fLogOnly = FALSE;
@@ -118,7 +118,6 @@ BOOL InitializeYaraRules()
 /// <returns>TRUE if at least one Yara rule matched</returns>
 BOOL TestYaraRulesOnFile(LPWSTR szTestFile, LPWSTR* ppszYaraOutput, LPWSTR lpCommandLine)
 {
-
     BOOL fRetVal = FALSE;
     WCHAR wYaraCommandLine[1000] = { 0 };
     WCHAR wYaraOutputFile[MAX_PATH] = { 0 };
