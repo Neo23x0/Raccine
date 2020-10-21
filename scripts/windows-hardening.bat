@@ -1,7 +1,10 @@
 :: Source: https://gist.github.com/mackwage/08604751462126599d7e52f233490efe
 :: Modified to be less intrusive by Florian Roth in October 2020
 :: I've disabled some of the original actions with REM statements
-
+@ECHO OFF
+SET __COMPAT_LAYER=RunAsInvoker
+SETLOCAL EnableDelayedExpansion
+CLS 
 :MENU
 CLS
 ECHO.
@@ -33,8 +36,8 @@ ECHO.
 SET /P M=" Select one of the options and  then press ENTER: "
 IF %M%==1 GOTO HARD 
 IF %M%==2 GOTO SOFT 
-IF %M%==E GOTO EOF
-IF %M%==e GOTO EOF
+IF %M%==E GOTO EXIT
+IF %M%==e GOTO EXIT
 
 :HARD
 ::#######################################################################
@@ -457,6 +460,12 @@ Netsh.exe advfirewall firewall add rule name="Block hh.exe netconns" program="%s
 
 GOTO EOF
 
+:EXIT
+:: Show exit message
+ECHO Exiting...
+TIMEOUT /t 10
+
 :EOF
 :: Other sections have been removed
 ECHO Successfully applied harding script. The system is now less susceptible to phishing attacks.
+TIMEOUT /t 10

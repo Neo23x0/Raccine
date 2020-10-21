@@ -105,10 +105,10 @@ The batch installer includes an "uninstall" option.
 
 ### Manual Installation
 
-1. Apply Registry Patch `raccine-reg-patch-vssadmin.reg` to intercept invocations of `vssadmin.exe`
+1. Apply Registry Patches `raccine-reg-patch-vssadmin.reg` to intercept invocations of `vssadmin.exe`
 2. Apply all other registry patches of applications that you'd like to intercept
 3. Place `Raccine.exe` from the [release section](https://github.com/Neo23x0/Raccine/releases/) into `C:\Windows`
-4. Create a folder `%ProgramData%\Raccine` for the log file
+4. Create a folder `%ProgramData%\Raccine` for the log file and other data (like YARA rules)
 5. Run the following command to register Raccine as Eventlog source and set logging to enabled
 
 ```bat
@@ -124,6 +124,7 @@ REG.EXE ADD HKCU\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
 1. Run `raccine-reg-patch-uninstall.reg` 
 2. Remove `Raccine.exe` from the `C:\Windows` folder
 3. Run `REG.EXE DELETE HKCU\Software\Raccine /F`
+4. Remove `%ProgramData%\Raccine` folder
 
 ### Upgrade
 
@@ -139,7 +140,7 @@ After configuring the changes, you may need to bump gpo by running `gpupdate.exe
 
 ## Logfile
 
-A logfile with all interceptions and actions taken is written to `C:\ProgramData\Raccine_log.txt` 
+A logfile with all interceptions and actions taken is written to `C:\ProgramData\Raccine\Raccine_log.txt` 
 
 ![Log File](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/logfile.png)
 

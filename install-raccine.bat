@@ -90,7 +90,7 @@ ECHO Copying YARA rules to the directory ...
 COPY yara\*.yar "%ProgramData%\Raccine\yara"
 COPY yara\runyara.bat "%ProgramData%\Raccine\"
 ECHO Installing Registry patches ...
-REGEDIT.EXE /S raccine-reg-patch-vssadmin.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-vssadmin.reg
 IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry.
     GOTO MENU
@@ -211,7 +211,7 @@ ECHO.
 ECHO Removing Raccine folder ...
 @RD /S /Q "%ProgramData%\Raccine"
 ECHO Uninstalling Registry patches ...
-REGEDIT.EXE /S raccine-reg-patch-uninstall.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-uninstall.reg
 ECHO Removing Raccine.exe from the Windows folder ...
 DEL /Q C:\Windows\Raccine.exe
 IF '%errorlevel%' NEQ '0' (
