@@ -818,6 +818,17 @@ int wmain(int argc, WCHAR* argv[]) {
                 szYaraOutput = NULL;
             }
         }
+        
+        // signal Event for UI to know an alert happened.  If no UI is running, this has no effect.
+        HANDLE hEvent = OpenEvent(EVENT_MODIFY_STATE, FALSE, L"RaccineAlertEvent");
+        if (hEvent != NULL)
+        {
+            if (!SetEvent(hEvent))
+            {
+                ;//didn't go through
+            }
+            CloseHandle(hEvent);
+        }        
     }
 
     // If block and not simulation mode
