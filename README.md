@@ -108,7 +108,7 @@ The batch installer includes an "uninstall" option.
 1. Apply Registry Patches `raccine-reg-patch-vssadmin.reg` to intercept invocations of `vssadmin.exe`
 2. Apply all other registry patches of applications that you'd like to intercept
 3. Place `Raccine.exe` from the [release section](https://github.com/Neo23x0/Raccine/releases/) into `C:\Windows`
-4. Create a directory `%ProgramData%\Raccine` 
+4. Create a folder `%ProgramData%\Raccine` for the log file and other data (like YARA rules)
 5. Run the following command to register Raccine as Eventlog source and set logging to enabled
 
 ```bat
