@@ -115,8 +115,8 @@ REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-powershell.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-diskshadow.reg
 ECHO Registering Eventlog Events
-eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine event message" 2> nul
-eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message" 2> nul
+eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine Setup: Registration of Event ID 1" 2> nul
+eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine Setup: Registration of Event ID 2" 2> nul
 :: Registry Settings
 REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 0 /F
 REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 2 /F
@@ -160,8 +160,8 @@ REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-powershell.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-diskshadow.reg
 ECHO Registering Eventlog Events
-eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine event message" 2> nul
-eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message" 2> nul
+eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine Setup: Registration of Event ID 1" 2> nul
+eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine Setup: Registration of Event ID 2" 2> nul
 REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 2 /F
 REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 2 /F
 REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d %ProgramData%\Raccine\yara /F
@@ -200,8 +200,8 @@ IF '%errorlevel%' NEQ '0' (
 )
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
 ECHO Registering Eventlog Events
-eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine event message" 2> nul
-eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message" 2> nul
+eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine Setup: Registration of Event ID 1" 2> nul
+eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine Setup: Registration of Event ID 2" 2> nul
 REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 0 /F
 REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 2 /F
 REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d %ProgramData%\Raccine\yara /F
