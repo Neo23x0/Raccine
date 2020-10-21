@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30523.141
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaccineSettings", "RaccineSettings\RaccineSettings.csproj", "{00D6357C-D619-4DD3-8F08-AAA4F45A0795}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaccineElevatedCfg", "RaccineElevatedCfg\RaccineElevatedCfg.csproj", "{2A98F319-C56E-4786-98C2-B0FFD76BECEA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{00D6357C-D619-4DD3-8F08-AAA4F45A0795}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00D6357C-D619-4DD3-8F08-AAA4F45A0795}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00D6357C-D619-4DD3-8F08-AAA4F45A0795}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00D6357C-D619-4DD3-8F08-AAA4F45A0795}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A98F319-C56E-4786-98C2-B0FFD76BECEA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A98F319-C56E-4786-98C2-B0FFD76BECEA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A98F319-C56E-4786-98C2-B0FFD76BECEA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A98F319-C56E-4786-98C2-B0FFD76BECEA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9146C810-BDCD-400B-B948-45CE37B1496B}
+	EndGlobalSection
+EndGlobal
