@@ -102,6 +102,9 @@ MKDIR "%ProgramData%\Raccine"
 MKDIR "%ProgramData%\Raccine\yara"
 ECHO Copying YARA rules to the directory ...
 COPY yara\*.yar "%ProgramData%\Raccine\yara"
+ECHO Creating empty log file ...
+echo. 2>"%ProgramData%\Raccine\Raccine_log.txt"
+icacls "%ProgramData%\Raccine\Raccine_log.txt" /grant Users:F
 :: Registry Patches
 ECHO Installing Registry patches ...
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-vssadmin.reg
@@ -147,6 +150,9 @@ MKDIR "%ProgramData%\Raccine"
 MKDIR "%ProgramData%\Raccine\yara"
 ECHO Copying YARA rules to the directory ...
 COPY yara\*.yar "%ProgramData%\Raccine\yara"
+ECHO Creating empty log file ...
+echo. 2>"%ProgramData%\Raccine\Raccine_log.txt"
+icacls "%ProgramData%\Raccine\Raccine_log.txt" /grant Users:F
 :: Registry Patches
 ECHO Installing Registry patches ...
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-vssadmin.reg
@@ -191,6 +197,9 @@ MKDIR "%ProgramData%\Raccine"
 MKDIR "%ProgramData%\Raccine\yara"
 ECHO Copying YARA rules to the directory ...
 COPY yara\*.yar "%ProgramData%\Raccine\yara"
+ECHO Creating empty log file ...
+echo. 2>"%ProgramData%\Raccine\Raccine_log.txt"
+icacls "%ProgramData%\Raccine\Raccine_log.txt" /grant Users:F
 :: Registry Patches
 ECHO Installing Registry patches ...
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-vssadmin.reg
