@@ -27,7 +27,7 @@
 #pragma comment(lib,"advapi32.lib")
 
 // Version
-#define VERSION "1.0 BETA"
+#define VERSION "1.0.1 BETA"
 
 // Log Config and Flags
 BOOL g_fLogOnly = FALSE;
@@ -54,6 +54,7 @@ constexpr UINT MAX_YARA_RULE_FILES = 200;
 #define RACCINE_YARA_RULES_PATH L"RulesDir"
 #define RACCINE_DEFAULT_EVENTID  1
 #define RACCINE_EVENTID_MALICIOUS_ACTIVITY  2
+
 
 /// <summary>
 /// Evaluate a set of yara rules on a command line

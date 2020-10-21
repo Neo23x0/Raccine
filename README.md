@@ -46,7 +46,11 @@ Malicious combinations:
 - `recoveryenabled` (bcedit)
 - `ignoreallfailures` (bcedit)
 
-Powershell list of encoded commands: `JAB`, `SQBFAF`, `SQBuAH`, `SUVYI`, `cwBhA`, `aWV4I`, `aQBlAHgA`
+Powershell list of encoded commands: `JAB`, `SQBFAF`, `SQBuAH`, `SUVYI`, `cwBhA`, `aWV4I`, `aQBlAHgA` and many more
+
+## YARA Matching
+
+Since version 1.0, Raccine additionally uses YARA rules to determine if a process command line is malicious or not. The current YARA rules are in the `./yara` sub folder. 
 
 ## Example
 
@@ -90,6 +94,8 @@ If you have a solid security monitoring that logs all process executions, you co
 - 0.10.0 - Simulation mode only
 - 0.10.1 - Fix for Simulation mode
 - 0.10.2 - Includes `diskshadow.exe delete shadows` command
+- 0.10.3-5 - Minor fixes and additions
+- 1.0 BETA - GUI elements and YARA rule scanning of command line params
 
 ## Installation
 
@@ -103,28 +109,15 @@ If you have a solid security monitoring that logs all process executions, you co
 
 The batch installer includes an "uninstall" option.
 
-### Manual Installation
-
-1. Apply Registry Patches `raccine-reg-patch-vssadmin.reg` to intercept invocations of `vssadmin.exe`
-2. Apply all other registry patches of applications that you'd like to intercept
-3. Place `Raccine.exe` from the [release section](https://github.com/Neo23x0/Raccine/releases/) into `C:\Windows`
-4. Create a folder `%ProgramData%\Raccine` for the log file and other data (like YARA rules)
-5. Run the following command to register Raccine as Eventlog source and set logging to enabled
-
-```bat
-eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine event message"
-eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine event message"
-REG.EXE ADD HKCU\Software\Raccine /v Logging /t REG_DWORD /d 2 /F
-```
-
-(For systems with i386 architecture use `Raccine_x86.exe` and rename it to `Raccine.exe`)
-
 ### Manual Uninstall 
 
+As Administrator do:
+
 1. Run `raccine-reg-patch-uninstall.reg` 
-2. Remove `Raccine.exe` from the `C:\Windows` folder
-3. Run `REG.EXE DELETE HKCU\Software\Raccine /F`
-4. Remove `%ProgramData%\Raccine` folder
+2. Remove `%ProgramFiles%\Raccine` and `%ProgramData%\Raccine folders
+3. Run `reg delete HKCU\Software\Raccine /F`
+4. Run `taskkill /F /IM RaccineSettings.exe` 
+5. Run `reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /F` 
 
 ### Upgrade
 
@@ -161,6 +154,16 @@ Since version 0.10.0, Raccine can be installed in "simulation mode", which activ
 Run `raccine.exe` and watch the parent process tree die (screenshot of v0.1)
 
 ![Kill Run](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/screen1.png)
+
+## GUI
+
+Available with version 1. Can be disabled by an installer option or manually via Registry patches.
+
+![GUI](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/raccine-gui1.png)
+
+![GUI](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/raccine-gui2.png)
+
+![GUI](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/raccine-gui3.png)
 
 ## Pivot
 
