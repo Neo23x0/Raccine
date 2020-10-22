@@ -429,20 +429,53 @@ std::wstring getImageName(DWORD pid) {
     return L"(unavailable)";
 }
 
+// Helper for isAllowListed, checks if a specific process is allowed
+bool isProcessAllowed(const PROCESSENTRY32W& pe32)
+{
+    ProcessHandleWrapper hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe32.th32ProcessID);
+    if (!hProcess) {
+        return false;
+    }
+
+    const std::array<std::wstring, 3> allow_list{ L"wininit.exe", L"winlogon.exe", L"explorer.exe" };
+    for (const std::wstring& allowed_name : allow_list) {
+        if (_wcsicmp(static_cast<const wchar_t*>(pe32.szExeFile), allowed_name.c_str()) != 0) {
+            continue;
+        }
+
+        wchar_t filePath[MAX_PATH] = { 0 };
+        if (GetModuleFileNameEx(hProcess, NULL, filePath, MAX_PATH)) {
+            // Are they in the Windows directory?
+            const std::wstring system32_path = L"C:\\Windows\\System32\\";
+            if (_wcsnicmp(filePath, system32_path.c_str(), system32_path.length()) == 0) {
+
+                // Is the process running as SYSTEM
+                return getIntegrityLevel(hProcess) == Integrity::System;
+            }
+
+            // Are you explorer running in the Windows dir
+            const std::wstring explorer_path = L"C:\\Windows\\Explorer.exe";
+            if (_wcsnicmp(filePath, explorer_path.c_str(), explorer_path.length()) == 0) {
+
+                // Is the process running as MEDIUM (which Explorer does)
+                return getIntegrityLevel(hProcess) == Integrity::Medium;
+            }
+        }
+    }
+    return false;
+}
 
 // Check if process is in allowed list
-bool isAllowListed(DWORD pid) {
-    const std::array<std::wstring, 3> allow_list{ L"wininit.exe", L"winlogon.exe", L"explorer.exe" };
-
-    PROCESSENTRY32W pe32{};
+bool isAllowListed(DWORD pid)
+{
     SnapshotHandleWrapper hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
     if (!hSnapshot) {
         return false;
     }
 
-    ZeroMemory(&pe32, sizeof(pe32));
-    pe32.dwSize = sizeof(pe32);
+    PROCESSENTRY32W pe32{};
+    pe32.dwSize = sizeof pe32;
 
     if (!Process32FirstW(hSnapshot, &pe32)) {
         return false;
@@ -453,40 +486,7 @@ bool isAllowListed(DWORD pid) {
             continue;
         }
 
-        ProcessHandleWrapper hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe32.th32ProcessID);
-        if (!hProcess) {
-            break;
-        }
-
-        for (const std::wstring& allowed_name : allow_list) {
-            if (_wcsicmp(static_cast<wchar_t*>(pe32.szExeFile), allowed_name.c_str()) != 0) {
-                continue;
-            }
-
-            wchar_t filePath[MAX_PATH] = { 0 };
-            if (GetModuleFileNameEx(hProcess, NULL, filePath, MAX_PATH)) {
-                // Are they in the Windows directory?
-                const std::wstring system32_path = L"C:\\Windows\\System32\\";
-                if (_wcsnicmp(filePath, system32_path.c_str(), system32_path.length()) == 0) {
-
-                    // Is the process running as SYSTEM
-                    if (getIntegrityLevel(hProcess) == Integrity::System) {
-                        return true;
-                    }
-                }
-
-                // Are you explorer running in the Windows dir
-                const std::wstring explorer_path = L"C:\\Windows\\Explorer.exe";
-                if (_wcsnicmp(filePath, explorer_path.c_str(), explorer_path.length()) == 0) {
-
-                    // Is the process running as MEDIUM (which Explorer does)
-                    if (getIntegrityLevel(hProcess) == Integrity::Medium) {
-                        return true;
-                    }
-                }
-            }
-        }
-        break;
+        return isProcessAllowed(pe32);
     } while (Process32NextW(hSnapshot, &pe32));
 
     return false;
