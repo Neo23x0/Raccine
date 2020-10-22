@@ -23,6 +23,7 @@
 #include <shlwapi.h>
 
 #include "HandleWrapper.h"
+#include "Utils.h"
 
 #pragma comment(lib,"advapi32.lib")
 #pragma comment(lib,"shlwapi.lib")
@@ -59,6 +60,15 @@ constexpr UINT MAX_YARA_RULE_FILES = 200;
 #define RACCINE_DEFAULT_EVENTID  1
 #define RACCINE_EVENTID_MALICIOUS_ACTIVITY  2
 
+enum class Integrity
+{
+    Error = 0, // Indicates integrity level could not be found
+    Low = 1,
+    Medium = 2,
+    High = 3,
+    System = 4,
+
+};
 
 /// <summary>
 /// Initialize the set of Yara rules. Look in the configured directory (which can be overridden in the registry).
@@ -347,12 +357,13 @@ DWORD getParentPid(DWORD pid)
 }
 
 // Get integrity level of process
-DWORD getIntegrityLevel(HANDLE hProcess) {
+Integrity getIntegrityLevel(HANDLE hProcess)
+{
 
     HANDLE hToken = INVALID_HANDLE_VALUE;
 
     if (!OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
-        return 0;
+        return Integrity::Error;
     }
 
     PTOKEN_MANDATORY_LABEL pTIL;
@@ -360,7 +371,7 @@ DWORD getIntegrityLevel(HANDLE hProcess) {
     GetTokenInformation(hToken, TokenIntegrityLevel, NULL, 0, &dwLengthNeeded);
     pTIL = static_cast<PTOKEN_MANDATORY_LABEL>(LocalAlloc(0, dwLengthNeeded));
     if (!pTIL) {
-        return 0;
+        return Integrity::Error;
     }
 
     if (GetTokenInformation(hToken, TokenIntegrityLevel,
@@ -371,36 +382,33 @@ DWORD getIntegrityLevel(HANDLE hProcess) {
         LocalFree(pTIL);
 
         if (dwIntegrityLevel == SECURITY_MANDATORY_LOW_RID) {
-            // Low Integrity
-            return 1;
+            return Integrity::Low;
         }
 
         if (dwIntegrityLevel >= SECURITY_MANDATORY_MEDIUM_RID &&
             dwIntegrityLevel < SECURITY_MANDATORY_HIGH_RID) {
-            // Medium Integrity
-            return 2;
+            return Integrity::Medium;
         }
 
         if (dwIntegrityLevel >= SECURITY_MANDATORY_HIGH_RID &&
             dwIntegrityLevel < SECURITY_MANDATORY_SYSTEM_RID) {
-            // High Integrity
-            return 3;
+            return Integrity::High;
         }
 
         if (dwIntegrityLevel >= SECURITY_MANDATORY_SYSTEM_RID) {
-            // System Integrity
-            return 4;
+            return Integrity::System;
         }
 
-        return 0;
+        return Integrity::Error;
     }
 
     LocalFree(pTIL);
-    return 0;
+    return Integrity::Error;
 }
 
 // Get the image name of the process
-std::wstring getImageName(DWORD pid) {
+std::wstring getImageName(DWORD pid)
+{
     PROCESSENTRY32W pe32{};
     SnapshotHandleWrapper hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
@@ -424,64 +432,63 @@ std::wstring getImageName(DWORD pid) {
     return L"(unavailable)";
 }
 
+// Helper for isAllowListed, checks if a specific process is allowed
+bool isProcessAllowed(const PROCESSENTRY32W& pe32)
+{
+    ProcessHandleWrapper hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe32.th32ProcessID);
+    if (!hProcess) {
+        return false;
+    }
+
+    const std::array<std::wstring, 3> allow_list{ L"wininit.exe", L"winlogon.exe", L"explorer.exe" };
+    for (const std::wstring& allowed_name : allow_list) {
+        if (_wcsicmp(static_cast<const wchar_t*>(pe32.szExeFile), allowed_name.c_str()) != 0) {
+            continue;
+        }
+
+        wchar_t filePath[MAX_PATH] = { 0 };
+        if (GetModuleFileNameEx(hProcess, NULL, filePath, MAX_PATH)) {
+            // Are they in the Windows directory?
+            const std::wstring system32_path = L"C:\\Windows\\System32\\";
+            if (_wcsnicmp(filePath, system32_path.c_str(), system32_path.length()) == 0) {
+                // Is the process running as SYSTEM
+                return getIntegrityLevel(hProcess) == Integrity::System;
+            }
+
+            // Are you explorer running in the Windows dir
+            const std::wstring explorer_path = L"C:\\Windows\\Explorer.exe";
+            if (_wcsnicmp(filePath, explorer_path.c_str(), explorer_path.length()) == 0) {
+                // Is the process running as MEDIUM (which Explorer does)
+                return getIntegrityLevel(hProcess) == Integrity::Medium;
+            }
+        }
+    }
+
+    return false;
+}
 
 // Check if process is in allowed list
-bool isAllowListed(DWORD pid) {
-    const std::array<std::wstring, 3> allow_list{ L"wininit.exe", L"winlogon.exe", L"explorer.exe" };
-
-    PROCESSENTRY32W pe32{};
+bool isAllowListed(DWORD pid)
+{
     SnapshotHandleWrapper hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
     if (!hSnapshot) {
         return false;
     }
 
-    ZeroMemory(&pe32, sizeof(pe32));
-    pe32.dwSize = sizeof(pe32);
+    PROCESSENTRY32W pe32{};
+    pe32.dwSize = sizeof pe32;
 
     if (!Process32FirstW(hSnapshot, &pe32)) {
         return false;
     }
 
     do {
-        if (pe32.th32ProcessID == pid) {
+        if (pe32.th32ProcessID != pid) {
             continue;
         }
 
-        ProcessHandleWrapper hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe32.th32ProcessID);
-        if (!hProcess) {
-            break;
-        }
-
-        for (const std::wstring& allowed_name : allow_list) {
-            if (_wcsicmp(static_cast<wchar_t*>(pe32.szExeFile), allowed_name.c_str()) != 0) {
-                continue;
-            }
-
-            wchar_t filePath[MAX_PATH] = { 0 };
-            if (GetModuleFileNameEx(hProcess, NULL, filePath, MAX_PATH)) {
-                // Are they in the Windows directory?
-                const std::wstring system32_path = L"C:\\Windows\\System32\\";
-                if (_wcsnicmp(filePath, system32_path.c_str(), system32_path.length()) == 0) {
-
-                    // Is the process running as SYSTEM
-                    if (getIntegrityLevel(hProcess) == 4) {
-                        return true;
-                    }
-                }
-
-                // Are you explorer running in the Windows dir
-                const std::wstring explorer_path = L"C:\\Windows\\Explorer.exe";
-                if (_wcsnicmp(filePath, explorer_path.c_str(), explorer_path.length()) == 0) {
-
-                    // Is the process running as MEDIUM (which Explorer does)
-                    if (getIntegrityLevel(hProcess) == 2) {
-                        return true;
-                    }
-                }
-            }
-        }
-        break;
+        return isProcessAllowed(pe32);
     } while (Process32NextW(hSnapshot, &pe32));
 
     return false;
@@ -752,8 +759,8 @@ int wmain(int argc, WCHAR* argv[]) {
         std::wstring convertedArgPrev(convertedChPrev);
 
         // Convert args to lowercase for case-insensitive comparisons
-        transform(convertedArg.begin(), convertedArg.end(), convertedArg.begin(), ::tolower);
-        transform(convertedArgPrev.begin(), convertedArgPrev.end(), convertedArgPrev.begin(), ::tolower);
+        convertedArg = utils::to_lower(convertedArg);
+        convertedArgPrev = utils::to_lower(convertedArgPrev);
 
         // Simple flag checks
         if (_wcsicmp(L"delete", argv[iCount]) == 0) {
