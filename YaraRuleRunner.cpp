@@ -37,7 +37,7 @@ bool YaraRuleRunner::run_yara_rule_on_file(const std::filesystem::path& yara_rul
         return false;
     }
 
-    const std::filesystem::path result_file_path = target_file.wstring() + L".out";
+    const std::filesystem::path result_file_path = target_file.wstring() + YARA_RESULTS_SUFFIX;
 
     // Did we get a match?  allow for an empty newline or two . 
     if (!std::filesystem::exists(result_file_path) || std::filesystem::file_size(result_file_path) < 2) {
@@ -95,7 +95,7 @@ std::wstring YaraRuleRunner::read_output_file(const std::filesystem::path& targe
 std::vector<std::filesystem::path> YaraRuleRunner::get_yara_rules(const std::filesystem::path& yara_rules_dir)
 {
     std::vector<std::filesystem::path> yara_rules;
-    const std::wstring ext(YARA_RESULTS_SUFFIX);
+    const std::wstring ext(L".yar");
     for (const auto& p : std::filesystem::directory_iterator(yara_rules_dir)) {
         if (p.path().extension() == ext) {
             yara_rules.push_back(p.path());
