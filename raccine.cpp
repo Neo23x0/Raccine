@@ -356,7 +356,8 @@ DWORD getParentPid(DWORD pid)
 }
 
 // Get integrity level of process
-Integrity getIntegrityLevel(HANDLE hProcess) {
+Integrity getIntegrityLevel(HANDLE hProcess)
+{
 
     HANDLE hToken = INVALID_HANDLE_VALUE;
 
@@ -405,7 +406,8 @@ Integrity getIntegrityLevel(HANDLE hProcess) {
 }
 
 // Get the image name of the process
-std::wstring getImageName(DWORD pid) {
+std::wstring getImageName(DWORD pid)
+{
     PROCESSENTRY32W pe32{};
     SnapshotHandleWrapper hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
@@ -448,7 +450,6 @@ bool isProcessAllowed(const PROCESSENTRY32W& pe32)
             // Are they in the Windows directory?
             const std::wstring system32_path = L"C:\\Windows\\System32\\";
             if (_wcsnicmp(filePath, system32_path.c_str(), system32_path.length()) == 0) {
-
                 // Is the process running as SYSTEM
                 return getIntegrityLevel(hProcess) == Integrity::System;
             }
@@ -456,12 +457,12 @@ bool isProcessAllowed(const PROCESSENTRY32W& pe32)
             // Are you explorer running in the Windows dir
             const std::wstring explorer_path = L"C:\\Windows\\Explorer.exe";
             if (_wcsnicmp(filePath, explorer_path.c_str(), explorer_path.length()) == 0) {
-
                 // Is the process running as MEDIUM (which Explorer does)
                 return getIntegrityLevel(hProcess) == Integrity::Medium;
             }
         }
     }
+
     return false;
 }
 
