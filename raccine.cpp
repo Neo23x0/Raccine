@@ -22,6 +22,7 @@
 #include <strsafe.h>
 
 #include "HandleWrapper.h"
+#include "Utils.h"
 
 #pragma comment(lib,"advapi32.lib")
 
@@ -57,6 +58,15 @@ constexpr UINT MAX_YARA_RULE_FILES = 200;
 #define RACCINE_DEFAULT_EVENTID  1
 #define RACCINE_EVENTID_MALICIOUS_ACTIVITY  2
 
+enum class Integrity
+{
+    Error = 0, // Indicates integrity level could not be found
+    Low = 1,
+    Medium = 2,
+    High = 3,
+    System = 4,
+
+};
 
 /// <summary>
 /// Initialize the set of Yara rules. Look in the configured directory (which can be overridden in the registry).
@@ -346,12 +356,12 @@ DWORD getParentPid(DWORD pid)
 }
 
 // Get integrity level of process
-DWORD getIntegrityLevel(HANDLE hProcess) {
+Integrity getIntegrityLevel(HANDLE hProcess) {
 
     HANDLE hToken = INVALID_HANDLE_VALUE;
 
     if (!OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
-        return 0;
+        return Integrity::Error;
     }
 
     PTOKEN_MANDATORY_LABEL pTIL;
@@ -359,7 +369,7 @@ DWORD getIntegrityLevel(HANDLE hProcess) {
     GetTokenInformation(hToken, TokenIntegrityLevel, NULL, 0, &dwLengthNeeded);
     pTIL = static_cast<PTOKEN_MANDATORY_LABEL>(LocalAlloc(0, dwLengthNeeded));
     if (!pTIL) {
-        return 0;
+        return Integrity::Error;
     }
 
     if (GetTokenInformation(hToken, TokenIntegrityLevel,
@@ -370,32 +380,28 @@ DWORD getIntegrityLevel(HANDLE hProcess) {
         LocalFree(pTIL);
 
         if (dwIntegrityLevel == SECURITY_MANDATORY_LOW_RID) {
-            // Low Integrity
-            return 1;
+            return Integrity::Low;
         }
 
         if (dwIntegrityLevel >= SECURITY_MANDATORY_MEDIUM_RID &&
             dwIntegrityLevel < SECURITY_MANDATORY_HIGH_RID) {
-            // Medium Integrity
-            return 2;
+            return Integrity::Medium;
         }
 
         if (dwIntegrityLevel >= SECURITY_MANDATORY_HIGH_RID &&
             dwIntegrityLevel < SECURITY_MANDATORY_SYSTEM_RID) {
-            // High Integrity
-            return 3;
+            return Integrity::High;
         }
 
         if (dwIntegrityLevel >= SECURITY_MANDATORY_SYSTEM_RID) {
-            // System Integrity
-            return 4;
+            return Integrity::System;
         }
 
-        return 0;
+        return Integrity::Error;
     }
 
     LocalFree(pTIL);
-    return 0;
+    return Integrity::Error;
 }
 
 // Get the image name of the process
@@ -443,7 +449,7 @@ bool isAllowListed(DWORD pid) {
     }
 
     do {
-        if (pe32.th32ProcessID == pid) {
+        if (pe32.th32ProcessID != pid) {
             continue;
         }
 
@@ -464,7 +470,7 @@ bool isAllowListed(DWORD pid) {
                 if (_wcsnicmp(filePath, system32_path.c_str(), system32_path.length()) == 0) {
 
                     // Is the process running as SYSTEM
-                    if (getIntegrityLevel(hProcess) == 4) {
+                    if (getIntegrityLevel(hProcess) == Integrity::System) {
                         return true;
                     }
                 }
@@ -474,7 +480,7 @@ bool isAllowListed(DWORD pid) {
                 if (_wcsnicmp(filePath, explorer_path.c_str(), explorer_path.length()) == 0) {
 
                     // Is the process running as MEDIUM (which Explorer does)
-                    if (getIntegrityLevel(hProcess) == 2) {
+                    if (getIntegrityLevel(hProcess) == Integrity::Medium) {
                         return true;
                     }
                 }
@@ -742,8 +748,8 @@ int wmain(int argc, WCHAR* argv[]) {
         std::wstring convertedArgPrev(convertedChPrev);
 
         // Convert args to lowercase for case-insensitive comparisons
-        transform(convertedArg.begin(), convertedArg.end(), convertedArg.begin(), ::tolower);
-        transform(convertedArgPrev.begin(), convertedArgPrev.end(), convertedArgPrev.begin(), ::tolower);
+        convertedArg = utils::to_lower(convertedArg);
+        convertedArgPrev = utils::to_lower(convertedArgPrev);
 
         // Simple flag checks
         if (_wcsicmp(L"delete", argv[iCount]) == 0) {
