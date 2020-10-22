@@ -45,8 +45,6 @@ WCHAR g_wRaccineProgramDirectory[MAX_PATH] = { 0 };  // ENV expanded RACCINE_PRO
 
 // YARA Matching
 WCHAR g_wYaraRulesDir[MAX_PATH] = { 0 };
-LPWSTR* g_aszRuleFiles = { 0 };
-int g_cRuleCount = 0;
 
 constexpr UINT MAX_YARA_RULE_FILES = 200;
 #define RACCINE_REG_CONFIG  L"SOFTWARE\\Raccine"
@@ -178,7 +176,7 @@ DWORD getParentPid(DWORD pid)
 // Get integrity level of process
 DWORD getIntegrityLevel(HANDLE hProcess) {
 
-    HANDLE hToken = INVALID_HANDLE_VALUE;
+    TokenHandleWrapper hToken = INVALID_HANDLE_VALUE;
 
     if (!OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
         return 0;
@@ -642,20 +640,17 @@ int wmain(int argc, WCHAR* argv[]) {
         }
         else {
             // Eventlog
-            StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n(simulation mode)", lpMessage);
+            StringCchPrintfW(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n(simulation mode)", lpMessage);
             // Log to the text log file
             sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity (simulation mode)"));
             WriteEventLogEntryWithId(static_cast<LPWSTR>(wMessage), RACCINE_EVENTID_MALICIOUS_ACTIVITY);
         }
 
         // YARA Matches Detected
-        if (fYaraRuleMatched)
-        {
-            if (!szYaraOutput.empty()) {
-                StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"\r\nYara matches:\r\n%s", szYaraOutput);
+        if (fYaraRuleMatched && !szYaraOutput.empty()) {
+                StringCchPrintfW(wMessage, ARRAYSIZE(wMessage), L"\r\nYara matches:\r\n%s", szYaraOutput.c_str());
                 WriteEventLogEntryWithId(static_cast<LPWSTR>(wMessage), RACCINE_EVENTID_MALICIOUS_ACTIVITY);
                 sListLogs.append(logFormatLine(szYaraOutput));
-            }
         }
 
         // signal Event for UI to know an alert happened.  If no UI is running, this has no effect.
