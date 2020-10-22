@@ -920,7 +920,7 @@ int wmain(int argc, WCHAR* argv[])
     // a.) not block or
     // b.) simulation mode
     if (!bBlock || g_fLogOnly) {
-        std::wstring sCommandLineStr;
+        std::wstring sCommandLineStr = sCommandLine;
         if (bPowerShellWorkaround) {
             sCommandLineStr = std::wstring(L"powershell.exe ").append(sCommandLine);
         }
