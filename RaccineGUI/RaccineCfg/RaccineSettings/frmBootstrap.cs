@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -21,15 +21,25 @@ namespace RaccineSettings
 {
     public partial class frmBootstrap : Form
     {
-        //private EventWaitHandle alertEvent = null;
         private IntPtr alertEvent = IntPtr.Zero;
+        System.Threading.Mutex singleInstanceMutex = null;
 
         public frmBootstrap()
         {
             InitializeComponent();
             this.Visible = false;
 
-            //this.alertEvent = new EventWaitHandle(false, EventResetMode.ManualReset, "RaccineAlertEvent");
+            string szSingleInstanceMutexName = "Local\\" + System.Diagnostics.Process.GetCurrentProcess().ProcessName + "_mutex";
+            bool fMutexCreated = false;
+            this.singleInstanceMutex = new System.Threading.Mutex(true, szSingleInstanceMutexName, out fMutexCreated);
+
+            if (!fMutexCreated)
+            {
+                string szMessage = String.Format("{0} is already running. Exiting this instance.", System.Diagnostics.Process.GetCurrentProcess().ProcessName);
+                MessageBox.Show(szMessage, "Raccine Startup Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                this.singleInstanceMutex.Close();
+                Close();
+            }
             this.alertEvent = NativeApi.CreateEvent(IntPtr.Zero, false, false, "RaccineAlertEvent");
             if (this.alertEvent == IntPtr.Zero)
             {
@@ -38,7 +48,6 @@ namespace RaccineSettings
             }
 
             Thread watcher = new Thread(new ThreadStart(WatcherThread.ThreadProc));
-            //WatcherThread.alertEvent = this.alertEvent;
             WatcherThread.alertEvent = this.alertEvent;
             watcher.Name = String.Format("RaccineAlertWatcherThread");
             watcher.Start();
@@ -46,14 +55,12 @@ namespace RaccineSettings
         }
         private void mnuLastAlert_Click(object sender, EventArgs e)
         {
-            //this.alertEvent.Set();
             NativeApi.SetEvent(this.alertEvent);
         }
 
         private void mnuExit_Click(object sender, EventArgs e)
         {
             Close();
-           // Environment.Exit(0);
         }
 
         private void mnuSettings_Click(object sender, EventArgs e)
@@ -64,6 +71,10 @@ namespace RaccineSettings
             psi.UseShellExecute = true;
             psi.Verb = "runas";
             Process.Start(psi);
+        }
+        private void ReleaseResources()
+        {
+            this.singleInstanceMutex.Close();
         }
     }
 
@@ -88,7 +99,6 @@ namespace RaccineSettings
     public class WatcherThread
     {
         public static bool exit = false;
-        //public static EventWaitHandle alertEvent = null;
         public static IntPtr alertEvent = IntPtr.Zero;
 
         private static DateTime? lastEventTimeGenerated = null;
@@ -139,7 +149,6 @@ namespace RaccineSettings
         {
             while (true)
             {
-                //alertEvent.WaitOne();
                 UInt32 RetVal = NativeApi.WaitForSingleObject(alertEvent, 5000);
                 if (RetVal == NativeApi.WAIT_TIMEOUT)
                 {
@@ -152,7 +161,6 @@ namespace RaccineSettings
                 {
                     NativeApi.ResetEvent(alertEvent);
                     DoWork();
-                    //alertEvent.Reset();
                 }
             }
         }

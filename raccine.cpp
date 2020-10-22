@@ -20,15 +20,17 @@
 #include <iomanip>
 #include <sstream>
 #include <strsafe.h>
+#include <shlwapi.h>
 #include <vector>
 
 
 #include "HandleWrapper.h"
 
 #pragma comment(lib,"advapi32.lib")
+#pragma comment(lib,"shlwapi.lib")
 
 // Version
-#define VERSION "1.0 BETA"
+#define VERSION "1.0.2 BETA"
 
 // Log Config and Flags
 BOOL g_fLogOnly = FALSE;
@@ -120,7 +122,6 @@ BOOL InitializeYaraRules()
 /// <returns>TRUE if at least one Yara rule matched</returns>
 BOOL TestYaraRulesOnFile(LPWSTR szTestFile, LPWSTR* ppszYaraOutput, LPWSTR lpCommandLine)
 {
-
     BOOL fRetVal = FALSE;
     WCHAR wYaraCommandLine[1000] = { 0 };
     WCHAR wYaraOutputFile[MAX_PATH] = { 0 };
@@ -716,6 +717,8 @@ int wmain(int argc, WCHAR* argv[])
     bool bwin32ShadowCopy = false;
     bool bEncodedCommand = false;
     bool bVersion = false;
+    bool bPowerShellWorkaround = false;
+
 
     // Encoded Command List (Base64)
     WCHAR encodedCommands[11][9] = { L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI", L"cwBhA", L"aWV4I", L"aQBlAHgA",
@@ -729,6 +732,14 @@ int wmain(int argc, WCHAR* argv[])
     // Append all original command line parameters to a string for later log messages
     for (int i = 1; i < argc; i++) {
         sCommandLine.append(std::wstring(argv[i]).append(L" "));
+    }
+
+    LPWSTR szCommandLine = (LPWSTR)sCommandLine.c_str();
+    if (StrStrI(szCommandLine, L"-File ") != NULL
+        && StrStrI(szCommandLine, L".ps") != NULL
+        && StrStrI(szCommandLine, L"powershell") == NULL)
+    {
+        bPowerShellWorkaround = true;
     }
 
     if (argc > 1)
@@ -909,7 +920,12 @@ int wmain(int argc, WCHAR* argv[])
     // a.) not block or
     // b.) simulation mode
     if (!bBlock || g_fLogOnly) {
-        createChildProcessWithDebugger(sCommandLine);
+        std::wstring sCommandLineStr;
+        if (bPowerShellWorkaround) {
+            sCommandLineStr = std::wstring(L"powershell.exe ").append(sCommandLine);
+        }
+
+        createChildProcessWithDebugger(sCommandLineStr);
     }
 
     // Log events
