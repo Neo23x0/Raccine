@@ -564,8 +564,8 @@ int wmain(int argc, WCHAR* argv[]) {
         std::wstring convertedArgPrev(convertedChPrev);
 
         // Convert args to lowercase for case-insensitive comparisons
-        std::ranges::transform(convertedArg, convertedArg.begin(), ::tolower);
-        std::ranges::transform(convertedArgPrev, convertedArgPrev.begin(), ::tolower);
+        transform(convertedArg.begin(), convertedArg.end(), convertedArg.begin(), ::tolower);
+        transform(convertedArgPrev.begin(), convertedArgPrev.end(), convertedArgPrev.begin(), ::tolower);
 
         // Simple flag checks
         if (_wcsicmp(L"delete", argv[iCount]) == 0) {
