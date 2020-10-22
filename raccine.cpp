@@ -670,7 +670,7 @@ int wmain(int argc, WCHAR* argv[]) {
     // If block and not simulation mode
     if (bBlock && !g_fLogOnly) {
         // Collect PIDs to kill
-        while (c < 1024) {
+        while (c < 1024) { // TODO: This will always be true, what was the intention here?
             pid = getParentPid(pid);
             if (pid == 0) {
                 break;
