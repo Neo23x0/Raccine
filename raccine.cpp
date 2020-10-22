@@ -20,6 +20,8 @@
 #include <iomanip>
 #include <sstream>
 #include <strsafe.h>
+#include <vector>
+
 
 #include "HandleWrapper.h"
 
@@ -639,12 +641,55 @@ void createChildProcessWithDebugger(std::wstring command_line)
     CloseHandle(processInfo.hThread);
 }
 
-int wmain(int argc, WCHAR* argv[]) {
-
-    DWORD pids[1024] = { 0 };
-    uint8_t c = 0;
+// Find all parent processes and kill them
+void find_and_kill_processes(const std::wstring& sCommandLine, std::wstring& sListLogs)
+{
+    std::vector<DWORD> pids;
+    // Collect PIDs to kill
     DWORD pid = GetCurrentProcessId();
 
+    while (true) {
+        pid = getParentPid(pid);
+        if (pid == 0) {
+            break;
+        }
+
+        std::wstring imageName = getImageName(pid);
+
+        if (!isAllowListed(pid)) {
+            wprintf(L"\nCollecting IMAGE %s with PID %d for a kill\n", imageName.c_str(), pid);
+            pids.push_back(pid);
+        }
+        else {
+            wprintf(L"\nProcess IMAGE %s with PID %d is on allowlist\n", imageName.c_str(), pid);
+            sListLogs.append(logFormatAction(pid, imageName, sCommandLine, L"Whitelisted"));
+        }
+    }
+
+    // Loop over collected PIDs and try to kill the processes
+    for (DWORD process_id : pids) {
+        std::wstring imageName = getImageName(process_id);
+        // If no simulation flag is set
+        if (!g_fLogOnly) {
+            // Kill
+            wprintf(L"Kill process IMAGE %s with PID %d\n", imageName.c_str(), process_id);
+            killProcess(process_id, 1);
+            sListLogs.append(logFormatAction(process_id, imageName, sCommandLine, L"Terminated"));
+        }
+        else {
+            // Simulated kill
+            wprintf(L"Simulated Kill IMAGE %s with PID %d\n", imageName.c_str(), process_id);
+            sListLogs.append(logFormatAction(process_id, imageName, sCommandLine, L"Terminated (Simulated)"));
+        }
+    }
+
+    // Finish message
+    printf("\nRaccine v%s finished\n", VERSION);
+    Sleep(5000);
+}
+
+int wmain(int argc, WCHAR* argv[])
+{
     setlocale(LC_ALL, "");
 
     // Block marker
@@ -682,7 +727,9 @@ int wmain(int argc, WCHAR* argv[]) {
     WCHAR wMessage[MAX_MESSAGE] = { 0 };
 
     // Append all original command line parameters to a string for later log messages
-    for (int i = 1; i < argc; i++) sCommandLine.append(std::wstring(argv[i]).append(L" "));
+    for (int i = 1; i < argc; i++) {
+        sCommandLine.append(std::wstring(argv[i]).append(L" "));
+    }
 
     if (argc > 1)
     {
@@ -723,9 +770,8 @@ int wmain(int argc, WCHAR* argv[]) {
     }
 
     LPWSTR szYaraOutput = NULL;  // if assigned, call LocalFree on it.
-    BOOL fYaraRuleMatched = EvaluateYaraRules((LPWSTR)sCommandLine.c_str(), &szYaraOutput);
-    if (fYaraRuleMatched)
-    {
+    const BOOL fYaraRuleMatched = EvaluateYaraRules(static_cast<LPWSTR>(sCommandLine.data()), &szYaraOutput);
+    if (fYaraRuleMatched) {
         bBlock = true;
     }
 
@@ -816,15 +862,16 @@ int wmain(int argc, WCHAR* argv[]) {
             StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n", lpMessage);
             // Log to the text log file
             sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity"));
-            WriteEventLogEntryWithId((LPWSTR)wMessage, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
         }
         else {
             // Eventlog
             StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n(simulation mode)", lpMessage);
             // Log to the text log file
             sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity (simulation mode)"));
-            WriteEventLogEntryWithId((LPWSTR)wMessage, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
         }
+
+        WriteEventLogEntryWithId(static_cast<LPWSTR>(wMessage), RACCINE_EVENTID_MALICIOUS_ACTIVITY);
+
 
         // YARA Matches Detected
         if (fYaraRuleMatched)
@@ -833,7 +880,7 @@ int wmain(int argc, WCHAR* argv[]) {
             {
 
                 StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"\r\nYara matches:\r\n%s", szYaraOutput);
-                WriteEventLogEntryWithId((LPWSTR)wMessage, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
+                WriteEventLogEntryWithId(static_cast<LPWSTR>(wMessage), RACCINE_EVENTID_MALICIOUS_ACTIVITY);
                 sListLogs.append(logFormatLine(szYaraOutput));
                 LocalFree(szYaraOutput);
                 szYaraOutput = NULL;
@@ -843,11 +890,9 @@ int wmain(int argc, WCHAR* argv[]) {
         // signal Event for UI to know an alert happened.  If no UI is running, this has no effect.
         if (g_fShowGui) {
             HANDLE hEvent = OpenEvent(EVENT_MODIFY_STATE, FALSE, L"RaccineAlertEvent");
-            if (hEvent != NULL)
-            {
-                if (!SetEvent(hEvent))
-                {
-                    ;//didn't go through
+            if (hEvent != NULL) {
+                if (!SetEvent(hEvent)) {
+                    //didn't go through
                 }
                 CloseHandle(hEvent);
             }
@@ -856,45 +901,7 @@ int wmain(int argc, WCHAR* argv[]) {
 
     // If block and not simulation mode
     if (bBlock && !g_fLogOnly) {
-        // Collect PIDs to kill
-        while (c < 1024) {
-            pid = getParentPid(pid);
-            if (pid == 0) {
-                break;
-            }
-
-            std::wstring imageName = getImageName(pid);
-
-            if (!isAllowListed(pid)) {
-                wprintf(L"\nCollecting IMAGE %s with PID %d for a kill\n", imageName.c_str(), pid);
-                pids[c] = pid;
-                c++;
-            }
-            else {
-                wprintf(L"\nProcess IMAGE %s with PID %d is on allowlist\n", imageName.c_str(), pid);
-                sListLogs.append(logFormatAction(pid, imageName, sCommandLine, L"Whitelisted"));
-            }
-        }
-
-        // Loop over collected PIDs and try to kill the processes
-        for (uint8_t i = c; i > 0; --i) {
-            std::wstring imageName = getImageName(pids[i - 1]);
-            // If no simulation flag is set
-            if (!g_fLogOnly) {
-                // Kill
-                wprintf(L"Kill process IMAGE %s with PID %d\n", imageName.c_str(), pids[i - 1]);
-                killProcess(pids[i - 1], 1);
-                sListLogs.append(logFormatAction(pids[i - 1], imageName, sCommandLine, L"Terminated"));
-            }
-            else {
-                // Simulated kill
-                wprintf(L"Simulated Kill IMAGE %s with PID %d\n", imageName.c_str(), pids[i - 1]);
-                sListLogs.append(logFormatAction(pids[i - 1], imageName, sCommandLine, L"Terminated (Simulated)"));
-            }
-        }
-        // Finish message
-        printf("\nRaccine v%s finished\n", VERSION);
-        Sleep(5000);
+        find_and_kill_processes(sCommandLine, sListLogs);
     }
 
     // Otherwise launch the process with its original parameters
@@ -902,13 +909,7 @@ int wmain(int argc, WCHAR* argv[]) {
     // a.) not block or
     // b.) simulation mode
     if (!bBlock || g_fLogOnly) {
-        std::wstring sCommandLineStr;
-
-        for (int i = 1; i < argc; i++) {
-            sCommandLineStr.append(std::wstring(argv[i]).append(L" "));
-        }
-
-        createChildProcessWithDebugger(sCommandLineStr);
+        createChildProcessWithDebugger(sCommandLine);
     }
 
     // Log events
