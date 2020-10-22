@@ -149,11 +149,13 @@
   <ItemGroup>
     <ClCompile Include="Raccine.cpp" />
     <ClCompile Include="YaraRuleRunner.cpp" />
+    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HandleWrapper.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="YaraRuleRunner.h" />
+    <ClInclude Include="Utils.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Raccine.ico" />

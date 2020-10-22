@@ -18,6 +18,7 @@ COPY reg-patches\*.reg Raccine\reg-patches\
 :: YARA Feature
 MKDIR Raccine\yara\
 COPY yara\*.* Raccine\yara\
+COPY tools\yara64.exe Raccine\yara\
 
 :: GUI
 COPY RaccineGUI\RaccineCfg\RaccineElevatedCfg\bin\Release\RaccineElevatedCfg.exe Raccine\
