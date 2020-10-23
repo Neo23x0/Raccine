@@ -44,6 +44,10 @@ public:
         return m_handle;
     }
 
+    typename traits::HandleType* operator&() {
+        return &m_handle;
+    }
+
 private:
     typename traits::HandleType m_handle;
 };
@@ -96,7 +100,20 @@ struct FindFileHandleTraits
     }
 };
 
+// Handle wrapper for handles from OpenProcessToken
+struct TokenHandleTraits
+{
+    typedef HANDLE HandleType;
+    inline static const HANDLE InvalidValue = INVALID_HANDLE_VALUE;
+
+    static void Close(HANDLE value)
+    {
+        CloseHandle(value);
+    }
+};
+
 using SnapshotHandleWrapper = HandleWrapper< SnapshotHandleTraits>;
 using ProcessHandleWrapper = HandleWrapper< ProcessHandleTraits>;
 using EventSourceHandleWrapper = HandleWrapper< EventSourceHandleTraits>;
 using FindFileHandleWrapper = HandleWrapper< FindFileHandleTraits>;
+using TokenHandleWrapper = HandleWrapper< TokenHandleTraits>;

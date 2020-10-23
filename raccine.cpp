@@ -14,17 +14,17 @@
 #include <Psapi.h>
 #include <string>
 #include <array>
-#include <algorithm>
 #include <chrono>
 #include <ctime>
 #include <iomanip>
 #include <sstream>
 #include <strsafe.h>
-#include <shlwapi.h>
+#include <Shlwapi.h>
 #include <vector>
 
 
 #include "HandleWrapper.h"
+#include "YaraRuleRunner.h"
 #include "Utils.h"
 
 #pragma comment(lib,"advapi32.lib")
@@ -49,11 +49,6 @@ WCHAR g_wRaccineProgramDirectory[MAX_PATH] = { 0 };  // ENV expanded RACCINE_PRO
 
 // YARA Matching
 WCHAR g_wYaraRulesDir[MAX_PATH] = { 0 };
-LPWSTR* g_aszRuleFiles = { 0 };
-int g_cRuleCount = 0;
-#define YARA_INSTANCE  L"runyara.bat"
-#define YARA_RESULTS_SUFFIX L".out"
-constexpr UINT TIMEOUT = 5000;
 
 constexpr UINT MAX_YARA_RULE_FILES = 200;
 #define RACCINE_REG_CONFIG  L"SOFTWARE\\Raccine"
@@ -73,202 +68,35 @@ enum class Integrity
 };
 
 /// <summary>
-/// Initialize the set of Yara rules. Look in the configured directory (which can be overridden in the registry).
-///
-/// By default it looks in %PROGRAMDATA%\Raccine, unless overridden by RulesDir in the registry
-///
-/// </summary>
-/// <returns></returns>
-BOOL InitializeYaraRules()
-{
-    WCHAR wYaraPattern[MAX_PATH] = { 0 };
-
-    //wprintf(L"Checking dir: %s\n", g_wYaraRulesDir);
-    if (FAILED(StringCchCat(wYaraPattern, ARRAYSIZE(wYaraPattern) - 1, g_wYaraRulesDir)))
-        return FALSE;
-
-    if (FAILED(StringCchCat(wYaraPattern, ARRAYSIZE(wYaraPattern) - 1, L"\\*.yar")))
-        return FALSE;
-
-    //allocate array to hold paths to yara rule files
-    g_aszRuleFiles = (LPWSTR*)LocalAlloc(LPTR, MAX_YARA_RULE_FILES * sizeof LPWSTR);
-    if (!g_aszRuleFiles) {
-        return FALSE;
-    }
-
-    WIN32_FIND_DATA FindFileData{};
-    FindFileHandleWrapper hFind = FindFirstFileW(wYaraPattern, &FindFileData);
-    if (!hFind) {
-        return FALSE;
-    }
-
-    do
-    {
-        if (g_cRuleCount >= MAX_YARA_RULE_FILES) {
-            wprintf(L"Yara rule count has exceeded max of %d rules\n", MAX_YARA_RULE_FILES);
-            break;
-        }
-
-        constexpr DWORD nSize = MAX_PATH;
-        LPWSTR szRulePath = static_cast<LPWSTR>(LocalAlloc(LPTR, (nSize + 1) * sizeof WCHAR));
-        if (!szRulePath) {
-            return FALSE;
-        }
-
-        StringCchPrintfW(szRulePath, nSize, L"%s\\%s", g_wYaraRulesDir, FindFileData.cFileName);
-        g_aszRuleFiles[g_cRuleCount++] = szRulePath;
-
-    } while (FindNextFileW(hFind, &FindFileData));
-
-    return TRUE;
-}
-
-/// <summary>
-/// This function tests the Yara rules in Raccine's config directory on the launched command line.
-/// </summary>
-/// <param name="szTestFile">The temp file containing the command line to test</param>
-/// <param name="ppszYaraOutput">Output parameter.  A string containing the Yara match text. If not NULL, call LocalFree to release the memory</param>
-/// <param name="lpCommandLine">The input command line</param>
-/// <returns>TRUE if at least one Yara rule matched</returns>
-BOOL TestYaraRulesOnFile(LPWSTR szTestFile, LPWSTR* ppszYaraOutput, LPWSTR lpCommandLine)
-{
-    BOOL fRetVal = FALSE;
-    WCHAR wYaraCommandLine[1000] = { 0 };
-    WCHAR wYaraOutputFile[MAX_PATH] = { 0 };
-    PROCESS_INFORMATION pi = { 0 };
-    STARTUPINFO si = { 0 };
-    LPWSTR szFinalString = NULL;
-    constexpr DWORD cchFinalStringMaxSize = 2000;
-
-    for (int i = 0; i < g_cRuleCount; i++)
-    {
-        LPWSTR szYaraRule = g_aszRuleFiles[i];
-        StringCchPrintf(wYaraCommandLine, ARRAYSIZE(wYaraCommandLine), L"%s\\%s %s %s", g_wRaccineProgramDirectory, YARA_INSTANCE, szYaraRule, szTestFile);
-
-        if (!CreateProcess(
-            NULL,
-            wYaraCommandLine,
-            NULL,
-            NULL,
-            FALSE,
-            0,
-            NULL,
-            NULL,
-            &si,
-            &pi
-        ))
-        {
-            DWORD err = GetLastError();
-            goto cleanup;
-        }
-
-        if (WaitForSingleObject(pi.hProcess, TIMEOUT) == WAIT_TIMEOUT)
-        {
-            CloseHandle(pi.hProcess);
-            CloseHandle(pi.hThread);
-            goto cleanup;
-        }
-
-        if (SUCCEEDED(StringCchPrintf(wYaraOutputFile, ARRAYSIZE(wYaraOutputFile), L"%s%s", szTestFile, YARA_RESULTS_SUFFIX)))
-        {
-            HANDLE hOutputFile = CreateFileW(wYaraOutputFile, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
-            if (hOutputFile != INVALID_HANDLE_VALUE)
-            {
-                DWORD dwHighSize = 0;
-                const DWORD dwSize = GetFileSize(hOutputFile,
-                                                 &dwHighSize
-                );
-                if (dwSize > 2)  //did we get a match?  allow for an empty newline or two . 
-                {
-                    fRetVal = TRUE;
-
-                    if (!szFinalString)
-                    {
-                        szFinalString = static_cast<LPWSTR>(LocalAlloc(LPTR, cchFinalStringMaxSize * sizeof WCHAR));
-                    }
-                    if (szFinalString)
-                    {
-                        LPSTR szYaraOutput = static_cast<LPSTR>(LocalAlloc(LPTR, (dwSize + 1) * sizeof CHAR));
-                        LPWSTR szYaraOutputWide = static_cast<LPWSTR>(LocalAlloc(LPTR, (dwSize + 1) * sizeof WCHAR));
-                        DWORD cbRead = 0;
-                        if (szYaraOutput && szYaraOutputWide)
-                        {
-                            if (ReadFile(hOutputFile, szYaraOutput, dwSize, &cbRead, NULL))
-                            {
-                                if (MultiByteToWideChar(
-                                    CP_ACP,
-                                    0,
-                                    szYaraOutput,
-                                    -1,
-                                    szYaraOutputWide,
-                                    dwSize + 1
-                                ))
-                                {
-                                    if (SUCCEEDED(StringCchCat(szFinalString, cchFinalStringMaxSize, L"Rule file: ")) &&
-                                        SUCCEEDED(StringCchCat(szFinalString, cchFinalStringMaxSize, szYaraRule)) &&
-                                        SUCCEEDED(StringCchCat(szFinalString, cchFinalStringMaxSize, L"\n")) &&
-                                        SUCCEEDED(StringCchCat(szFinalString, cchFinalStringMaxSize, szYaraOutputWide)) &&
-                                        SUCCEEDED(StringCchCat(szFinalString, cchFinalStringMaxSize, L"\n")) &&
-                                        SUCCEEDED(StringCchCat(szFinalString, cchFinalStringMaxSize, L"Command line:\n")) &&
-                                        SUCCEEDED(StringCchCat(szFinalString, cchFinalStringMaxSize, lpCommandLine)) &&
-                                        SUCCEEDED(StringCchCat(szFinalString, cchFinalStringMaxSize, L"\n\n")))
-                                    {
-                                        *ppszYaraOutput = szFinalString;
-                                    }
-                                    LocalFree(szYaraOutputWide);
-                                }
-                            }
-                        }
-                        if (szYaraOutput)
-                            LocalFree(szYaraOutput);
-                    }
-
-                }
-
-                CloseHandle(hOutputFile);
-            }
-
-            DeleteFileW(wYaraOutputFile);
-        }
-
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-    }
-
-cleanup:
-    return fRetVal;
-}
-
-/// <summary>
 /// Evaluate a set of yara rules on a command line
 /// </summary>
 /// <param name="lpCommandLine">The command line to test</param>
-/// <param name="ppszYaraOutput">if non-NULL, an output string containing match results is written to this parameter. Use LocalFree to free the memory.</param>
+/// <param name="outYaraOutput">if not empty, an output string containing match results is written to this parameter.</param>
 /// <returns>TRUE if at least one match result was found</returns>
-BOOL EvaluateYaraRules(LPWSTR lpCommandLine, _Outptr_opt_ LPWSTR* ppszYaraOutput)
+BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput)
 {
     BOOL fRetVal = FALSE;
     WCHAR wTestFilename[MAX_PATH] = { 0 };
-    int len = static_cast<int>(wcslen(lpCommandLine));
-    HANDLE hTempFile = INVALID_HANDLE_VALUE;
+    const int len = static_cast<int>(wcslen(lpCommandLine));
     LPSTR lpAnsiCmdLine = static_cast<LPSTR>(LocalAlloc(LPTR, len + 1));
     if (!lpAnsiCmdLine)
     {
         return FALSE;
     }
-    ExpandEnvironmentStrings(RACCINE_DATA_DIRECTORY, wTestFilename, ARRAYSIZE(wTestFilename) - 1);
+    ExpandEnvironmentStringsW(RACCINE_DATA_DIRECTORY, wTestFilename, ARRAYSIZE(wTestFilename) - 1);
+    YaraRuleRunner rule_runner(wTestFilename, g_wRaccineProgramDirectory);
 
-    int c = GetTempFileName(wTestFilename, L"Raccine", 0, wTestFilename);
+    int c = GetTempFileNameW(wTestFilename, L"Raccine", 0, wTestFilename);
     if (c != 0)
     {
         //  Creates the new file to write to for the upper-case version.
-        hTempFile = CreateFile(wTestFilename, // file name 
-                               GENERIC_WRITE,        // open for write 
-                               0,                    // do not share 
-                               NULL,                 // default security 
-                               CREATE_ALWAYS,        // overwrite existing
-                               FILE_ATTRIBUTE_NORMAL,// normal file 
-                               NULL);                // no template 
+        HANDLE hTempFile = CreateFileW(wTestFilename, // file name 
+                                       GENERIC_WRITE,        // open for write 
+                                       0,                    // do not share 
+                                       NULL,                 // default security 
+                                       CREATE_ALWAYS,        // overwrite existing
+                                       FILE_ATTRIBUTE_NORMAL,// normal file 
+                                       NULL);                // no template 
         if (hTempFile == INVALID_HANDLE_VALUE)
         {
             return FALSE;
@@ -294,9 +122,9 @@ BOOL EvaluateYaraRules(LPWSTR lpCommandLine, _Outptr_opt_ LPWSTR* ppszYaraOutput
         }
         CloseHandle(hTempFile);
 
-        fRetVal = TestYaraRulesOnFile(wTestFilename, ppszYaraOutput, lpCommandLine);
+        fRetVal = rule_runner.run_yara_rules_on_file(wTestFilename, lpCommandLine, outYaraOutput);
 
-        DeleteFile(wTestFilename);
+        DeleteFileW(wTestFilename);
     }
 cleanup:
     return fRetVal;
@@ -362,7 +190,7 @@ DWORD getParentPid(DWORD pid)
 Integrity getIntegrityLevel(HANDLE hProcess)
 {
 
-    HANDLE hToken = INVALID_HANDLE_VALUE;
+    TokenHandleWrapper hToken = INVALID_HANDLE_VALUE;
 
     if (!OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
         return Integrity::Error;
@@ -780,15 +608,9 @@ int wmain(int argc, WCHAR* argv[])
 
     InitializeSettings();
 
+    std::wstring szYaraOutput;
+    BOOL fYaraRuleMatched = EvaluateYaraRules(static_cast<LPWSTR>(sCommandLine.data()), szYaraOutput);
 
-    // YARA
-    if (!InitializeYaraRules())
-    {
-        wprintf(L"Fatal error during InitializeYaraRules(). Yara rules will not be used.");
-    }
-
-    LPWSTR szYaraOutput = NULL;  // if assigned, call LocalFree on it.
-    const BOOL fYaraRuleMatched = EvaluateYaraRules(static_cast<LPWSTR>(sCommandLine.data()), &szYaraOutput);
     if (fYaraRuleMatched) {
         bBlock = true;
     }
@@ -883,7 +705,7 @@ int wmain(int argc, WCHAR* argv[])
         }
         else {
             // Eventlog
-            StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n(simulation mode)", lpMessage);
+            StringCchPrintfW(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n(simulation mode)", lpMessage);
             // Log to the text log file
             sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity (simulation mode)"));
         }
@@ -892,17 +714,10 @@ int wmain(int argc, WCHAR* argv[])
 
 
         // YARA Matches Detected
-        if (fYaraRuleMatched)
-        {
-            if (szYaraOutput != NULL)
-            {
-
-                StringCchPrintf(wMessage, ARRAYSIZE(wMessage), L"\r\nYara matches:\r\n%s", szYaraOutput);
+        if (fYaraRuleMatched && !szYaraOutput.empty()) {
+                StringCchPrintfW(wMessage, ARRAYSIZE(wMessage), L"\r\nYara matches:\r\n%s", szYaraOutput.c_str());
                 WriteEventLogEntryWithId(static_cast<LPWSTR>(wMessage), RACCINE_EVENTID_MALICIOUS_ACTIVITY);
                 sListLogs.append(logFormatLine(szYaraOutput));
-                LocalFree(szYaraOutput);
-                szYaraOutput = NULL;
-            }
         }
 
         // signal Event for UI to know an alert happened.  If no UI is running, this has no effect.
