@@ -5,4 +5,6 @@
 
 #pragma once
 
+#pragma warning(push, 3)
 #include "gtest/gtest.h"
+#pragma warning(pop)

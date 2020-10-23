@@ -287,7 +287,8 @@ bool isAllowListed(DWORD pid)
 }
 
 // Kill a process
-BOOL killProcess(DWORD dwProcessId, UINT uExitCode) {
+BOOL killProcess(DWORD dwProcessId, UINT uExitCode)
+{
     constexpr DWORD dwDesiredAccess = PROCESS_TERMINATE;
     constexpr BOOL  bInheritHandle = FALSE;
     ProcessHandleWrapper hProcess = OpenProcess(dwDesiredAccess, bInheritHandle, dwProcessId);
@@ -299,7 +300,8 @@ BOOL killProcess(DWORD dwProcessId, UINT uExitCode) {
 }
 
 // Get timestamp
-std::string getTimeStamp() {
+std::string getTimeStamp()
+{
     struct tm buf {};
     auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now() - std::chrono::hours(24));
     localtime_s(&buf, &time);
@@ -310,7 +312,8 @@ std::string getTimeStamp() {
 }
 
 // Format a log lines
-std::wstring logFormat(const std::wstring& cmdLine, const std::wstring& comment) {
+std::wstring logFormat(const std::wstring& cmdLine, const std::wstring& comment)
+{
     const std::string timeString = getTimeStamp();
     const std::wstring timeStringW(timeString.cbegin(), timeString.cend());
     std::wstring logLine = timeStringW + L" DETECTED_CMD: '" + cmdLine + L" COMMENT: " + comment + L"\n";
