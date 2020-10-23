@@ -1,6 +1,5 @@
 ﻿#include "YaraRuleRunner.h"
 
-
 #include <fstream>
 #include <strsafe.h>
 #include <Windows.h>
