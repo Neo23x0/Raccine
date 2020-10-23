@@ -20,6 +20,12 @@ jobs:
 
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.0.2
+      
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.2
+    
+    - name: Nuget Restore
+      run: nuget restore Raccine.sln
 
     - name: Run msbuild of Raccine for x86 release
       run: msbuild -m /p:Configuration=Release /p:Platform=x86
