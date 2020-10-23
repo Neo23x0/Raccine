@@ -41,6 +41,16 @@ jobs:
       run: msbuild -m /p:Configuration=Release
       working-directory: ./RaccineGUI/RaccineCfg
 
+    - name: Run Tests (x64)
+      run: Raccine-Test.exe
+      working-directory: ./x64/Release
+      shell: cmd
+  
+    - name: Run Tests (x86)
+      run: Raccine-Test.exe
+      working-directory: ./Release
+      shell: cmd
+      
     - name: Run build_dist.bat
       run: ./build_dist.bat
       shell: cmd
