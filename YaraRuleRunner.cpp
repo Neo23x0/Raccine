@@ -64,7 +64,7 @@ bool YaraRuleRunner::run_yara_process(std::wstring& command_line)
         NULL,
         NULL,
         FALSE,
-        0,
+        CREATE_NO_WINDOW,
         NULL,
         NULL,
         &info,

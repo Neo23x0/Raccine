@@ -14,13 +14,12 @@
 #include <Psapi.h>
 #include <string>
 #include <array>
-#include <algorithm>
 #include <chrono>
 #include <ctime>
 #include <iomanip>
 #include <sstream>
 #include <strsafe.h>
-#include <shlwapi.h>
+#include <Shlwapi.h>
 #include <vector>
 
 
