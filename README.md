@@ -173,10 +173,9 @@ In case that the Ransomware that your're currently handling uses a certain proce
 
 I'd like to extend Raccine but lack the C++ coding skills, especially o the Windows platform.
 
-1. Show process image name and not just PID for killed processes
-2. Add (optional) message box to indicate a blocked program for the working user
-3. Extend coverage according to [this](https://github.com/Neo23x0/sigma/blob/master/rules/windows/process_creation/win_office_shell.yml) sigma rule comparing a list of child process names with their parents' to block many office droppers
-4. Add MD5/SHA1/SHA256 hash values to log (I fear the OpenSSl ... maybe we don't include a hash)
+1. Pass [external variables](https://yara.readthedocs.io/en/v3.4.0/commandline.html#cmdoption-yara-d) to the YARA matching process 
+2. Extend coverage according to [this](https://github.com/Neo23x0/sigma/blob/master/rules/windows/process_creation/win_office_shell.yml) sigma rule comparing a list of child process names with their parents' to block many office droppers - we need to pass external variables to the YARA matching process for that
+3. Add MD5/SHA1/SHA256 hash values to log (I fear the OpenSSl ... maybe we don't include a hash)
 
 ## Other Info
 
