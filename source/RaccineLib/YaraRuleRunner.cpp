@@ -19,7 +19,7 @@ bool YaraRuleRunner::run_yara_rules_on_file(const std::filesystem::path& target_
     bool fRetVal = false;
     // run all rules, don't bail out early
     for (const std::filesystem::path& yara_rule : m_yara_rules) {
-        wprintf(L"Running with YARA rule: %s", yara_rule.c_str());
+        //wprintf(L"Running with YARA rule: %s", yara_rule.c_str());
         bool fSuccess = run_yara_rule_on_file(yara_rule, target_file, command_line, out_yara_output, yara_cmd_optional_defines); 
         if (fSuccess)
             fRetVal = true;
@@ -100,11 +100,11 @@ std::wstring YaraRuleRunner::read_output_file(const std::filesystem::path& targe
 std::vector<std::filesystem::path> YaraRuleRunner::get_yara_rules(const std::filesystem::path& yara_rules_dir)
 {
     std::vector<std::filesystem::path> yara_rules;
-    wprintf(L"Checking Rules Directory: %s\n", yara_rules_dir.c_str());
+    //wprintf(L"Checking Rules Directory: %s\n", yara_rules_dir.c_str());
     const std::wstring ext(L".yar");
     for (const auto& p : std::filesystem::directory_iterator(yara_rules_dir)) {
         if (p.path().extension() == ext) {
-            wprintf(L"Found: %s\n", p.path().c_str());
+            //wprintf(L"Found: %s\n", p.path().c_str());
             yara_rules.push_back(p.path());
         }
     }
