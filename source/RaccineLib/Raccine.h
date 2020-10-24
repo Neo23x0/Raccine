@@ -27,6 +27,7 @@ constexpr UINT MAX_MESSAGE = 1000;
 #define RACCINE_EVENTID_MALICIOUS_ACTIVITY  2
 
 #define RACCINE_DATA_DIRECTORY  L"%PROGRAMDATA%\\Raccine"
+#define RACCINE_YARA_DIRECTORY  L"%PROGRAMDATA%\\Raccine\\yara"
 #define RACCINE_PROGRAM_DIRECTORY  L"%PROGRAMFILES%\\Raccine"
 inline WCHAR g_wRaccineDataDirectory[MAX_PATH] = { 0 };  // ENV expanded RACCINE_DATA_DIRECTORY
 inline WCHAR g_wRaccineProgramDirectory[MAX_PATH] = { 0 };  // ENV expanded RACCINE_PROGRAM_DIRECTORY

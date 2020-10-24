@@ -48,7 +48,7 @@ BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput, DWORD 
     {
         return FALSE;
     }
-    ExpandEnvironmentStringsW(RACCINE_DATA_DIRECTORY, wTestFilename, ARRAYSIZE(wTestFilename) - 1);
+    ExpandEnvironmentStringsW(RACCINE_YARA_DIRECTORY, wTestFilename, ARRAYSIZE(wTestFilename) - 1);
     YaraRuleRunner rule_runner(wTestFilename, g_wRaccineProgramDirectory);
 
     int c = GetTempFileNameW(wTestFilename, L"Raccine", 0, wTestFilename);
