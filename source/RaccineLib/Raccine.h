@@ -19,6 +19,7 @@
 // Log Config and Flags
 inline BOOL g_fLogOnly = FALSE;
 inline BOOL g_fShowGui = FALSE;
+inline BOOL g_fDebug = FALSE;
 #define RACCINE_REG_CONFIG  L"SOFTWARE\\Raccine"
 #define RACCINE_REG_POICY_CONFIG  L"SOFTWARE\\Policies\\Raccine"
 constexpr UINT MAX_MESSAGE = 1000;

@@ -37,6 +37,9 @@
 /// <returns>TRUE if at least one match result was found</returns>
 BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput, DWORD dwChildPid)
 {
+    if (g_fDebug) {
+        wprintf(L"Running YARA on: %s\n", lpCommandLine);
+    }
     BOOL fRetVal = FALSE;
     WCHAR wTestFilename[MAX_PATH] = { 0 };
     const int len = static_cast<int>(wcslen(lpCommandLine));
@@ -105,6 +108,10 @@ BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput, DWORD 
         std::wstring AdditionalYaraDefines = L" " + std::to_wstring(dwCurrSessionId) + L" " + std::to_wstring(dwCurrPid) + L" " + std::to_wstring(dwCurrParentPid) +
             L" " + std::to_wstring(dwParentSessionId) + L" " + std::to_wstring(dwParentPid) + L" " + std::to_wstring(dwParentParentPid) + L" ";
 
+        if (g_fDebug) {
+            wprintf(L"Composed test-string is: %s\n", AdditionalYaraDefines.c_str());
+            wprintf(L"Everything OK? %d\n", fSuccess);
+        }
 
         if (fSuccess)
         {
@@ -422,6 +429,16 @@ void InitializeSettings()
                 if (dwShowGui > 0)
                 {
                     g_fShowGui = TRUE;
+                }
+            }
+            // Debug
+            DWORD dwDebug = 0;
+            DWORD cbDataDebug = sizeof(dwDebug);
+            if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"Debug", NULL, NULL, (LPBYTE)&dwDebug, &cbDataDebug))
+            {
+                if (dwDebug > 0)
+                {
+                    g_fDebug = TRUE;
                 }
             }
             // Yara rules dir
