@@ -56,12 +56,18 @@ enum class Integrity
 /// <param name="lpCommandLine">The command line to test</param>
 /// <param name="outYaraOutput">if not empty, an output string containing match results is written to this parameter.</param>
 /// <returns>TRUE if at least one match result was found</returns>
-BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput);
+bool EvaluateYaraRules(const std::wstring& lpCommandLine, std::wstring& outYaraOutput);
 
 /// This function will optionally log messages to the eventlog
 void WriteEventLogEntryWithId(LPWSTR pszMessage, DWORD dwEventId);
 
 void WriteEventLogEntry(LPWSTR  pszMessage);
+
+bool is_malicious_command_line(const std::vector<std::wstring>& command_line);
+
+bool does_command_line_contain_base64(const std::vector<std::wstring>& command_line);
+
+bool needs_powershell_workaround(const std::wstring& command_line);
 
 // Get Parent Process ID
 DWORD getParentPid(DWORD pid);

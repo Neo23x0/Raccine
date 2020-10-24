@@ -24,6 +24,7 @@
 #include "Raccine.h"
 
 #include "HandleWrapper.h"
+#include "Utils.h"
 #include "YaraRuleRunner.h"
 
 #pragma comment(lib,"advapi32.lib")
@@ -35,22 +36,20 @@
 /// <param name="lpCommandLine">The command line to test</param>
 /// <param name="outYaraOutput">if not empty, an output string containing match results is written to this parameter.</param>
 /// <returns>TRUE if at least one match result was found</returns>
-BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput)
+bool EvaluateYaraRules(const std::wstring& lpCommandLine, std::wstring& outYaraOutput)
 {
-    BOOL fRetVal = FALSE;
+    bool fRetVal = false;
     WCHAR wTestFilename[MAX_PATH] = { 0 };
-    const int len = static_cast<int>(wcslen(lpCommandLine));
+    const int len = static_cast<int>(lpCommandLine.length());
     LPSTR lpAnsiCmdLine = static_cast<LPSTR>(LocalAlloc(LPTR, len + 1));
-    if (!lpAnsiCmdLine)
-    {
-        return FALSE;
+    if (!lpAnsiCmdLine) {
+        return false;
     }
     ExpandEnvironmentStringsW(RACCINE_DATA_DIRECTORY, wTestFilename, ARRAYSIZE(wTestFilename) - 1);
     YaraRuleRunner rule_runner(wTestFilename, g_wRaccineProgramDirectory);
 
     int c = GetTempFileNameW(wTestFilename, L"Raccine", 0, wTestFilename);
-    if (c != 0)
-    {
+    if (c != 0) {
         //  Creates the new file to write to for the upper-case version.
         HANDLE hTempFile = CreateFileW(wTestFilename, // file name 
                                        GENERIC_WRITE,        // open for write 
@@ -59,25 +58,22 @@ BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput)
                                        CREATE_ALWAYS,        // overwrite existing
                                        FILE_ATTRIBUTE_NORMAL,// normal file 
                                        NULL);                // no template 
-        if (hTempFile == INVALID_HANDLE_VALUE)
-        {
-            return FALSE;
+        if (hTempFile == INVALID_HANDLE_VALUE) {
+            return false;
         }
         DWORD dwWritten = 0;
 
         if (WideCharToMultiByte(
             CP_ACP,
             0,
-            lpCommandLine,
+            lpCommandLine.c_str(),
             len,
             lpAnsiCmdLine,
             len + 1,
             NULL,
             NULL
-        ))
-        {
-            if (!WriteFile(hTempFile, lpAnsiCmdLine, lstrlenA(lpAnsiCmdLine) + 1, &dwWritten, NULL))
-            {
+        )) {
+            if (!WriteFile(hTempFile, lpAnsiCmdLine, lstrlenA(lpAnsiCmdLine) + 1, &dwWritten, NULL)) {
                 CloseHandle(hTempFile);
                 goto cleanup;
             }
@@ -121,6 +117,156 @@ void WriteEventLogEntryWithId(LPWSTR pszMessage, DWORD dwEventId)
 void WriteEventLogEntry(LPWSTR  pszMessage)
 {
     WriteEventLogEntryWithId(pszMessage, RACCINE_DEFAULT_EVENTID);
+}
+
+bool is_malicious_command_line(const std::vector<std::wstring>& command_line)
+{
+    if (command_line.empty()) {
+        return false;
+    }
+
+    // Main programs to monitor
+    bool bVssadmin = false;
+    bool bWmic = false;
+    bool bWbadmin = false;
+    bool bcdEdit = false;
+    bool bPowerShell = false;
+    bool bDiskShadow = false;
+
+    // Command line params
+    bool bDelete = false;
+    bool bShadows = false;
+    bool bResize = false;
+    bool bShadowStorage = false;
+    bool bShadowCopy = false;
+    bool bCatalog = false;
+    bool bQuiet = false;
+    bool bRecoveryEnabled = false;
+    bool bIgnoreallFailures = false;
+    bool bwin32ShadowCopy = false;
+    const bool bEncodedCommand = does_command_line_contain_base64(command_line);
+    bool bVersion = false;
+
+    const std::wstring program = utils::to_lower(command_line[0]);
+    // Check for invoked program
+    if (program == L"vssadmin.exe" || program == L"vssadmin") {
+        bVssadmin = true;
+    }
+
+    if (program == L"wmic.exe" || program == L"wmic") {
+        bWmic = true;
+    }
+
+    if (program == L"wbadmin.exe" || program == L"wbadmin") {
+        bWbadmin = true;
+    }
+
+    if (program == L"bcdedit.exe" || program == L"bcdedit") {
+        bcdEdit = true;
+    }
+
+    if (program == L"powershell.exe" || program == L"powershell") {
+        bPowerShell = true;
+    }
+
+    if (program == L"diskshadow.exe" || program == L"diskshadow") {
+        bDiskShadow = true;
+    }
+
+    // Check for keywords in command line parameters
+    std::vector<std::wstring> command_line_parameters(command_line.begin() + 1,
+                                                      command_line.end());
+    for(const std::wstring& parameter: command_line_parameters) {
+        // Convert wchar to wide string so we can perform contains/find command
+        const std::wstring convertedArg(utils::to_lower(parameter));
+
+        // Simple flag checks
+        if (convertedArg == L"delete") {
+            bDelete = true;
+        } else if (convertedArg == L"shadows") {
+            bShadows = true;
+        } else if (convertedArg == L"shadowstorage") {
+            bShadowStorage = true;
+        } else if (convertedArg == L"resize") {
+            bResize = true;
+        } else if (convertedArg == L"shadowcopy") {
+            bShadowCopy = true;
+        } else if (convertedArg == L"catalog") {
+            bCatalog = true;
+        } else if (convertedArg == L"-quiet" || convertedArg == L"/quiet") {
+            bQuiet = true;
+        } else if (convertedArg == L"recoveryenabled") {
+            bRecoveryEnabled = true;
+        } else if (convertedArg == L"ignoreallfailures") {
+            bIgnoreallFailures = true;
+        } else if (convertedArg.find(L"win32_shadowcopy") != std::string::npos) {
+            bwin32ShadowCopy = true;
+        } else if (convertedArg == L"-version" || convertedArg == L"/version") {
+            bVersion = true;
+        }
+    }
+
+    // Check all combinations (our blocklist)
+    if ((bVssadmin && bDelete && bShadows) ||            // vssadmin.exe
+        (bVssadmin && bDelete && bShadowStorage) ||      // vssadmin.exe
+        (bVssadmin && bResize && bShadowStorage) ||      // vssadmin.exe
+        (bWmic && bDelete && bShadowCopy) ||             // wmic.exe
+        (bWbadmin && bDelete && bCatalog && bQuiet) || 	 // wbadmin.exe 
+        (bcdEdit && bIgnoreallFailures) ||               // bcdedit.exe
+        (bcdEdit && bRecoveryEnabled) ||                 // bcdedit.exe
+        (bPowerShell && bVersion) ||                     // powershell.exe
+        (bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
+        (bPowerShell && bEncodedCommand) ||              // powershell.exe
+        (bDiskShadow && bDelete && bShadows)) {          // diskshadow.exe
+
+        // Activate blocking
+        return true;
+    }
+
+    return false;
+}
+
+bool does_command_line_contain_base64(const std::vector<std::wstring>& command_line)
+{
+    // Encoded Command List (Base64)
+    std::vector<std::wstring> encodedCommands = { L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI",
+                                                  L"cwBhA", L"aWV4I", L"aQBlAHgA",
+                                                  L"cwB", L"IAA", L"IAB", L"UwB" };
+
+    // Check for keywords in command line parameters
+    for (size_t iCount = 1; iCount < command_line.size(); iCount++) {
+
+        // Convert wchar to wide string so we can perform contains/find command
+        std::wstring convertedArg(utils::to_lower(command_line[iCount]));
+        std::wstring convertedArgOrig(command_line[iCount]);                        // original parameter (no tolower)
+        std::wstring convertedArgPrev(utils::to_lower(command_line[iCount - 1]));   // previous parameter
+
+        // Special comparison of current argument with previous argument
+        // allows to check for e.g. -encodedCommand JABbaTheHuttandotherBase64characters
+        if (convertedArgPrev.find(L"-e") == std::string::npos && convertedArgPrev.find(L"/e") == std::string::npos) {
+            continue;
+        }
+
+        for (const std::wstring& command : encodedCommands) {
+            if (convertedArgOrig.find(command) != std::string::npos) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool needs_powershell_workaround(const std::wstring& command_line)
+{
+    const auto szCommandLine = static_cast<LPCWSTR>(command_line.c_str());
+    if (StrStrIW(szCommandLine, L"-File ") != NULL
+        && StrStrIW(szCommandLine, L".ps") != NULL
+        && StrStrIW(szCommandLine, L"powershell") == NULL) {
+        return true;
+    }
+
+    return false;
 }
 
 // Get Parent Process ID
@@ -320,7 +466,8 @@ std::wstring logFormat(const std::wstring& cmdLine, const std::wstring& comment)
     return logLine;
 }
 
-std::wstring logFormatLine(const std::wstring& line) {
+std::wstring logFormatLine(const std::wstring& line)
+{
     const std::string timeString = getTimeStamp();
     const std::wstring timeStringW(timeString.cbegin(), timeString.cend());
     std::wstring logLine = timeStringW + L" " + line + L"\n";
@@ -328,7 +475,8 @@ std::wstring logFormatLine(const std::wstring& line) {
 }
 
 // Format the activity log lines
-std::wstring logFormatAction(DWORD pid, const std::wstring& imageName, const std::wstring& cmdLine, const std::wstring& comment) {
+std::wstring logFormatAction(DWORD pid, const std::wstring& imageName, const std::wstring& cmdLine, const std::wstring& comment)
+{
     const std::string timeString = getTimeStamp();
     const std::wstring timeStringW(timeString.cbegin(), timeString.cend());
     std::wstring logLine = timeStringW + L" DETECTED_CMD: '" + cmdLine + L"' IMAGE: '" + imageName + L"' PID: " + std::to_wstring(pid) + L" ACTION: " + comment + L"\n";
@@ -336,7 +484,8 @@ std::wstring logFormatAction(DWORD pid, const std::wstring& imageName, const std
 }
 
 // Log to file
-void logSend(const std::wstring& logStr) {
+void logSend(const std::wstring& logStr)
+{
     static FILE* logFile = nullptr;
     if (logFile == nullptr) {
         errno_t err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine\\Raccine_log.txt", L"at");
@@ -351,8 +500,7 @@ void logSend(const std::wstring& logStr) {
         }
     }
     //transform(logStr.begin(), logStr.end(), logStr.begin(), ::tolower);
-    if (logFile != nullptr)
-    {
+    if (logFile != nullptr) {
         fwprintf(logFile, L"%s", logStr.c_str());
         fflush(logFile);
         fclose(logFile);
@@ -377,34 +525,27 @@ void InitializeSettings()
     const wchar_t* LoggingKeys[] = { RACCINE_REG_CONFIG , RACCINE_REG_POICY_CONFIG };
 
     HKEY hKey = NULL;
-    for (int i = 0; i < ARRAYSIZE(LoggingKeys); i++)
-    {
-        if (ERROR_SUCCESS == RegOpenKeyEx(HKEY_LOCAL_MACHINE, LoggingKeys[i], 0, KEY_READ, &hKey))
-        {
+    for (int i = 0; i < ARRAYSIZE(LoggingKeys); i++) {
+        if (ERROR_SUCCESS == RegOpenKeyEx(HKEY_LOCAL_MACHINE, LoggingKeys[i], 0, KEY_READ, &hKey)) {
             // Log Only
             DWORD dwLoggingOnly = 0;
             DWORD cbDataLO = sizeof(dwLoggingOnly);
-            if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"LogOnly", NULL, NULL, (LPBYTE)&dwLoggingOnly, &cbDataLO))
-            {
-                if (dwLoggingOnly > 0)
-                {
+            if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"LogOnly", NULL, NULL, (LPBYTE)&dwLoggingOnly, &cbDataLO)) {
+                if (dwLoggingOnly > 0) {
                     g_fLogOnly = TRUE;
                 }
             }
             // Show Gui
             DWORD dwShowGui = 0;
             DWORD cbDataGUI = sizeof(dwShowGui);
-            if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"ShowGui", NULL, NULL, (LPBYTE)&dwShowGui, &cbDataGUI))
-            {
-                if (dwShowGui > 0)
-                {
+            if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"ShowGui", NULL, NULL, (LPBYTE)&dwShowGui, &cbDataGUI)) {
+                if (dwShowGui > 0) {
                     g_fShowGui = TRUE;
                 }
             }
             // Yara rules dir
             DWORD cbData = sizeof(g_wYaraRulesDir);
-            if (ERROR_SUCCESS == RegQueryValueExW(hKey, RACCINE_YARA_RULES_PATH, NULL, NULL, (LPBYTE)g_wYaraRulesDir, &cbData))
-            {
+            if (ERROR_SUCCESS == RegQueryValueExW(hKey, RACCINE_YARA_RULES_PATH, NULL, NULL, (LPBYTE)g_wYaraRulesDir, &cbData)) {
                 ;
             }
             RegCloseKey(hKey);
@@ -460,8 +601,7 @@ void find_and_kill_processes(const std::wstring& sCommandLine, std::wstring& sLi
         if (!isAllowListed(pid)) {
             wprintf(L"\nCollecting IMAGE %s with PID %d for a kill\n", imageName.c_str(), pid);
             pids.push_back(pid);
-        }
-        else {
+        } else {
             wprintf(L"\nProcess IMAGE %s with PID %d is on allowlist\n", imageName.c_str(), pid);
             sListLogs.append(logFormatAction(pid, imageName, sCommandLine, L"Whitelisted"));
         }
@@ -476,8 +616,7 @@ void find_and_kill_processes(const std::wstring& sCommandLine, std::wstring& sLi
             wprintf(L"Kill process IMAGE %s with PID %d\n", imageName.c_str(), process_id);
             killProcess(process_id, 1);
             sListLogs.append(logFormatAction(process_id, imageName, sCommandLine, L"Terminated"));
-        }
-        else {
+        } else {
             // Simulated kill
             wprintf(L"Simulated Kill IMAGE %s with PID %d\n", imageName.c_str(), process_id);
             sListLogs.append(logFormatAction(process_id, imageName, sCommandLine, L"Terminated (Simulated)"));
