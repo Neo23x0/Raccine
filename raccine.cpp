@@ -41,6 +41,9 @@ int wmain(int argc, WCHAR* argv[])
     bool bVersion = false;
     bool bPowerShellWorkaround = false;
 
+    HANDLE hThread = INVALID_HANDLE_VALUE;
+    HANDLE hProcess = INVALID_HANDLE_VALUE;
+    DWORD dwChildPid = 0;
 
     // Encoded Command List (Base64)
     WCHAR encodedCommands[11][9] = { L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI", L"cwBhA", L"aWV4I", L"aQBlAHgA",
@@ -63,6 +66,16 @@ int wmain(int argc, WCHAR* argv[])
     {
         bPowerShellWorkaround = true;
     }
+
+    // Launch the new child in a suspended state (CREATE_SUSPENDED)
+    // this will allow yara rules to run against this process
+    // if we should block, we will terminate it later
+    std::wstring sCommandLineStr = sCommandLine;
+    if (bPowerShellWorkaround) {
+        sCommandLineStr = std::wstring(L"powershell.exe ").append(sCommandLine);
+    }
+
+    createChildProcessWithDebugger(sCommandLineStr, CREATE_SUSPENDED, &dwChildPid, &hProcess, &hThread);
 
     if (argc > 1)
     {
@@ -96,7 +109,7 @@ int wmain(int argc, WCHAR* argv[])
     InitializeSettings();
 
     std::wstring szYaraOutput;
-    BOOL fYaraRuleMatched = EvaluateYaraRules(static_cast<LPWSTR>(sCommandLine.data()), szYaraOutput);
+    BOOL fYaraRuleMatched = EvaluateYaraRules(static_cast<LPWSTR>(sCommandLine.data()), szYaraOutput, dwChildPid);
 
     if (fYaraRuleMatched) {
         bBlock = true;
@@ -224,17 +237,27 @@ int wmain(int argc, WCHAR* argv[])
         find_and_kill_processes(sCommandLine, sListLogs);
     }
 
-    // Otherwise launch the process with its original parameters
-    // Conditions:
-    // a.) not block or
-    // b.) simulation mode
-    if (!bBlock || g_fLogOnly) {
-        std::wstring sCommandLineStr = sCommandLine;
-        if (bPowerShellWorkaround) {
-            sCommandLineStr = std::wstring(L"powershell.exe ").append(sCommandLine);
-        }
 
-        createChildProcessWithDebugger(sCommandLineStr);
+    // if we're in simulation mode or we didn't need to block the process, let it run
+    if (g_fLogOnly || !bBlock)
+    {
+        if (hThread != INVALID_HANDLE_VALUE && hProcess != INVALID_HANDLE_VALUE)
+        {
+
+            ResumeThread(hThread);
+            WaitForSingleObject(hProcess, INFINITE);
+            CloseHandle(hThread);
+            CloseHandle(hProcess);
+        }
+    }
+    else
+    {
+        if (bBlock)
+        {
+            killProcess(dwChildPid, 1);
+            CloseHandle(hThread);
+            CloseHandle(hProcess);
+        }
     }
 
     // Log events

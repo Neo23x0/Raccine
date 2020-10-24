@@ -8,28 +8,33 @@ YaraRuleRunner::YaraRuleRunner(const std::filesystem::path& yara_rules_dir, cons
     m_raccine_program_directory(raccine_program_directory),
     m_yara_rules(get_yara_rules(yara_rules_dir))
 {
+    ExpandEnvironmentStrings(YARA_USERCONTEXT_DIR, g_wRaccineUserContextDirectory, ARRAYSIZE(g_wRaccineUserContextDirectory) - 1);
 }
 
 bool YaraRuleRunner::run_yara_rules_on_file(const std::filesystem::path& target_file,
                                             const std::wstring& command_line,
-                                            std::wstring& out_yara_output)
+                                            std::wstring& out_yara_output,
+                                            std::wstring&  yara_cmd_optional_defines)
 {
+    bool fRetVal = false;
+    // run all rules, don't bail out early
     for (const std::filesystem::path& yara_rule : m_yara_rules) {
-        if (run_yara_rule_on_file(yara_rule, target_file, command_line, out_yara_output)) {
-            return true;
-        }
+        bool fSuccess = run_yara_rule_on_file(yara_rule, target_file, command_line, out_yara_output, yara_cmd_optional_defines); 
+        if (fSuccess)
+            fRetVal = true;
     }
 
-    return false;
+    return fRetVal;
 }
 
 bool YaraRuleRunner::run_yara_rule_on_file(const std::filesystem::path& yara_rule,
                                            const std::filesystem::path& target_file,
                                            const std::wstring& command_line,
-                                           std::wstring& out_yara_output) const
+                                           std::wstring& out_yara_output,
+                                            std::wstring& yara_cmd_optional_defines) const
 {
     std::wstring yara_command_line = m_raccine_program_directory.wstring() + L"\\"
-        + YARA_INSTANCE + L" " + yara_rule.wstring() + L" " + target_file.wstring();
+        + YARA_INSTANCE + L" " + yara_rule.wstring() + L" " + target_file.wstring() + L" " + yara_cmd_optional_defines;
 
     const bool yara_succeeded = run_yara_process(yara_command_line);
     if(!yara_succeeded) {

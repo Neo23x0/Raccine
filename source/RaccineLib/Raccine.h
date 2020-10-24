@@ -56,7 +56,7 @@ enum class Integrity
 /// <param name="lpCommandLine">The command line to test</param>
 /// <param name="outYaraOutput">if not empty, an output string containing match results is written to this parameter.</param>
 /// <returns>TRUE if at least one match result was found</returns>
-BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput);
+BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput, DWORD dwChildPid);
 
 /// This function will optionally log messages to the eventlog
 void WriteEventLogEntryWithId(LPWSTR pszMessage, DWORD dwEventId);
@@ -100,7 +100,7 @@ void logSend(const std::wstring& logStr);
 //
 void InitializeSettings();
 
-void createChildProcessWithDebugger(std::wstring command_line);
+void createChildProcessWithDebugger(std::wstring command_line, DWORD dwAdditionalCreateParams, PDWORD pdwChildPid, PHANDLE phProcess, PHANDLE phThread);
 
 // Find all parent processes and kill them
 void find_and_kill_processes(const std::wstring& sCommandLine, std::wstring& sListLogs);

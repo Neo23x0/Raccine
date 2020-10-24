@@ -35,7 +35,7 @@
 /// <param name="lpCommandLine">The command line to test</param>
 /// <param name="outYaraOutput">if not empty, an output string containing match results is written to this parameter.</param>
 /// <returns>TRUE if at least one match result was found</returns>
-BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput)
+BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput, DWORD dwChildPid)
 {
     BOOL fRetVal = FALSE;
     WCHAR wTestFilename[MAX_PATH] = { 0 };
@@ -84,8 +84,32 @@ BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput)
         }
         CloseHandle(hTempFile);
 
-        fRetVal = rule_runner.run_yara_rules_on_file(wTestFilename, lpCommandLine, outYaraOutput);
+        BOOL fSuccess = TRUE;
 
+        DWORD dwCurrPid = dwChildPid;
+        DWORD dwCurrParentPid = getParentPid(dwCurrPid);
+        DWORD dwCurrSessionId = 0;
+        if (!ProcessIdToSessionId(dwCurrPid, &dwCurrSessionId))
+        {
+            fSuccess = FALSE;
+        }
+
+        DWORD dwParentPid = getParentPid(GetCurrentProcessId());
+        DWORD dwParentParentPid = getParentPid(dwParentPid);
+        DWORD dwParentSessionId = 0;
+        if (!ProcessIdToSessionId(dwParentPid, &dwParentSessionId))
+        {
+            fSuccess = FALSE;
+        }
+
+        std::wstring AdditionalYaraDefines = L" " + std::to_wstring(dwCurrSessionId) + L" " + std::to_wstring(dwCurrPid) + L" " + std::to_wstring(dwCurrParentPid) +
+            L" " + std::to_wstring(dwParentSessionId) + L" " + std::to_wstring(dwParentPid) + L" " + std::to_wstring(dwParentParentPid) + L" ";
+
+
+        if (fSuccess)
+        {
+            fRetVal = rule_runner.run_yara_rules_on_file(wTestFilename, lpCommandLine, outYaraOutput, AdditionalYaraDefines);
+        }
         DeleteFileW(wTestFilename);
     }
 cleanup:
@@ -295,7 +319,6 @@ BOOL killProcess(DWORD dwProcessId, UINT uExitCode)
     if (!hProcess) {
         return FALSE;
     }
-
     return TerminateProcess(hProcess, uExitCode);
 }
 
@@ -412,7 +435,7 @@ void InitializeSettings()
     }
 }
 
-void createChildProcessWithDebugger(std::wstring command_line)
+void createChildProcessWithDebugger(std::wstring command_line, DWORD dwAdditionalCreateParams, PDWORD pdwChildPid, PHANDLE phProcess, PHANDLE phThread)
 {
     STARTUPINFO info = { sizeof(info) };
     PROCESS_INFORMATION processInfo{};
@@ -427,7 +450,7 @@ void createChildProcessWithDebugger(std::wstring command_line)
                                     DEFAULT_SECURITY_ATTRIBUTES,
                                     DEFAULT_SECURITY_ATTRIBUTES,
                                     INHERIT_HANDLES,
-                                    DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS,
+                                    DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS | dwAdditionalCreateParams,
                                     USE_CALLER_ENVIRONMENT,
                                     USE_CALLER_WORKING_DIRECTORY,
                                     &info,
@@ -437,9 +460,19 @@ void createChildProcessWithDebugger(std::wstring command_line)
     }
 
     DebugActiveProcessStop(processInfo.dwProcessId);
-    WaitForSingleObject(processInfo.hProcess, INFINITE);
-    CloseHandle(processInfo.hProcess);
-    CloseHandle(processInfo.hThread);
+
+    if (phProcess != NULL)
+    {
+        *phProcess = processInfo.hProcess;  // Caller responsible for closing
+    }
+    if (phThread != NULL)
+    {
+        *phThread = processInfo.hThread;  // Caller responsible for closing
+    }
+    if (pdwChildPid != NULL)
+    {
+        *pdwChildPid = processInfo.dwProcessId;
+    }
 }
 
 // Find all parent processes and kill them
@@ -486,5 +519,5 @@ void find_and_kill_processes(const std::wstring& sCommandLine, std::wstring& sLi
 
     // Finish message
     printf("\nRaccine v%s finished\n", VERSION);
-    Sleep(5000);
+    Sleep(1000);
 }

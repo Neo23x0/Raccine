@@ -5,6 +5,7 @@ using System.Data;
 using System.Diagnostics.Eventing.Reader;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -23,6 +24,7 @@ namespace RaccineSettings
     {
         private IntPtr alertEvent = IntPtr.Zero;
         System.Threading.Mutex singleInstanceMutex = null;
+        EnvMonitor envMonitor = null;
 
         public frmBootstrap()
         {
@@ -52,6 +54,18 @@ namespace RaccineSettings
             watcher.Name = String.Format("RaccineAlertWatcherThread");
             watcher.Start();
 
+            string szRaccineUserContextDirectory = Environment.ExpandEnvironmentVariables("%TEMP%") + "\\RaccineUserContext";
+            try
+            {
+                Directory.CreateDirectory(szRaccineUserContextDirectory);
+                this.envMonitor = new EnvMonitor(szRaccineUserContextDirectory);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(String.Format("Raccine was unable to create user context folder for Yara rules {0}\n{1}",
+                    szRaccineUserContextDirectory, ex.Message));
+            }
+
         }
         private void mnuLastAlert_Click(object sender, EventArgs e)
         {
@@ -75,6 +89,7 @@ namespace RaccineSettings
         private void ReleaseResources()
         {
             this.singleInstanceMutex.Close();
+            this.envMonitor.Stop();
         }
     }
 
