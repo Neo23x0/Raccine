@@ -8,8 +8,6 @@
 #include "source/RaccineLib/Raccine.h"
 
 #include <Shlwapi.h>
-#include <strsafe.h>
-
 
 #include "source/RaccineLib/HandleWrapper.h"
 #include "source/RaccineLib/RaccineConfig.h"
@@ -58,13 +56,13 @@ int wmain(int argc, WCHAR* argv[])
             sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity (simulation mode)"));
         }
 
-        WriteEventLogEntryWithId(message.data(), RACCINE_EVENTID_MALICIOUS_ACTIVITY);
+        WriteEventLogEntryWithId(message, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
 
 
         // YARA Matches Detected
         if (fYaraRuleMatched && !szYaraOutput.empty()) {
             message += L"\r\nYara matches:\r\n" + szYaraOutput;
-            WriteEventLogEntryWithId(message.data(), RACCINE_EVENTID_MALICIOUS_ACTIVITY);
+            WriteEventLogEntryWithId(message, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
             sListLogs.append(logFormatLine(szYaraOutput));
         }
 

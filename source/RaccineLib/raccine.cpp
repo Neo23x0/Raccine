@@ -141,7 +141,7 @@ bool is_malicious_command_line(const std::vector<std::wstring>& command_line)
     bool bQuiet = false;
     bool bRecoveryEnabled = false;
     bool bIgnoreallFailures = false;
-    bool bwin32ShadowCopy = false;
+    bool bWin32ShadowCopy = false;
     const bool bEncodedCommand = does_command_line_contain_base64(command_line);
     bool bVersion = false;
 
@@ -198,7 +198,7 @@ bool is_malicious_command_line(const std::vector<std::wstring>& command_line)
         } else if (convertedArg == L"ignoreallfailures") {
             bIgnoreallFailures = true;
         } else if (convertedArg.find(L"win32_shadowcopy") != std::string::npos) {
-            bwin32ShadowCopy = true;
+            bWin32ShadowCopy = true;
         } else if (convertedArg == L"-version" || convertedArg == L"/version") {
             bVersion = true;
         }
@@ -213,7 +213,7 @@ bool is_malicious_command_line(const std::vector<std::wstring>& command_line)
         (bcdEdit && bIgnoreallFailures) ||               // bcdedit.exe
         (bcdEdit && bRecoveryEnabled) ||                 // bcdedit.exe
         (bPowerShell && bVersion) ||                     // powershell.exe
-        (bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
+        (bPowerShell && bWin32ShadowCopy) ||             // powershell.exe
         (bPowerShell && bEncodedCommand) ||              // powershell.exe
         (bDiskShadow && bDelete && bShadows)) {          // diskshadow.exe
 
