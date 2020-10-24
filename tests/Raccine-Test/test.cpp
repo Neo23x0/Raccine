@@ -53,5 +53,5 @@ TEST(TestGetIntegrityLevel, CurrentProcess)
     }
 
     Integrity integrity = getIntegrityLevel(hProcess);
-    ASSERT_EQ(integrity, Integrity::Medium);
+    EXPECT_TRUE(integrity == Integrity::Medium || integrity == Integrity::High);
 }
