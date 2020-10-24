@@ -56,6 +56,12 @@ TEST(TestGetIntegrityLevel, CurrentProcess)
     EXPECT_TRUE(integrity == Integrity::Medium || integrity == Integrity::High);
 }
 
+TEST(TestGetIntegrityLevel, InvalidHAndle)
+{
+    const Integrity integrity = getIntegrityLevel(reinterpret_cast<HANDLE>(1));
+    EXPECT_TRUE(integrity == Integrity::Error);
+}
+
 TEST(TestExpandEnvironmentStrings, RaccineDataDirectory)
 {
     std::wstring result = utils::expand_environment_strings(RACCINE_DATA_DIRECTORY);

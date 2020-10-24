@@ -27,13 +27,14 @@ int wmain(int argc, WCHAR* argv[])
         command_line.emplace_back(argv[i]);
     }
 
-    RaccineConfig configuration;
-    InitializeSettings();
+    const RaccineConfig configuration;
 
     bool bBlock = is_malicious_command_line(command_line);
 
     std::wstring szYaraOutput;
-    const bool fYaraRuleMatched = EvaluateYaraRules(sCommandLine, szYaraOutput);
+    const bool fYaraRuleMatched = EvaluateYaraRules(configuration.yara_rules_directory(), 
+                                                    sCommandLine, 
+                                                    szYaraOutput);
 
     if (fYaraRuleMatched) {
         bBlock = true;
@@ -69,14 +70,7 @@ int wmain(int argc, WCHAR* argv[])
 
         // signal Event for UI to know an alert happened.  If no UI is running, this has no effect.
         if (configuration.show_gui()) {
-            EventHandleWrapper hEvent = OpenEventW(EVENT_MODIFY_STATE,
-                                       FALSE,
-                                       L"RaccineAlertEvent");
-            if (hEvent) {
-                if (!SetEvent(hEvent)) {
-                    //didn't go through
-                }
-            }
+            trigger_gui_event();
         }
     }
 

@@ -31,24 +31,14 @@
 #pragma comment(lib,"advapi32.lib")
 #pragma comment(lib,"shlwapi.lib")
 
-/// <summary>
-/// Evaluate a set of yara rules on a command line
-/// </summary>
-/// <param name="lpCommandLine">The command line to test</param>
-/// <param name="outYaraOutput">if not empty, an output string containing match results is written to this parameter.</param>
-/// <returns>TRUE if at least one match result was found</returns>
-bool EvaluateYaraRules(const std::wstring& lpCommandLine, std::wstring& outYaraOutput)
+bool EvaluateYaraRules(const std::wstring& yara_rules_directory,
+                       const std::wstring& lpCommandLine,
+                       std::wstring& outYaraOutput)
 {
     bool fRetVal = false;
     WCHAR wTestFilename[MAX_PATH] = { 0 };
-    const int len = static_cast<int>(lpCommandLine.length());
-    LPSTR lpAnsiCmdLine = static_cast<LPSTR>(LocalAlloc(LPTR, len + 1));
-    if (!lpAnsiCmdLine) {
-        return false;
-    }
-  
+
     ExpandEnvironmentStringsW(RACCINE_DATA_DIRECTORY, wTestFilename, ARRAYSIZE(wTestFilename) - 1);
-    YaraRuleRunner rule_runner(wTestFilename, g_wRaccineProgramDirectory);
 
     const int c = GetTempFileNameW(wTestFilename, L"Raccine", 0, wTestFilename);
     if (c != 0) {
@@ -65,23 +55,30 @@ bool EvaluateYaraRules(const std::wstring& lpCommandLine, std::wstring& outYaraO
         }
         DWORD dwWritten = 0;
 
+        std::vector<char> ansi_command_line(lpCommandLine.length() + 1, 0);
         if (WideCharToMultiByte(
             CP_ACP,
             0,
             lpCommandLine.c_str(),
-            len,
-            lpAnsiCmdLine,
-            len + 1,
+            static_cast<int>(lpCommandLine.length()),
+            ansi_command_line.data(),
+            static_cast<int>(ansi_command_line.size()),
             NULL,
             NULL
         )) {
-            if (!WriteFile(hTempFile, lpAnsiCmdLine, lstrlenA(lpAnsiCmdLine) + 1, &dwWritten, NULL)) {
+            if (!WriteFile(hTempFile,
+                           ansi_command_line.data(),
+                           lstrlenA(ansi_command_line.data()) + 1,
+                           &dwWritten,
+                           NULL)) {
                 CloseHandle(hTempFile);
                 goto cleanup;
             }
         }
         CloseHandle(hTempFile);
 
+        YaraRuleRunner rule_runner(yara_rules_directory,
+                                   utils::expand_environment_strings(RACCINE_PROGRAM_DIRECTORY));
         fRetVal = rule_runner.run_yara_rules_on_file(wTestFilename, lpCommandLine, outYaraOutput);
 
         DeleteFileW(wTestFilename);
@@ -90,7 +87,6 @@ cleanup:
     return fRetVal;
 }
 
-/// This function will optionally log messages to the eventlog
 void WriteEventLogEntryWithId(const std::wstring& pszMessage, DWORD dwEventId)
 {
     constexpr LPCWSTR LOCAL_COMPUTER = nullptr;
@@ -112,7 +108,7 @@ void WriteEventLogEntryWithId(const std::wstring& pszMessage, DWORD dwEventId)
                  1,                          // Size of lpszStrings array
                  0,                          // No binary data
                  lpszStrings,                // Array of strings
-                 NO_BINARY_DATA                        // No binary data
+                 NO_BINARY_DATA              // No binary data
     );
 }
 
@@ -178,7 +174,7 @@ bool is_malicious_command_line(const std::vector<std::wstring>& command_line)
     // Check for keywords in command line parameters
     std::vector<std::wstring> command_line_parameters(command_line.begin() + 1,
                                                       command_line.end());
-    for(const std::wstring& parameter: command_line_parameters) {
+    for (const std::wstring& parameter : command_line_parameters) {
         // Convert wchar to wide string so we can perform contains/find command
         const std::wstring convertedArg(utils::to_lower(parameter));
 
@@ -261,17 +257,26 @@ bool does_command_line_contain_base64(const std::vector<std::wstring>& command_l
 
 bool needs_powershell_workaround(const std::wstring& command_line)
 {
-    const auto szCommandLine = static_cast<LPCWSTR>(command_line.c_str());
-    if (StrStrIW(szCommandLine, L"-File ") != NULL
-        && StrStrIW(szCommandLine, L".ps") != NULL
-        && StrStrIW(szCommandLine, L"powershell") == NULL) {
+    if (command_line.find(L"-File ") != std::wstring::npos &&
+        command_line.find(L".ps") != std::wstring::npos &&
+        command_line.find(L"powershell") == std::wstring::npos) {
         return true;
     }
 
     return false;
 }
 
-// Get Parent Process ID
+void trigger_gui_event()
+{
+    constexpr BOOL DO_NOT_INHERIT = FALSE;
+    EventHandleWrapper hEvent = OpenEventW(EVENT_MODIFY_STATE,
+                                           DO_NOT_INHERIT,
+                                           L"RaccineAlertEvent");
+    if (hEvent) {
+        SetEvent(hEvent);
+    }
+}
+
 DWORD getParentPid(DWORD pid)
 {
     SnapshotHandleWrapper hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -296,7 +301,6 @@ DWORD getParentPid(DWORD pid)
     return 0;
 }
 
-// Get integrity level of process
 Integrity getIntegrityLevel(HANDLE hProcess)
 {
     TokenHandleWrapper hToken = INVALID_HANDLE_VALUE;
@@ -305,47 +309,48 @@ Integrity getIntegrityLevel(HANDLE hProcess)
         return Integrity::Error;
     }
 
-    PTOKEN_MANDATORY_LABEL pTIL;
-    DWORD dwLengthNeeded = sizeof pTIL;
-    GetTokenInformation(hToken, TokenIntegrityLevel, NULL, 0, &dwLengthNeeded);
-    pTIL = static_cast<PTOKEN_MANDATORY_LABEL>(LocalAlloc(0, dwLengthNeeded));
-    if (!pTIL) {
+    DWORD dwLengthNeeded = 0;
+    GetTokenInformation(hToken,
+                        TokenIntegrityLevel,
+                        NULL,
+                        0,
+                        &dwLengthNeeded);
+    std::vector<unsigned char> token_data(static_cast<size_t>(dwLengthNeeded), 0);
+
+    const BOOL ret = GetTokenInformation(hToken,
+                                         TokenIntegrityLevel,
+                                         token_data.data(),
+                                         dwLengthNeeded,
+                                         &dwLengthNeeded);
+    if (!ret) {
         return Integrity::Error;
     }
 
-    if (GetTokenInformation(hToken, TokenIntegrityLevel,
-                            pTIL, dwLengthNeeded, &dwLengthNeeded)) {
-        const DWORD dwIntegrityLevel = *GetSidSubAuthority(pTIL->Label.Sid,
-                                                           static_cast<DWORD>(static_cast<UCHAR>(*GetSidSubAuthorityCount(pTIL->Label.Sid) - 1)));
+    auto* const pTIL = reinterpret_cast<PTOKEN_MANDATORY_LABEL>(token_data.data());
+    const DWORD dwIntegrityLevel = *GetSidSubAuthority(pTIL->Label.Sid,
+                                                       static_cast<DWORD>(static_cast<UCHAR>(*GetSidSubAuthorityCount(pTIL->Label.Sid) - 1)));
 
-        LocalFree(pTIL);
-
-        if (dwIntegrityLevel == SECURITY_MANDATORY_LOW_RID) {
-            return Integrity::Low;
-        }
-
-        if (dwIntegrityLevel >= SECURITY_MANDATORY_MEDIUM_RID &&
-            dwIntegrityLevel < SECURITY_MANDATORY_HIGH_RID) {
-            return Integrity::Medium;
-        }
-
-        if (dwIntegrityLevel >= SECURITY_MANDATORY_HIGH_RID &&
-            dwIntegrityLevel < SECURITY_MANDATORY_SYSTEM_RID) {
-            return Integrity::High;
-        }
-
-        if (dwIntegrityLevel >= SECURITY_MANDATORY_SYSTEM_RID) {
-            return Integrity::System;
-        }
-
-        return Integrity::Error;
+    if (dwIntegrityLevel == SECURITY_MANDATORY_LOW_RID) {
+        return Integrity::Low;
     }
 
-    LocalFree(pTIL);
+    if (dwIntegrityLevel >= SECURITY_MANDATORY_MEDIUM_RID &&
+        dwIntegrityLevel < SECURITY_MANDATORY_HIGH_RID) {
+        return Integrity::Medium;
+    }
+
+    if (dwIntegrityLevel >= SECURITY_MANDATORY_HIGH_RID &&
+        dwIntegrityLevel < SECURITY_MANDATORY_SYSTEM_RID) {
+        return Integrity::High;
+    }
+
+    if (dwIntegrityLevel >= SECURITY_MANDATORY_SYSTEM_RID) {
+        return Integrity::System;
+    }
+
     return Integrity::Error;
 }
 
-// Get the image name of the process
 std::wstring getImageName(DWORD pid)
 {
     SnapshotHandleWrapper hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -370,7 +375,6 @@ std::wstring getImageName(DWORD pid)
     return L"(unavailable)";
 }
 
-// Helper for isAllowListed, checks if a specific process is allowed
 bool isProcessAllowed(const PROCESSENTRY32W& pe32)
 {
     ProcessHandleWrapper hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe32.th32ProcessID);
@@ -405,7 +409,6 @@ bool isProcessAllowed(const PROCESSENTRY32W& pe32)
     return false;
 }
 
-// Check if process is in allowed list
 bool isAllowListed(DWORD pid)
 {
     SnapshotHandleWrapper hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -432,7 +435,6 @@ bool isAllowListed(DWORD pid)
     return false;
 }
 
-// Kill a process
 BOOL killProcess(DWORD dwProcessId, UINT uExitCode)
 {
     constexpr DWORD dwDesiredAccess = PROCESS_TERMINATE;
@@ -445,7 +447,6 @@ BOOL killProcess(DWORD dwProcessId, UINT uExitCode)
     return TerminateProcess(hProcess, uExitCode);
 }
 
-// Get timestamp
 std::string getTimeStamp()
 {
     struct tm buf {};
@@ -457,7 +458,6 @@ std::string getTimeStamp()
     return timestamp;
 }
 
-// Format a log lines
 std::wstring logFormat(const std::wstring& cmdLine, const std::wstring& comment)
 {
     const std::string timeString = getTimeStamp();
@@ -474,7 +474,6 @@ std::wstring logFormatLine(const std::wstring& line)
     return logLine;
 }
 
-// Format the activity log lines
 std::wstring logFormatAction(DWORD pid,
                              const std::wstring& imageName,
                              const std::wstring& cmdLine,
@@ -486,56 +485,29 @@ std::wstring logFormatAction(DWORD pid,
     return logLine;
 }
 
-// Log to file
 void logSend(const std::wstring& logStr)
 {
     static FILE* logFile = nullptr;
     if (logFile == nullptr) {
-        errno_t err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine\\Raccine_log.txt", L"at");
+        const std::filesystem::path raccine_data_directory = utils::expand_environment_strings(RACCINE_DATA_DIRECTORY);
+        const std::filesystem::path raccine_log_file_path = raccine_data_directory / L"Raccine_log.txt";
+        errno_t err = _wfopen_s(&logFile, raccine_log_file_path.c_str(), L"at");
 
         if (err != 0) {
-            err = _wfopen_s(&logFile, L"C:\\ProgramData\\Raccine\\Raccine_log.txt", L"wt");
+            err = _wfopen_s(&logFile, raccine_log_file_path.c_str(), L"wt");
         }
 
         if (err != 0) {
-            wprintf(L"\nCan not open C:\\ProgramData\\Raccine\\Raccine_log.txt for writing.\n");
+            wprintf(L"\nCan not open %s for writing.\n", raccine_log_file_path.c_str());
             return;   // bail out if we can't log
         }
     }
-    //transform(logStr.begin(), logStr.end(), logStr.begin(), ::tolower);
+
     if (logFile != nullptr) {
         fwprintf(logFile, L"%s", logStr.c_str());
         fflush(logFile);
         fclose(logFile);
         logFile = nullptr;
-    }
-}
-
-//
-//  Query for config in HKLM and HKLM\Software\Policies override by GPO
-//
-void InitializeSettings()
-{
-    // Registry Settings
-    // Query for logging level. A value of 1 or more indicates to log key events to the event log
-    // Query for logging only mode. A value of 1 or more indicates to suppress process kills
-
-    ExpandEnvironmentStringsW(RACCINE_DATA_DIRECTORY, g_wRaccineDataDirectory, ARRAYSIZE(g_wRaccineDataDirectory) - 1);
-    ExpandEnvironmentStringsW(RACCINE_PROGRAM_DIRECTORY, g_wRaccineProgramDirectory, ARRAYSIZE(g_wRaccineProgramDirectory) - 1);
-
-    StringCchCopyW(g_wYaraRulesDir, ARRAYSIZE(g_wYaraRulesDir), g_wRaccineDataDirectory);
-
-    const wchar_t* LoggingKeys[] = { RACCINE_REG_CONFIG , RACCINE_REG_POLICY_CONFIG };
-
-    HKEY hKey = NULL;
-    for (int i = 0; i < ARRAYSIZE(LoggingKeys); i++) {
-        if (ERROR_SUCCESS == RegOpenKeyExW(HKEY_LOCAL_MACHINE, LoggingKeys[i], 0, KEY_READ, &hKey)) {
-            // Yara rules dir
-            DWORD cbData = sizeof g_wYaraRulesDir;
-            if (ERROR_SUCCESS == RegQueryValueExW(hKey, RACCINE_YARA_RULES_PATH, NULL, NULL, reinterpret_cast<LPBYTE>(g_wYaraRulesDir), &cbData)) {
-            }
-            RegCloseKey(hKey);
-        }
     }
 }
 
