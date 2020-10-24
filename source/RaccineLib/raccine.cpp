@@ -25,6 +25,7 @@
 
 #include "HandleWrapper.h"
 #include "RaccineConfig.h"
+#include "Utils.h"
 #include "YaraRuleRunner.h"
 
 #pragma comment(lib,"advapi32.lib")
@@ -36,15 +37,16 @@
 /// <param name="lpCommandLine">The command line to test</param>
 /// <param name="outYaraOutput">if not empty, an output string containing match results is written to this parameter.</param>
 /// <returns>TRUE if at least one match result was found</returns>
-BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput)
+bool EvaluateYaraRules(const std::wstring& lpCommandLine, std::wstring& outYaraOutput)
 {
-    BOOL fRetVal = FALSE;
+    bool fRetVal = false;
     WCHAR wTestFilename[MAX_PATH] = { 0 };
-    const int len = static_cast<int>(wcslen(lpCommandLine));
-    auto* const lpAnsiCmdLine = static_cast<LPSTR>(LocalAlloc(LPTR, len + 1));
+    const int len = static_cast<int>(lpCommandLine.length());
+    LPSTR lpAnsiCmdLine = static_cast<LPSTR>(LocalAlloc(LPTR, len + 1));
     if (!lpAnsiCmdLine) {
-        return FALSE;
+        return false;
     }
+  
     ExpandEnvironmentStringsW(RACCINE_DATA_DIRECTORY, wTestFilename, ARRAYSIZE(wTestFilename) - 1);
     YaraRuleRunner rule_runner(wTestFilename, g_wRaccineProgramDirectory);
 
@@ -66,7 +68,7 @@ BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput)
         if (WideCharToMultiByte(
             CP_ACP,
             0,
-            lpCommandLine,
+            lpCommandLine.c_str(),
             len,
             lpAnsiCmdLine,
             len + 1,
@@ -117,6 +119,156 @@ void WriteEventLogEntryWithId(const std::wstring& pszMessage, DWORD dwEventId)
 void WriteEventLogEntry(const std::wstring& pszMessage)
 {
     WriteEventLogEntryWithId(pszMessage, RACCINE_DEFAULT_EVENTID);
+}
+
+bool is_malicious_command_line(const std::vector<std::wstring>& command_line)
+{
+    if (command_line.empty()) {
+        return false;
+    }
+
+    // Main programs to monitor
+    bool bVssadmin = false;
+    bool bWmic = false;
+    bool bWbadmin = false;
+    bool bcdEdit = false;
+    bool bPowerShell = false;
+    bool bDiskShadow = false;
+
+    // Command line params
+    bool bDelete = false;
+    bool bShadows = false;
+    bool bResize = false;
+    bool bShadowStorage = false;
+    bool bShadowCopy = false;
+    bool bCatalog = false;
+    bool bQuiet = false;
+    bool bRecoveryEnabled = false;
+    bool bIgnoreallFailures = false;
+    bool bwin32ShadowCopy = false;
+    const bool bEncodedCommand = does_command_line_contain_base64(command_line);
+    bool bVersion = false;
+
+    const std::wstring program = utils::to_lower(command_line[0]);
+    // Check for invoked program
+    if (program == L"vssadmin.exe" || program == L"vssadmin") {
+        bVssadmin = true;
+    }
+
+    if (program == L"wmic.exe" || program == L"wmic") {
+        bWmic = true;
+    }
+
+    if (program == L"wbadmin.exe" || program == L"wbadmin") {
+        bWbadmin = true;
+    }
+
+    if (program == L"bcdedit.exe" || program == L"bcdedit") {
+        bcdEdit = true;
+    }
+
+    if (program == L"powershell.exe" || program == L"powershell") {
+        bPowerShell = true;
+    }
+
+    if (program == L"diskshadow.exe" || program == L"diskshadow") {
+        bDiskShadow = true;
+    }
+
+    // Check for keywords in command line parameters
+    std::vector<std::wstring> command_line_parameters(command_line.begin() + 1,
+                                                      command_line.end());
+    for(const std::wstring& parameter: command_line_parameters) {
+        // Convert wchar to wide string so we can perform contains/find command
+        const std::wstring convertedArg(utils::to_lower(parameter));
+
+        // Simple flag checks
+        if (convertedArg == L"delete") {
+            bDelete = true;
+        } else if (convertedArg == L"shadows") {
+            bShadows = true;
+        } else if (convertedArg == L"shadowstorage") {
+            bShadowStorage = true;
+        } else if (convertedArg == L"resize") {
+            bResize = true;
+        } else if (convertedArg == L"shadowcopy") {
+            bShadowCopy = true;
+        } else if (convertedArg == L"catalog") {
+            bCatalog = true;
+        } else if (convertedArg == L"-quiet" || convertedArg == L"/quiet") {
+            bQuiet = true;
+        } else if (convertedArg == L"recoveryenabled") {
+            bRecoveryEnabled = true;
+        } else if (convertedArg == L"ignoreallfailures") {
+            bIgnoreallFailures = true;
+        } else if (convertedArg.find(L"win32_shadowcopy") != std::string::npos) {
+            bwin32ShadowCopy = true;
+        } else if (convertedArg == L"-version" || convertedArg == L"/version") {
+            bVersion = true;
+        }
+    }
+
+    // Check all combinations (our blocklist)
+    if ((bVssadmin && bDelete && bShadows) ||            // vssadmin.exe
+        (bVssadmin && bDelete && bShadowStorage) ||      // vssadmin.exe
+        (bVssadmin && bResize && bShadowStorage) ||      // vssadmin.exe
+        (bWmic && bDelete && bShadowCopy) ||             // wmic.exe
+        (bWbadmin && bDelete && bCatalog && bQuiet) || 	 // wbadmin.exe 
+        (bcdEdit && bIgnoreallFailures) ||               // bcdedit.exe
+        (bcdEdit && bRecoveryEnabled) ||                 // bcdedit.exe
+        (bPowerShell && bVersion) ||                     // powershell.exe
+        (bPowerShell && bwin32ShadowCopy) ||             // powershell.exe
+        (bPowerShell && bEncodedCommand) ||              // powershell.exe
+        (bDiskShadow && bDelete && bShadows)) {          // diskshadow.exe
+
+        // Activate blocking
+        return true;
+    }
+
+    return false;
+}
+
+bool does_command_line_contain_base64(const std::vector<std::wstring>& command_line)
+{
+    // Encoded Command List (Base64)
+    std::vector<std::wstring> encodedCommands = { L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI",
+                                                  L"cwBhA", L"aWV4I", L"aQBlAHgA",
+                                                  L"cwB", L"IAA", L"IAB", L"UwB" };
+
+    // Check for keywords in command line parameters
+    for (size_t iCount = 1; iCount < command_line.size(); iCount++) {
+
+        // Convert wchar to wide string so we can perform contains/find command
+        std::wstring convertedArg(utils::to_lower(command_line[iCount]));
+        std::wstring convertedArgOrig(command_line[iCount]);                        // original parameter (no tolower)
+        std::wstring convertedArgPrev(utils::to_lower(command_line[iCount - 1]));   // previous parameter
+
+        // Special comparison of current argument with previous argument
+        // allows to check for e.g. -encodedCommand JABbaTheHuttandotherBase64characters
+        if (convertedArgPrev.find(L"-e") == std::string::npos && convertedArgPrev.find(L"/e") == std::string::npos) {
+            continue;
+        }
+
+        for (const std::wstring& command : encodedCommands) {
+            if (convertedArgOrig.find(command) != std::string::npos) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool needs_powershell_workaround(const std::wstring& command_line)
+{
+    const auto szCommandLine = static_cast<LPCWSTR>(command_line.c_str());
+    if (StrStrIW(szCommandLine, L"-File ") != NULL
+        && StrStrIW(szCommandLine, L".ps") != NULL
+        && StrStrIW(szCommandLine, L"powershell") == NULL) {
+        return true;
+    }
+
+    return false;
 }
 
 // Get Parent Process ID
@@ -381,7 +533,6 @@ void InitializeSettings()
             // Yara rules dir
             DWORD cbData = sizeof g_wYaraRulesDir;
             if (ERROR_SUCCESS == RegQueryValueExW(hKey, RACCINE_YARA_RULES_PATH, NULL, NULL, reinterpret_cast<LPBYTE>(g_wYaraRulesDir), &cbData)) {
-
             }
             RegCloseKey(hKey);
         }

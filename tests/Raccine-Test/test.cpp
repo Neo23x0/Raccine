@@ -94,3 +94,25 @@ TEST(TestFindProcessesToKill, NonExistant)
 
     EXPECT_FALSE(pids.contains(3));
 }
+
+TEST(TestIsMaliciousCommandLine, VssAdmin)
+{
+    EXPECT_FALSE(is_malicious_command_line({ L"vssadmin.exe"}));
+    EXPECT_FALSE(is_malicious_command_line({ L"vssadmin.exe", L"delete"}));
+    EXPECT_FALSE(is_malicious_command_line({ L"vssadmin.exe", L"shadows"}));
+    EXPECT_FALSE(is_malicious_command_line({ L"vssadmin", L"resize", L"shadows" }));
+
+    EXPECT_TRUE(is_malicious_command_line({ L"vssadmin.exe", L"delete", L"shadows" }));
+    EXPECT_TRUE(is_malicious_command_line({ L"vssadmin", L"delete", L"shadows" }));
+    EXPECT_TRUE(is_malicious_command_line({ L"Vssadmin", L"dElete", L"shAdows" }));
+    EXPECT_TRUE(is_malicious_command_line({ L"vssadmin", L"shadows", L"delete" }));
+    EXPECT_TRUE(is_malicious_command_line({ L"vssadmin", L"delete", L"shadowstorage" }));
+
+    EXPECT_TRUE(is_malicious_command_line({ L"vssadmin", L"resize", L"shadowstorage" }));
+}
+
+TEST(TestIsMaliciousCommandLine, Empty)
+{
+    const std::vector<std::wstring> command_line;
+    EXPECT_FALSE(is_malicious_command_line(command_line));
+}
