@@ -76,6 +76,7 @@ int wmain(int argc, WCHAR* argv[])
     }
 
     createChildProcessWithDebugger(sCommandLineStr, CREATE_SUSPENDED, &dwChildPid, &hProcess, &hThread);
+    Sleep(300);
 
     if (argc > 1)
     {
