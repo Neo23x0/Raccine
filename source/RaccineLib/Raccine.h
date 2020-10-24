@@ -21,7 +21,6 @@ inline BOOL g_fLogOnly = FALSE;
 inline BOOL g_fShowGui = FALSE;
 #define RACCINE_REG_CONFIG  L"SOFTWARE\\Raccine"
 #define RACCINE_REG_POICY_CONFIG  L"SOFTWARE\\Policies\\Raccine"
-constexpr UINT MAX_MESSAGE = 1000;
 #define RACCINE_DEFAULT_EVENTID  1
 #define RACCINE_EVENTID_MALICIOUS_ACTIVITY  2
 

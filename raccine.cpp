@@ -14,12 +14,8 @@ int wmain(int argc, WCHAR* argv[])
 {
     setlocale(LC_ALL, "");
 
-
-    // Log
     std::vector<std::wstring> command_line;
     std::wstring sCommandLine;
-    std::wstring sListLogs;
-    WCHAR wMessage[MAX_MESSAGE] = { 0 };
 
     // Append all original command line parameters to a string for later log messages
     for (int i = 1; i < argc; i++) {
@@ -38,29 +34,31 @@ int wmain(int argc, WCHAR* argv[])
         bBlock = true;
     }
 
+    std::wstring sListLogs;
+
     // If activity that should be block has been registered (always log)
     if (bBlock) {
+        std::wstring message;
         // Log to the windows Eventlog
-        LPCWSTR lpMessage = sCommandLine.c_str();
         if (!g_fLogOnly) {
             // Eventlog
-            StringCchPrintfW(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n", lpMessage);
+            message = L"Raccine detected malicious activity:\n" + sCommandLine + L"\n";
             // Log to the text log file
             sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity"));
         } else {
             // Eventlog
-            StringCchPrintfW(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n(simulation mode)", lpMessage);
+            message = L"Raccine detected malicious activity:\n" + sCommandLine + L"\n(simulation mode)";
             // Log to the text log file
             sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity (simulation mode)"));
         }
 
-        WriteEventLogEntryWithId(static_cast<LPWSTR>(wMessage), RACCINE_EVENTID_MALICIOUS_ACTIVITY);
+        WriteEventLogEntryWithId(message.data(), RACCINE_EVENTID_MALICIOUS_ACTIVITY);
 
 
         // YARA Matches Detected
         if (fYaraRuleMatched && !szYaraOutput.empty()) {
-            StringCchPrintfW(wMessage, ARRAYSIZE(wMessage), L"\r\nYara matches:\r\n%s", szYaraOutput.c_str());
-            WriteEventLogEntryWithId(static_cast<LPWSTR>(wMessage), RACCINE_EVENTID_MALICIOUS_ACTIVITY);
+            message += L"\r\nYara matches:\r\n" + szYaraOutput;
+            WriteEventLogEntryWithId(message.data(), RACCINE_EVENTID_MALICIOUS_ACTIVITY);
             sListLogs.append(logFormatLine(szYaraOutput));
         }
 
@@ -86,9 +84,11 @@ int wmain(int argc, WCHAR* argv[])
     // a.) not block or
     // b.) simulation mode
     if (!bBlock || g_fLogOnly) {
-        std::wstring sCommandLineStr = sCommandLine;
+        std::wstring sCommandLineStr;
         if (needs_powershell_workaround(sCommandLine)) {
             sCommandLineStr = std::wstring(L"powershell.exe ").append(sCommandLine);
+        } else {
+            sCommandLineStr = sCommandLine;
         }
 
         createChildProcessWithDebugger(sCommandLineStr);
