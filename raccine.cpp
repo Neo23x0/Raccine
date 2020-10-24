@@ -10,6 +10,10 @@
 #include <Shlwapi.h>
 #include <strsafe.h>
 
+
+#include "source/RaccineLib/HandleWrapper.h"
+#include "source/RaccineLib/RaccineConfig.h"
+
 int wmain(int argc, WCHAR* argv[])
 {
     setlocale(LC_ALL, "");
@@ -23,6 +27,7 @@ int wmain(int argc, WCHAR* argv[])
         command_line.emplace_back(argv[i]);
     }
 
+    RaccineConfig configuration;
     InitializeSettings();
 
     bool bBlock = is_malicious_command_line(command_line);
@@ -40,7 +45,7 @@ int wmain(int argc, WCHAR* argv[])
     if (bBlock) {
         std::wstring message;
         // Log to the windows Eventlog
-        if (!g_fLogOnly) {
+        if (!configuration.log_only()) {
             // Eventlog
             message = L"Raccine detected malicious activity:\n" + sCommandLine + L"\n";
             // Log to the text log file
@@ -63,27 +68,28 @@ int wmain(int argc, WCHAR* argv[])
         }
 
         // signal Event for UI to know an alert happened.  If no UI is running, this has no effect.
-        if (g_fShowGui) {
-            HANDLE hEvent = OpenEvent(EVENT_MODIFY_STATE, FALSE, L"RaccineAlertEvent");
-            if (hEvent != NULL) {
+        if (configuration.show_gui()) {
+            EventHandleWrapper hEvent = OpenEventW(EVENT_MODIFY_STATE,
+                                       FALSE,
+                                       L"RaccineAlertEvent");
+            if (hEvent) {
                 if (!SetEvent(hEvent)) {
                     //didn't go through
                 }
-                CloseHandle(hEvent);
             }
         }
     }
 
     // If block and not simulation mode
-    if (bBlock && !g_fLogOnly) {
-        find_and_kill_processes(sCommandLine, sListLogs);
+    if (bBlock && !configuration.log_only()) {
+        find_and_kill_processes(configuration.log_only(), sCommandLine, sListLogs);
     }
 
     // Otherwise launch the process with its original parameters
     // Conditions:
     // a.) not block or
     // b.) simulation mode
-    if (!bBlock || g_fLogOnly) {
+    if (!bBlock || configuration.log_only()) {
         std::wstring sCommandLineStr;
         if (needs_powershell_workaround(sCommandLine)) {
             sCommandLineStr = std::wstring(L"powershell.exe ").append(sCommandLine);

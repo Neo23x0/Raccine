@@ -24,6 +24,7 @@
 #include "Raccine.h"
 
 #include "HandleWrapper.h"
+#include "RaccineConfig.h"
 #include "Utils.h"
 #include "YaraRuleRunner.h"
 
@@ -45,21 +46,22 @@ bool EvaluateYaraRules(const std::wstring& lpCommandLine, std::wstring& outYaraO
     if (!lpAnsiCmdLine) {
         return false;
     }
+  
     ExpandEnvironmentStringsW(RACCINE_DATA_DIRECTORY, wTestFilename, ARRAYSIZE(wTestFilename) - 1);
     YaraRuleRunner rule_runner(wTestFilename, g_wRaccineProgramDirectory);
 
-    int c = GetTempFileNameW(wTestFilename, L"Raccine", 0, wTestFilename);
+    const int c = GetTempFileNameW(wTestFilename, L"Raccine", 0, wTestFilename);
     if (c != 0) {
         //  Creates the new file to write to for the upper-case version.
-        HANDLE hTempFile = CreateFileW(wTestFilename, // file name 
-                                       GENERIC_WRITE,        // open for write 
-                                       0,                    // do not share 
-                                       NULL,                 // default security 
-                                       CREATE_ALWAYS,        // overwrite existing
-                                       FILE_ATTRIBUTE_NORMAL,// normal file 
-                                       NULL);                // no template 
+        const HANDLE hTempFile = CreateFileW(wTestFilename, // file name 
+                                             GENERIC_WRITE,        // open for write 
+                                             0,                    // do not share 
+                                             NULL,                 // default security 
+                                             CREATE_ALWAYS,        // overwrite existing
+                                             FILE_ATTRIBUTE_NORMAL,// normal file 
+                                             NULL);                // no template 
         if (hTempFile == INVALID_HANDLE_VALUE) {
-            return false;
+            return FALSE;
         }
         DWORD dwWritten = 0;
 
@@ -89,32 +91,32 @@ cleanup:
 }
 
 /// This function will optionally log messages to the eventlog
-void WriteEventLogEntryWithId(LPWSTR pszMessage, DWORD dwEventId)
+void WriteEventLogEntryWithId(const std::wstring& pszMessage, DWORD dwEventId)
 {
-    EventSourceHandleWrapper hEventSource = RegisterEventSourceW(NULL, L"Raccine");
+    constexpr LPCWSTR LOCAL_COMPUTER = nullptr;
+    EventSourceHandleWrapper hEventSource = RegisterEventSourceW(LOCAL_COMPUTER,
+                                                                 L"Raccine");
     if (!hEventSource) {
         return;
     }
 
-    LPCWSTR lpszStrings[2] = { NULL, NULL };
+    LPCWSTR lpszStrings[2] = { pszMessage.c_str() , nullptr };
 
-    lpszStrings[0] = pszMessage;
-    lpszStrings[1] = NULL;
-
-
-    ReportEventW(hEventSource,      // Event log handle
+    constexpr PSID NO_USER_SID = nullptr;
+    constexpr LPVOID NO_BINARY_DATA = nullptr;
+    ReportEventW(hEventSource,               // Event log handle
                  EVENTLOG_INFORMATION_TYPE,  // Event type
                  0,                          // Event category
                  dwEventId,                  // Event identifier
-                 NULL,                       // No security identifier
+                 NO_USER_SID,                // No security identifier
                  1,                          // Size of lpszStrings array
                  0,                          // No binary data
                  lpszStrings,                // Array of strings
-                 NULL                        // No binary data
+                 NO_BINARY_DATA                        // No binary data
     );
 }
 
-void WriteEventLogEntry(LPWSTR  pszMessage)
+void WriteEventLogEntry(const std::wstring& pszMessage)
 {
     WriteEventLogEntryWithId(pszMessage, RACCINE_DEFAULT_EVENTID);
 }
@@ -279,8 +281,8 @@ DWORD getParentPid(DWORD pid)
     }
 
     PROCESSENTRY32W pe32{};
-    ZeroMemory(&pe32, sizeof(pe32));
-    pe32.dwSize = sizeof(pe32);
+    pe32.dwSize = sizeof pe32;
+
     if (!Process32FirstW(hSnapshot, &pe32)) {
         return 0;
     }
@@ -297,7 +299,6 @@ DWORD getParentPid(DWORD pid)
 // Get integrity level of process
 Integrity getIntegrityLevel(HANDLE hProcess)
 {
-
     TokenHandleWrapper hToken = INVALID_HANDLE_VALUE;
 
     if (!OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
@@ -347,15 +348,14 @@ Integrity getIntegrityLevel(HANDLE hProcess)
 // Get the image name of the process
 std::wstring getImageName(DWORD pid)
 {
-    PROCESSENTRY32W pe32{};
     SnapshotHandleWrapper hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
     if (!hSnapshot) {
         return L"(unavailable)";
     }
 
-    ZeroMemory(&pe32, sizeof(pe32));
-    pe32.dwSize = sizeof(pe32);
+    PROCESSENTRY32W pe32{};
+    pe32.dwSize = sizeof pe32;
 
     if (!Process32FirstW(hSnapshot, &pe32)) {
         return L"(unavailable)";
@@ -475,7 +475,10 @@ std::wstring logFormatLine(const std::wstring& line)
 }
 
 // Format the activity log lines
-std::wstring logFormatAction(DWORD pid, const std::wstring& imageName, const std::wstring& cmdLine, const std::wstring& comment)
+std::wstring logFormatAction(DWORD pid,
+                             const std::wstring& imageName,
+                             const std::wstring& cmdLine,
+                             const std::wstring& comment)
 {
     const std::string timeString = getTimeStamp();
     const std::wstring timeStringW(timeString.cbegin(), timeString.cend());
@@ -517,36 +520,19 @@ void InitializeSettings()
     // Query for logging level. A value of 1 or more indicates to log key events to the event log
     // Query for logging only mode. A value of 1 or more indicates to suppress process kills
 
-    ExpandEnvironmentStrings(RACCINE_DATA_DIRECTORY, g_wRaccineDataDirectory, ARRAYSIZE(g_wRaccineDataDirectory) - 1);
-    ExpandEnvironmentStrings(RACCINE_PROGRAM_DIRECTORY, g_wRaccineProgramDirectory, ARRAYSIZE(g_wRaccineProgramDirectory) - 1);
+    ExpandEnvironmentStringsW(RACCINE_DATA_DIRECTORY, g_wRaccineDataDirectory, ARRAYSIZE(g_wRaccineDataDirectory) - 1);
+    ExpandEnvironmentStringsW(RACCINE_PROGRAM_DIRECTORY, g_wRaccineProgramDirectory, ARRAYSIZE(g_wRaccineProgramDirectory) - 1);
 
-    StringCchCopy(g_wYaraRulesDir, ARRAYSIZE(g_wYaraRulesDir), g_wRaccineDataDirectory);
+    StringCchCopyW(g_wYaraRulesDir, ARRAYSIZE(g_wYaraRulesDir), g_wRaccineDataDirectory);
 
-    const wchar_t* LoggingKeys[] = { RACCINE_REG_CONFIG , RACCINE_REG_POICY_CONFIG };
+    const wchar_t* LoggingKeys[] = { RACCINE_REG_CONFIG , RACCINE_REG_POLICY_CONFIG };
 
     HKEY hKey = NULL;
     for (int i = 0; i < ARRAYSIZE(LoggingKeys); i++) {
-        if (ERROR_SUCCESS == RegOpenKeyEx(HKEY_LOCAL_MACHINE, LoggingKeys[i], 0, KEY_READ, &hKey)) {
-            // Log Only
-            DWORD dwLoggingOnly = 0;
-            DWORD cbDataLO = sizeof(dwLoggingOnly);
-            if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"LogOnly", NULL, NULL, (LPBYTE)&dwLoggingOnly, &cbDataLO)) {
-                if (dwLoggingOnly > 0) {
-                    g_fLogOnly = TRUE;
-                }
-            }
-            // Show Gui
-            DWORD dwShowGui = 0;
-            DWORD cbDataGUI = sizeof(dwShowGui);
-            if (ERROR_SUCCESS == RegQueryValueExW(hKey, L"ShowGui", NULL, NULL, (LPBYTE)&dwShowGui, &cbDataGUI)) {
-                if (dwShowGui > 0) {
-                    g_fShowGui = TRUE;
-                }
-            }
+        if (ERROR_SUCCESS == RegOpenKeyExW(HKEY_LOCAL_MACHINE, LoggingKeys[i], 0, KEY_READ, &hKey)) {
             // Yara rules dir
-            DWORD cbData = sizeof(g_wYaraRulesDir);
-            if (ERROR_SUCCESS == RegQueryValueExW(hKey, RACCINE_YARA_RULES_PATH, NULL, NULL, (LPBYTE)g_wYaraRulesDir, &cbData)) {
-                ;
+            DWORD cbData = sizeof g_wYaraRulesDir;
+            if (ERROR_SUCCESS == RegQueryValueExW(hKey, RACCINE_YARA_RULES_PATH, NULL, NULL, reinterpret_cast<LPBYTE>(g_wYaraRulesDir), &cbData)) {
             }
             RegCloseKey(hKey);
         }
@@ -555,7 +541,9 @@ void InitializeSettings()
 
 void createChildProcessWithDebugger(std::wstring command_line)
 {
-    STARTUPINFO info = { sizeof(info) };
+    STARTUPINFO info{};
+    info.cb = sizeof info;
+
     PROCESS_INFORMATION processInfo{};
 
     constexpr LPCWSTR NO_APPLICATION_NAME = nullptr;
@@ -583,11 +571,9 @@ void createChildProcessWithDebugger(std::wstring command_line)
     CloseHandle(processInfo.hThread);
 }
 
-// Find all parent processes and kill them
-void find_and_kill_processes(const std::wstring& sCommandLine, std::wstring& sListLogs)
+std::set<DWORD> find_processes_to_kill(const std::wstring& sCommandLine, std::wstring& sListLogs)
 {
-    std::vector<DWORD> pids;
-    // Collect PIDs to kill
+    std::set<DWORD> pids;
     DWORD pid = GetCurrentProcessId();
 
     while (true) {
@@ -596,22 +582,31 @@ void find_and_kill_processes(const std::wstring& sCommandLine, std::wstring& sLi
             break;
         }
 
-        std::wstring imageName = getImageName(pid);
+        const std::wstring imageName = getImageName(pid);
 
         if (!isAllowListed(pid)) {
             wprintf(L"\nCollecting IMAGE %s with PID %d for a kill\n", imageName.c_str(), pid);
-            pids.push_back(pid);
+            pids.insert(pid);
         } else {
             wprintf(L"\nProcess IMAGE %s with PID %d is on allowlist\n", imageName.c_str(), pid);
             sListLogs.append(logFormatAction(pid, imageName, sCommandLine, L"Whitelisted"));
         }
     }
 
+    return pids;
+}
+
+void find_and_kill_processes(bool log_only,
+                             const std::wstring& sCommandLine,
+                             std::wstring& sListLogs)
+{
+    const std::set<DWORD> pids = find_processes_to_kill(sCommandLine, sListLogs);
+
     // Loop over collected PIDs and try to kill the processes
     for (DWORD process_id : pids) {
         std::wstring imageName = getImageName(process_id);
         // If no simulation flag is set
-        if (!g_fLogOnly) {
+        if (!log_only) {
             // Kill
             wprintf(L"Kill process IMAGE %s with PID %d\n", imageName.c_str(), process_id);
             killProcess(process_id, 1);
