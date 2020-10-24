@@ -85,6 +85,8 @@ GOTO MENU
 :: Full
 :FULL
 ECHO.
+:: Cleanup existing elements
+TASKKILL /F /IM RaccineSettings.exe
 :: Raccine GUI Elements
 ECHO Creating data directory "%ProgramFiles%\Raccine" ...
 MKDIR "%ProgramFiles%\Raccine"
@@ -101,7 +103,7 @@ ECHO Creating data directory "%ProgramData%\Raccine" ...
 MKDIR "%ProgramData%\Raccine"
 MKDIR "%ProgramData%\Raccine\yara"
 ECHO Copying YARA rules to the directory ...
-COPY yara\*.yar "%ProgramData%\Raccine\yara"
+COPY yara\*.yar "%ProgramData%\Raccine\yara\"
 ECHO Creating empty log file ...
 echo. 2>"%ProgramData%\Raccine\Raccine_log.txt"
 icacls "%ProgramData%\Raccine\Raccine_log.txt" /grant Users:F
@@ -133,6 +135,8 @@ GOTO MENU
 :: Simulation Mode
 :FULL_SIMU
 ECHO.
+:: Cleanup existing elements
+TASKKILL /F /IM RaccineSettings.exe
 :: Raccine GUI Elements
 ECHO Creating data directory "%ProgramFiles%\Raccine" ...
 MKDIR "%ProgramFiles%\Raccine"
@@ -149,7 +153,7 @@ ECHO Creating data directory "%ProgramData%\Raccine" ...
 MKDIR "%ProgramData%\Raccine"
 MKDIR "%ProgramData%\Raccine\yara"
 ECHO Copying YARA rules to the directory ...
-COPY yara\*.yar "%ProgramData%\Raccine\yara"
+COPY yara\*.yar "%ProgramData%\Raccine\yara\"
 ECHO Creating empty log file ...
 echo. 2>"%ProgramData%\Raccine\Raccine_log.txt"
 icacls "%ProgramData%\Raccine\Raccine_log.txt" /grant Users:F
@@ -180,6 +184,8 @@ GOTO MENU
 :: Soft
 :SOFT 
 ECHO.
+:: Cleanup existing elements
+TASKKILL /F /IM RaccineSettings.exe
 :: Raccine GUI Elements
 ECHO Creating data directory "%ProgramFiles%\Raccine" ...
 MKDIR "%ProgramFiles%\Raccine"
@@ -196,7 +202,7 @@ ECHO Creating data directory "%ProgramData%\Raccine" ...
 MKDIR "%ProgramData%\Raccine"
 MKDIR "%ProgramData%\Raccine\yara"
 ECHO Copying YARA rules to the directory ...
-COPY yara\*.yar "%ProgramData%\Raccine\yara"
+COPY yara\*.yar "%ProgramData%\Raccine\yara\"
 ECHO Creating empty log file ...
 echo. 2>"%ProgramData%\Raccine\Raccine_log.txt"
 icacls "%ProgramData%\Raccine\Raccine_log.txt" /grant Users:F
