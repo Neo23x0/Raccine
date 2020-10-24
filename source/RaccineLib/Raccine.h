@@ -7,7 +7,6 @@
 // Florian Roth, Ollie Whitehouse, Branislav Djalic, John Lambert
 // with help of Hilko Bengen
 
-#include <cwchar>
 #include <set>
 #include <Windows.h>
 #include <TlHelp32.h>
@@ -23,16 +22,7 @@
 
 #define RACCINE_DATA_DIRECTORY  L"%PROGRAMDATA%\\Raccine"
 #define RACCINE_PROGRAM_DIRECTORY  L"%PROGRAMFILES%\\Raccine"
-inline WCHAR g_wRaccineDataDirectory[MAX_PATH] = { 0 };  // ENV expanded RACCINE_DATA_DIRECTORY
-inline WCHAR g_wRaccineProgramDirectory[MAX_PATH] = { 0 };  // ENV expanded RACCINE_PROGRAM_DIRECTORY
 
-// YARA Matching
-inline WCHAR g_wYaraRulesDir[MAX_PATH] = { 0 };
-
-constexpr UINT MAX_YARA_RULE_FILES = 200;
-#define RACCINE_YARA_RULES_PATH L"RulesDir"
-#define RACCINE_DEFAULT_EVENTID  1
-#define RACCINE_EVENTID_MALICIOUS_ACTIVITY  2
 
 enum class Integrity
 {
@@ -47,10 +37,13 @@ enum class Integrity
 /// <summary>
 /// Evaluate a set of yara rules on a command line
 /// </summary>
+/// <param name="yara_rules_directory">The directory containing the yara rules</param>
 /// <param name="lpCommandLine">The command line to test</param>
 /// <param name="outYaraOutput">if not empty, an output string containing match results is written to this parameter.</param>
 /// <returns>TRUE if at least one match result was found</returns>
-bool EvaluateYaraRules(const std::wstring& lpCommandLine, std::wstring& outYaraOutput);
+bool EvaluateYaraRules(const std::wstring& yara_rules_directory,
+                       const std::wstring& lpCommandLine, 
+                       std::wstring& outYaraOutput);
 
 /// This function will optionally log messages to the eventlog
 void WriteEventLogEntryWithId(const std::wstring& pszMessage, DWORD dwEventId);
@@ -62,6 +55,8 @@ bool is_malicious_command_line(const std::vector<std::wstring>& command_line);
 bool does_command_line_contain_base64(const std::vector<std::wstring>& command_line);
 
 bool needs_powershell_workaround(const std::wstring& command_line);
+
+void trigger_gui_event();
 
 // Get Parent Process ID
 DWORD getParentPid(DWORD pid);
@@ -94,11 +89,6 @@ std::wstring logFormatAction(DWORD pid, const std::wstring& imageName, const std
 
 // Log to file
 void logSend(const std::wstring& logStr);
-
-//
-//  Query for config in HKLM and HKLM\Software\Policies override by GPO
-//
-void InitializeSettings();
 
 void createChildProcessWithDebugger(std::wstring command_line);
 
