@@ -107,59 +107,59 @@ namespace RaccineSettings
             {
                 using (StreamWriter outputFile = new StreamWriter(szContextPath))
                 {
-                    string szName = "Caption";
+                    string szName = "raccine_Caption";
                     string szValue = EscapeString(process.Caption);
                     outputFile.Write(" " + szName + "=" + szValue + " ");
 
-                    szName = "CommandLine";
+                    szName = "raccine_CommandLine";
                     szValue = EscapeString(process.CommandLine);
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "ExecutablePath";
+                    szName = "raccine_ExecutablePath";
                     szValue = EscapeString(process.ExecutablePath);
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "HandleCount";
+                    szName = "raccine_HandleCount";
                     szValue = process.HandleCount.ToString();
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "Name";
+                    szName = "raccine_Name";
                     szValue = EscapeString(process.Name);
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "OSName";
+                    szName = "raccine_OSName";
                     szValue = EscapeString(process.OSName);
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "Priority";
+                    szName = "raccine_Priority";
                     szValue = process.Priority.ToString();
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "ProcessId";
+                    szName = "raccine_ProcessId";
                     szValue = process.ProcessId.ToString();
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "ParentProcessId";
+                    szName = "raccine_ParentProcessId";
                     szValue = process.ParentProcessId.ToString();
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "SessionId";
+                    szName = "raccine_SessionId";
                     szValue = process.SessionId.ToString();
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "ThreadCount";
+                    szName = "raccine_ThreadCount";
                     szValue = process.ThreadCount.ToString();
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "WindowsVersion";
+                    szName = "raccine_WindowsVersion";
                     szValue = process.WindowsVersion;
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "WriteOperationCount";
+                    szName = "raccine_WriteOperationCount";
                     szValue = process.WriteOperationCount.ToString();
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "WriteTransferCount";
+                    szName = "raccine_WriteTransferCount";
                     szValue = process.WriteTransferCount.ToString();
                     outputFile.Write(szName + "=" + szValue + " ");
                 }
@@ -185,7 +185,7 @@ namespace RaccineSettings
                                 szValue = "";
                             else
                                 szValue = EscapeString(subprop.Value.ToString());
-                            outputFile.Write(" " + subprop.Name + "=" + szValue + " ");
+                            outputFile.Write(" raccine_" + subprop.Name + "=" + szValue + " ");
                         }
                     }
                 }
