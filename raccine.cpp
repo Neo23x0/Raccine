@@ -11,6 +11,10 @@
 #include <Shlwapi.h>
 #include <strsafe.h>
 
+
+#include "source/RaccineLib/HandleWrapper.h"
+#include "source/RaccineLib/RaccineConfig.h"
+
 int wmain(int argc, WCHAR* argv[])
 {
     setlocale(LC_ALL, "");
@@ -56,43 +60,37 @@ int wmain(int argc, WCHAR* argv[])
         sCommandLine.append(std::wstring(argv[i]).append(L" "));
     }
 
-    LPWSTR szCommandLine = (LPWSTR)sCommandLine.c_str();
-    if (StrStrI(szCommandLine, L"-File ") != NULL
-        && StrStrI(szCommandLine, L".ps") != NULL
-        && StrStrI(szCommandLine, L"powershell") == NULL)
-    {
+    auto szCommandLine = static_cast<LPWSTR>(sCommandLine.data());
+    if (StrStrIW(szCommandLine, L"-File ") != NULL
+        && StrStrIW(szCommandLine, L".ps") != NULL
+        && StrStrIW(szCommandLine, L"powershell") == NULL) {
         bPowerShellWorkaround = true;
     }
 
-    if (argc > 1)
-    {
+    if (argc > 1) {
         // Check for invoked program 
         if ((_wcsicmp(L"vssadmin.exe", argv[1]) == 0) ||
             (_wcsicmp(L"vssadmin", argv[1]) == 0)) {
             bVssadmin = true;
-        }
-        else if ((_wcsicmp(L"wmic.exe", argv[1]) == 0) ||
-                 (_wcsicmp(L"wmic", argv[1]) == 0)) {
+        } else if ((_wcsicmp(L"wmic.exe", argv[1]) == 0) ||
+                  (_wcsicmp(L"wmic", argv[1]) == 0)) {
             bWmic = true;
-        }
-        else if ((_wcsicmp(L"wbadmin.exe", argv[1]) == 0) ||
-                 (_wcsicmp(L"wbadmin", argv[1]) == 0)) {
+        } else if ((_wcsicmp(L"wbadmin.exe", argv[1]) == 0) ||
+                  (_wcsicmp(L"wbadmin", argv[1]) == 0)) {
             bWbadmin = true;
-        }
-        else if ((_wcsicmp(L"bcdedit.exe", argv[1]) == 0) ||
-                 (_wcsicmp(L"bcdedit", argv[1]) == 0)) {
+        } else if ((_wcsicmp(L"bcdedit.exe", argv[1]) == 0) ||
+                  (_wcsicmp(L"bcdedit", argv[1]) == 0)) {
             bcdEdit = true;
-        }
-        else if ((_wcsicmp(L"powershell.exe", argv[1]) == 0) ||
-                 (_wcsicmp(L"powershell", argv[1]) == 0)) {
+        } else if ((_wcsicmp(L"powershell.exe", argv[1]) == 0) ||
+                  (_wcsicmp(L"powershell", argv[1]) == 0)) {
             bPowerShell = true;
-        }
-        else if ((_wcsicmp(L"diskshadow.exe", argv[1]) == 0) ||
-                 (_wcsicmp(L"diskshadow", argv[1]) == 0)) {
+        } else if ((_wcsicmp(L"diskshadow.exe", argv[1]) == 0) ||
+                  (_wcsicmp(L"diskshadow", argv[1]) == 0)) {
             bDiskShadow = true;
         }
     }
 
+    RaccineConfig configuration;
     InitializeSettings();
 
     std::wstring szYaraOutput;
@@ -121,35 +119,25 @@ int wmain(int argc, WCHAR* argv[])
         // Simple flag checks
         if (_wcsicmp(L"delete", argv[iCount]) == 0) {
             bDelete = true;
-        }
-        else if (_wcsicmp(L"shadows", argv[iCount]) == 0) {
+        } else if (_wcsicmp(L"shadows", argv[iCount]) == 0) {
             bShadows = true;
-        }
-        else if (_wcsicmp(L"shadowstorage", argv[iCount]) == 0) {
+        } else if (_wcsicmp(L"shadowstorage", argv[iCount]) == 0) {
             bShadowStorage = true;
-        }
-        else if (_wcsicmp(L"resize", argv[iCount]) == 0) {
+        } else if (_wcsicmp(L"resize", argv[iCount]) == 0) {
             bResize = true;
-        }
-        else if (_wcsicmp(L"shadowcopy", argv[iCount]) == 0) {
+        } else if (_wcsicmp(L"shadowcopy", argv[iCount]) == 0) {
             bShadowCopy = true;
-        }
-        else if (_wcsicmp(L"catalog", argv[iCount]) == 0) {
+        } else if (_wcsicmp(L"catalog", argv[iCount]) == 0) {
             bCatalog = true;
-        }
-        else if (_wcsicmp(L"-quiet", argv[iCount]) == 0 || _wcsicmp(L"/quiet", argv[iCount]) == 0) {
+        } else if (_wcsicmp(L"-quiet", argv[iCount]) == 0 || _wcsicmp(L"/quiet", argv[iCount]) == 0) {
             bQuiet = true;
-        }
-        else if (_wcsicmp(L"recoveryenabled", argv[iCount]) == 0) {
+        } else if (_wcsicmp(L"recoveryenabled", argv[iCount]) == 0) {
             bRecoveryEnabled = true;
-        }
-        else if (_wcsicmp(L"ignoreallfailures", argv[iCount]) == 0) {
+        } else if (_wcsicmp(L"ignoreallfailures", argv[iCount]) == 0) {
             bIgnoreallFailures = true;
-        }
-        else if (convertedArg.find(L"win32_shadowcopy") != std::string::npos) {
+        } else if (convertedArg.find(L"win32_shadowcopy") != std::string::npos) {
             bwin32ShadowCopy = true;
-        }
-        else if (_wcsicmp(L"-version", argv[iCount]) == 0 || _wcsicmp(L"/version", argv[iCount]) == 0) {
+        } else if (_wcsicmp(L"-version", argv[iCount]) == 0 || _wcsicmp(L"/version", argv[iCount]) == 0) {
             bVersion = true;
         }
         // Special comparison of current argument with previous argument
@@ -184,13 +172,12 @@ int wmain(int argc, WCHAR* argv[])
     if (bBlock) {
         // Log to the windows Eventlog
         LPCWSTR lpMessage = sCommandLine.c_str();
-        if (!g_fLogOnly) {
+        if (!configuration.log_only()) {
             // Eventlog
             StringCchPrintfW(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n", lpMessage);
             // Log to the text log file
             sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity"));
-        }
-        else {
+        } else {
             // Eventlog
             StringCchPrintfW(wMessage, ARRAYSIZE(wMessage), L"Raccine detected malicious activity:\n%s\n(simulation mode)", lpMessage);
             // Log to the text log file
@@ -208,27 +195,28 @@ int wmain(int argc, WCHAR* argv[])
         }
 
         // signal Event for UI to know an alert happened.  If no UI is running, this has no effect.
-        if (g_fShowGui) {
-            HANDLE hEvent = OpenEvent(EVENT_MODIFY_STATE, FALSE, L"RaccineAlertEvent");
-            if (hEvent != NULL) {
+        if (configuration.show_gui()) {
+            EventHandleWrapper hEvent = OpenEventW(EVENT_MODIFY_STATE,
+                                       FALSE,
+                                       L"RaccineAlertEvent");
+            if (hEvent) {
                 if (!SetEvent(hEvent)) {
                     //didn't go through
                 }
-                CloseHandle(hEvent);
             }
         }
     }
 
     // If block and not simulation mode
-    if (bBlock && !g_fLogOnly) {
-        find_and_kill_processes(sCommandLine, sListLogs);
+    if (bBlock && !configuration.log_only()) {
+        find_and_kill_processes(configuration.log_only(), sCommandLine, sListLogs);
     }
 
     // Otherwise launch the process with its original parameters
     // Conditions:
     // a.) not block or
     // b.) simulation mode
-    if (!bBlock || g_fLogOnly) {
+    if (!bBlock || configuration.log_only()) {
         std::wstring sCommandLineStr = sCommandLine;
         if (bPowerShellWorkaround) {
             sCommandLineStr = std::wstring(L"powershell.exe ").append(sCommandLine);

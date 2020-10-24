@@ -52,6 +52,45 @@ TEST(TestGetIntegrityLevel, CurrentProcess)
         FAIL() << "Failed to open process";
     }
 
-    Integrity integrity = getIntegrityLevel(hProcess);
+    const Integrity integrity = getIntegrityLevel(hProcess);
     EXPECT_TRUE(integrity == Integrity::Medium || integrity == Integrity::High);
+}
+
+TEST(TestExpandEnvironmentStrings, RaccineDataDirectory)
+{
+    std::wstring result = utils::expand_environment_strings(RACCINE_DATA_DIRECTORY);
+    EXPECT_EQ(result, L"C:\\ProgramData\\Raccine");
+}
+
+TEST(TestFindProcessesToKill, Parent)
+{
+    const std::wstring command_line = L"TEST_COMMAND_LINE";
+    std::wstring logs;
+    const std::set<DWORD> pids = find_processes_to_kill(command_line, logs);
+    EXPECT_FALSE(pids.empty());
+
+    const DWORD parent_pid = getParentPid(GetCurrentProcessId());
+    EXPECT_TRUE(pids.contains(parent_pid));
+
+    // TODO: test logs output
+}
+
+TEST(TestFindProcessesToKill, System)
+{
+    const std::wstring command_line = L"TEST_COMMAND_LINE";
+    std::wstring logs;
+    const std::set<DWORD> pids = find_processes_to_kill(command_line, logs);
+    EXPECT_FALSE(pids.empty());
+
+    EXPECT_FALSE(pids.contains(4));
+}
+
+TEST(TestFindProcessesToKill, NonExistant)
+{
+    const std::wstring command_line = L"TEST_COMMAND_LINE";
+    std::wstring logs;
+    const std::set<DWORD> pids = find_processes_to_kill(command_line, logs);
+    EXPECT_FALSE(pids.empty());
+
+    EXPECT_FALSE(pids.contains(3));
 }

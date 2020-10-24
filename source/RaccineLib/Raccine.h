@@ -8,6 +8,7 @@
 // with help of Hilko Bengen
 
 #include <cwchar>
+#include <set>
 #include <Windows.h>
 #include <TlHelp32.h>
 #include <string>
@@ -17,10 +18,6 @@
 #define VERSION "1.0.4 BETA"
 
 // Log Config and Flags
-inline BOOL g_fLogOnly = FALSE;
-inline BOOL g_fShowGui = FALSE;
-#define RACCINE_REG_CONFIG  L"SOFTWARE\\Raccine"
-#define RACCINE_REG_POICY_CONFIG  L"SOFTWARE\\Policies\\Raccine"
 constexpr UINT MAX_MESSAGE = 1000;
 #define RACCINE_DEFAULT_EVENTID  1
 #define RACCINE_EVENTID_MALICIOUS_ACTIVITY  2
@@ -34,8 +31,6 @@ inline WCHAR g_wRaccineProgramDirectory[MAX_PATH] = { 0 };  // ENV expanded RACC
 inline WCHAR g_wYaraRulesDir[MAX_PATH] = { 0 };
 
 constexpr UINT MAX_YARA_RULE_FILES = 200;
-#define RACCINE_REG_CONFIG  L"SOFTWARE\\Raccine"
-#define RACCINE_REG_POICY_CONFIG  L"SOFTWARE\\Policies\\Raccine"
 #define RACCINE_YARA_RULES_PATH L"RulesDir"
 #define RACCINE_DEFAULT_EVENTID  1
 #define RACCINE_EVENTID_MALICIOUS_ACTIVITY  2
@@ -59,9 +54,9 @@ enum class Integrity
 BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput);
 
 /// This function will optionally log messages to the eventlog
-void WriteEventLogEntryWithId(LPWSTR pszMessage, DWORD dwEventId);
+void WriteEventLogEntryWithId(const std::wstring& pszMessage, DWORD dwEventId);
 
-void WriteEventLogEntry(LPWSTR  pszMessage);
+void WriteEventLogEntry(const std::wstring& pszMessage);
 
 // Get Parent Process ID
 DWORD getParentPid(DWORD pid);
@@ -102,5 +97,10 @@ void InitializeSettings();
 
 void createChildProcessWithDebugger(std::wstring command_line);
 
+// Find all parent processes
+std::set<DWORD> find_processes_to_kill(const std::wstring& sCommandLine, std::wstring& sListLogs);
+
 // Find all parent processes and kill them
-void find_and_kill_processes(const std::wstring& sCommandLine, std::wstring& sListLogs);
+void find_and_kill_processes(bool log_only, 
+                             const std::wstring& sCommandLine, 
+                             std::wstring& sListLogs);

@@ -32,7 +32,7 @@ bool YaraRuleRunner::run_yara_rule_on_file(const std::filesystem::path& yara_rul
         + YARA_INSTANCE + L" " + yara_rule.wstring() + L" " + target_file.wstring();
 
     const bool yara_succeeded = run_yara_process(yara_command_line);
-    if(!yara_succeeded) {
+    if (!yara_succeeded) {
         return false;
     }
 
@@ -54,7 +54,9 @@ bool YaraRuleRunner::run_yara_rule_on_file(const std::filesystem::path& yara_rul
 
 bool YaraRuleRunner::run_yara_process(std::wstring& command_line)
 {
-    STARTUPINFO info = { sizeof(info) };
+    STARTUPINFO info{};
+    info.cb = sizeof info;
+
     PROCESS_INFORMATION processInfo{};
 
     if (!CreateProcessW(
