@@ -165,11 +165,13 @@
   <ItemGroup>
     <ClInclude Include="HandleWrapper.h" />
     <ClInclude Include="Raccine.h" />
+    <ClInclude Include="RaccineConfig.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="YaraRuleRunner.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="raccine.cpp" />
+    <ClCompile Include="RaccineConfig.cpp" />
     <ClCompile Include="Utils.cpp" />
     <ClCompile Include="YaraRuleRunner.cpp" />
   </ItemGroup>

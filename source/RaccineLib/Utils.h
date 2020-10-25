@@ -62,4 +62,6 @@ namespace utils
 
     DWORD GetPriorityClassByPid( DWORD pid );
 
+
+    std::wstring expand_environment_strings(const std::wstring& input);
 }

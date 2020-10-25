@@ -25,26 +25,29 @@ public:
 
     void Close()
     {
-        if (m_handle != traits::InvalidValue)
-        {
+        if (m_handle != traits::InvalidValue) {
             traits::Close(m_handle);
             m_handle = traits::InvalidValue;
         }
     }
 
-    bool operator !() const {
-        return (m_handle == traits::InvalidValue);
+    bool operator !() const
+    {
+        return m_handle == traits::InvalidValue;
     }
 
-    operator bool() const {
-        return (m_handle != traits::InvalidValue);
+    operator bool() const
+    {
+        return m_handle != traits::InvalidValue;
     }
 
-    operator typename traits::HandleType() {
+    operator typename traits::HandleType()
+    {
         return m_handle;
     }
 
-    typename traits::HandleType* operator&() {
+    typename traits::HandleType* operator&()
+    {
         return &m_handle;
     }
 
@@ -112,8 +115,21 @@ struct TokenHandleTraits
     }
 };
 
+// Handle wrapper for handles from OpenEvent
+struct EventHandleTraits
+{
+    typedef HANDLE HandleType;
+    inline static const HANDLE InvalidValue = NULL;
+
+    static void Close(HANDLE value)
+    {
+        CloseHandle(value);
+    }
+};
+
 using SnapshotHandleWrapper = HandleWrapper< SnapshotHandleTraits>;
 using ProcessHandleWrapper = HandleWrapper< ProcessHandleTraits>;
 using EventSourceHandleWrapper = HandleWrapper< EventSourceHandleTraits>;
 using FindFileHandleWrapper = HandleWrapper< FindFileHandleTraits>;
 using TokenHandleWrapper = HandleWrapper< TokenHandleTraits>;
+using EventHandleWrapper = HandleWrapper< EventHandleTraits>;
