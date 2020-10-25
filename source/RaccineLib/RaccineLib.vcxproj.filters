@@ -27,6 +27,9 @@
     <ClInclude Include="Raccine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="RaccineConfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="raccine.cpp">
@@ -36,6 +39,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="YaraRuleRunner.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RaccineConfig.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -13,15 +13,15 @@ constexpr UINT TIMEOUT = 5000;
 class YaraRuleRunner final
 {
 public:
-    YaraRuleRunner(const std::filesystem::path& yara_rules_dir,
-                   const std::filesystem::path& raccine_program_directory);
+    [[nodiscard]] YaraRuleRunner(const std::filesystem::path& yara_rules_dir,
+                                 const std::filesystem::path& raccine_program_directory);
 
     ~YaraRuleRunner() = default;
 
-    bool run_yara_rules_on_file(const std::filesystem::path& target_file,
-                                const std::wstring& command_line,
-                                std::wstring& out_yara_output,
-                                std::wstring& yara_cmd_optional_defines);
+    [[nodiscard]] bool run_yara_rules_on_file(const std::filesystem::path& target_file,
+                                              const std::wstring& command_line,
+                                              std::wstring& out_yara_output,
+                                              std::wstring& yara_cmd_optional_defines);
 
     // Deleted functions
     YaraRuleRunner(const YaraRuleRunner&) = delete;

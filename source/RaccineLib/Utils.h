@@ -2,64 +2,61 @@
 #include <string>
 #include <Windows.h>
 #include <TlHelp32.h>
-#include <Psapi.h>
-#include "HandleWrapper.h"
-#include <array>
-#include <StrSafe.h>
-#include <wbemidl.h>
-#include <comdef.h>
 
 namespace utils
 {
 
-    class ProcessDetail final
+class ProcessDetail final
+{
+public:
+    ProcessDetail(DWORD dwPid);
+
+    ~ProcessDetail() = default;
+
+    std::wstring ToString(const std::wstring& szPrefix);
+
+private:
+    struct PROCESS_DETAIL
     {
-    public:
-        ProcessDetail(DWORD dwPid);
-
-        ~ProcessDetail() = default;
-
-        std::wstring ToString(std::wstring szPrefix);
-
-    private:
-        struct PROCESS_DETAIL
-        {
-            DWORD dwPid;
-            std::wstring ExeName;
-            std::wstring ExePath;
-            std::wstring CommandLine;
-            UINT HandleCount;
-            UINT Priority;
-            UINT SecondsSinceExeCreation;
-        };
-        PROCESS_DETAIL ProcessDetailStruct;
+        DWORD dwPid;
+        std::wstring ExeName;
+        std::wstring ExePath;
+        std::wstring CommandLine;
+        UINT HandleCount;
+        UINT Priority;
+        UINT SecondsSinceExeCreation;
     };
+    PROCESS_DETAIL ProcessDetailStruct;
+};
 
-    enum class Integrity
-    {
-        Error = 0, // Indicates integrity level could not be found
-        Low = 1,
-        Medium = 2,
-        High = 3,
-        System = 4,
+enum class Integrity
+{
+    Error = 0, // Indicates integrity level could not be found
+    Low = 1,
+    Medium = 2,
+    High = 3,
+    System = 4,
 
-    };
-    std::wstring to_lower(const std::wstring& input);
+};
 
-    bool isProcessAllowed(const PROCESSENTRY32W& pe32);
+std::wstring to_lower(const std::wstring& input);
 
-    std::wstring getImageName(DWORD pid);
+bool isProcessAllowed(const PROCESSENTRY32W& pe32);
 
-    std::wstring getImageEXEPath(DWORD pid);
+std::wstring getImageName(DWORD pid);
 
-    Integrity getIntegrityLevel(HANDLE hProcess);
+std::wstring getImageEXEPath(DWORD pid);
 
-    DWORD getParentPid(DWORD pid);
+Integrity getIntegrityLevel(HANDLE hProcess);
 
-    BOOL killProcess(DWORD dwProcessId, UINT uExitCode);
+DWORD getParentPid(DWORD pid);
 
-    std::wstring GetProcessCommandLine(DWORD pid);
+BOOL killProcess(DWORD dwProcessId, UINT uExitCode);
 
-    DWORD GetPriorityClassByPid( DWORD pid );
+std::wstring GetProcessCommandLine(DWORD pid);
+
+DWORD GetPriorityClassByPid(DWORD pid);
+
+std::wstring expand_environment_strings(const std::wstring& input);
 
 }

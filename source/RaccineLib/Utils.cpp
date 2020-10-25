@@ -1,9 +1,20 @@
 #include "Utils.h"
 
 #include <algorithm>
+#include <Shlwapi.h>
+#include <vector>
 
+#include <Psapi.h>
+#include "HandleWrapper.h"
+#include <array>
+#include <strsafe.h>
+#include <wbemidl.h>
+#include <comdef.h>
 
-std::wstring utils::to_lower(const std::wstring& input)
+namespace utils
+{
+
+std::wstring to_lower(const std::wstring& input)
 {
     std::wstring output = input;
     std::transform(output.begin(), output.end(), output.begin(),
@@ -11,9 +22,7 @@ std::wstring utils::to_lower(const std::wstring& input)
     return output;
 }
 
-
-// Get Parent Process ID
-DWORD utils::getParentPid(DWORD pid)
+DWORD getParentPid(DWORD pid)
 {
     SnapshotHandleWrapper hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
@@ -22,8 +31,8 @@ DWORD utils::getParentPid(DWORD pid)
     }
 
     PROCESSENTRY32W pe32{};
-    ZeroMemory(&pe32, sizeof(pe32));
-    pe32.dwSize = sizeof(pe32);
+    pe32.dwSize = sizeof pe32;
+
     if (!Process32FirstW(hSnapshot, &pe32)) {
         return 0;
     }
@@ -37,53 +46,53 @@ DWORD utils::getParentPid(DWORD pid)
     return 0;
 }
 
-// Get integrity level of process
-utils::Integrity utils::getIntegrityLevel(HANDLE hProcess)
+Integrity getIntegrityLevel(HANDLE hProcess)
 {
-
     TokenHandleWrapper hToken = INVALID_HANDLE_VALUE;
 
     if (!OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
         return Integrity::Error;
     }
 
-    PTOKEN_MANDATORY_LABEL pTIL;
-    DWORD dwLengthNeeded = sizeof pTIL;
-    GetTokenInformation(hToken, TokenIntegrityLevel, NULL, 0, &dwLengthNeeded);
-    pTIL = static_cast<PTOKEN_MANDATORY_LABEL>(LocalAlloc(0, dwLengthNeeded));
-    if (!pTIL) {
+    DWORD dwLengthNeeded = 0;
+    GetTokenInformation(hToken,
+                        TokenIntegrityLevel,
+                        NULL,
+                        0,
+                        &dwLengthNeeded);
+    std::vector<unsigned char> token_data(static_cast<size_t>(dwLengthNeeded), 0);
+
+    const BOOL ret = GetTokenInformation(hToken,
+                                         TokenIntegrityLevel,
+                                         token_data.data(),
+                                         dwLengthNeeded,
+                                         &dwLengthNeeded);
+    if (!ret) {
         return Integrity::Error;
     }
 
-    if (GetTokenInformation(hToken, TokenIntegrityLevel,
-        pTIL, dwLengthNeeded, &dwLengthNeeded)) {
-        const DWORD dwIntegrityLevel = *GetSidSubAuthority(pTIL->Label.Sid,
-            static_cast<DWORD>(static_cast<UCHAR>(*GetSidSubAuthorityCount(pTIL->Label.Sid) - 1)));
+    auto* const pTIL = reinterpret_cast<PTOKEN_MANDATORY_LABEL>(token_data.data());
+    const DWORD dwIntegrityLevel = *GetSidSubAuthority(pTIL->Label.Sid,
+                                                       static_cast<DWORD>(static_cast<UCHAR>(*GetSidSubAuthorityCount(pTIL->Label.Sid) - 1)));
 
-        LocalFree(pTIL);
-
-        if (dwIntegrityLevel == SECURITY_MANDATORY_LOW_RID) {
-            return Integrity::Low;
-        }
-
-        if (dwIntegrityLevel >= SECURITY_MANDATORY_MEDIUM_RID &&
-            dwIntegrityLevel < SECURITY_MANDATORY_HIGH_RID) {
-            return Integrity::Medium;
-        }
-
-        if (dwIntegrityLevel >= SECURITY_MANDATORY_HIGH_RID &&
-            dwIntegrityLevel < SECURITY_MANDATORY_SYSTEM_RID) {
-            return Integrity::High;
-        }
-
-        if (dwIntegrityLevel >= SECURITY_MANDATORY_SYSTEM_RID) {
-            return Integrity::System;
-        }
-
-        return Integrity::Error;
+    if (dwIntegrityLevel == SECURITY_MANDATORY_LOW_RID) {
+        return Integrity::Low;
     }
 
-    LocalFree(pTIL);
+    if (dwIntegrityLevel >= SECURITY_MANDATORY_MEDIUM_RID &&
+        dwIntegrityLevel < SECURITY_MANDATORY_HIGH_RID) {
+        return Integrity::Medium;
+    }
+
+    if (dwIntegrityLevel >= SECURITY_MANDATORY_HIGH_RID &&
+        dwIntegrityLevel < SECURITY_MANDATORY_SYSTEM_RID) {
+        return Integrity::High;
+    }
+
+    if (dwIntegrityLevel >= SECURITY_MANDATORY_SYSTEM_RID) {
+        return Integrity::System;
+    }
+
     return Integrity::Error;
 }
 
@@ -95,35 +104,30 @@ BOOL GetWin32FileName(const WCHAR* pszNativeFileName, WCHAR* pszWin32FileName)
     WCHAR szTemp[MAX_PATH];
     szTemp[0] = '\0';
 
-    if (GetLogicalDriveStrings(MAX_PATH - 1, szTemp))
-    {
+    if (GetLogicalDriveStrings(MAX_PATH - 1, szTemp)) {
         WCHAR szName[MAX_PATH];
         WCHAR szDrive[3] = TEXT(" :");
         WCHAR* p = szTemp;
 
-        do
-        {
+        do {
             // Copy the drive letter to the template string
             *szDrive = *p;
 
             // Look up each device name
-            if (QueryDosDevice(szDrive, szName, MAX_PATH))
-            {
-                size_t uNameLen = wcslen(szName);
+            if (QueryDosDevice(szDrive, szName, MAX_PATH)) {
+                const size_t uNameLen = wcslen(szName);
 
-                if (uNameLen < MAX_PATH)
-                {
+                if (uNameLen < MAX_PATH) {
                     bFound = _wcsnicmp(pszNativeFileName, szName, uNameLen) == 0
                         && *(pszNativeFileName + uNameLen) == L'\\';
 
-                    if (bFound)
-                    {
+                    if (bFound) {
                         // Replace device path with DOS path
                         StringCchPrintf(pszWin32FileName,
-                            MAX_PATH,
-                            L"%s%s",
-                            szDrive,
-                            pszNativeFileName + uNameLen);
+                                        MAX_PATH,
+                                        L"%s%s",
+                                        szDrive,
+                                        pszNativeFileName + uNameLen);
                     }
                 }
             }
@@ -135,21 +139,20 @@ BOOL GetWin32FileName(const WCHAR* pszNativeFileName, WCHAR* pszWin32FileName)
     return(bFound);
 }
 
-DWORD utils::GetPriorityClassByPid(DWORD pid)
+DWORD GetPriorityClassByPid(DWORD pid)
 {
-    ProcessHandleWrapper hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
-    if (hProcess != NULL)
-    {
+    ProcessHandleWrapper hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION,
+                                                FALSE, 
+                                                pid);
+    if (hProcess != NULL) {
         return GetPriorityClass(hProcess);
     }
+
     return NORMAL_PRIORITY_CLASS;
 }
 
-// get the image path for the EXE 
-std::wstring utils::getImageEXEPath(DWORD pid)
+std::wstring getImageEXEPath(DWORD pid)
 {
-    UNREFERENCED_PARAMETER(pid);
-
     WCHAR wEXEPath[MAX_PATH] = { 0 };
 
     ProcessHandleWrapper hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
@@ -159,11 +162,9 @@ std::wstring utils::getImageEXEPath(DWORD pid)
     std::wstring ExePath(wEXEPath);
 
     //see if we need to convert it to C:
-    if (to_lower(ExePath).rfind(L"\\device\\harddisk", 0) == 0) 
-    {
+    if (to_lower(ExePath).rfind(L"\\device\\harddisk", 0) == 0) {
         WCHAR wWin32EXEPath[MAX_PATH] = { 0 };
-        if (GetWin32FileName(ExePath.c_str(), wWin32EXEPath))
-        {
+        if (GetWin32FileName(ExePath.c_str(), wWin32EXEPath)) {
             return std::wstring(wWin32EXEPath);
         }
     }
@@ -172,18 +173,16 @@ std::wstring utils::getImageEXEPath(DWORD pid)
     return ExePath;
 }
 
-// Get the image name of the process
-std::wstring utils::getImageName(DWORD pid)
+std::wstring getImageName(DWORD pid)
 {
-    PROCESSENTRY32W pe32{};
     SnapshotHandleWrapper hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
     if (!hSnapshot) {
         return L"(unavailable)";
     }
 
-    ZeroMemory(&pe32, sizeof(pe32));
-    pe32.dwSize = sizeof(pe32);
+    PROCESSENTRY32W pe32{};
+    pe32.dwSize = sizeof pe32;
 
     if (!Process32FirstW(hSnapshot, &pe32)) {
         return L"(unavailable)";
@@ -199,7 +198,7 @@ std::wstring utils::getImageName(DWORD pid)
 }
 
 // Helper for isAllowListed, checks if a specific process is allowed
-bool utils::isProcessAllowed(const PROCESSENTRY32W& pe32)
+bool isProcessAllowed(const PROCESSENTRY32W& pe32)
 {
     ProcessHandleWrapper hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe32.th32ProcessID);
     if (!hProcess) {
@@ -233,7 +232,7 @@ bool utils::isProcessAllowed(const PROCESSENTRY32W& pe32)
     return false;
 }
 
-std::wstring utils::GetProcessCommandLine(DWORD pid)
+std::wstring GetProcessCommandLine(DWORD pid)
 {
     std::wstring CommandLine;
     HRESULT hr = 0;
@@ -242,26 +241,27 @@ std::wstring utils::GetProcessCommandLine(DWORD pid)
     IEnumWbemClassObject* EnumWbem = NULL;
     std::wstring Query = L"SELECT CommandLine FROM Win32_Process WHERE ProcessID = " + std::to_wstring(pid);
 
-    //initializate the Windows security
+    // initialize the Windows security
     hr = CoInitializeEx(0, COINIT_MULTITHREADED);
     hr = CoInitializeSecurity(NULL, -1, NULL, NULL, RPC_C_AUTHN_LEVEL_DEFAULT, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE, NULL);
 
 
     hr = CoCreateInstance(CLSID_WbemLocator,
-                            0,
-                            CLSCTX_INPROC_SERVER,
-                            IID_IWbemLocator, (LPVOID*)&WbemLocator);
+                          0,
+                          CLSCTX_INPROC_SERVER,
+                          IID_IWbemLocator, 
+                          reinterpret_cast<LPVOID*>(&WbemLocator));
     //connect to the WMI
     hr = WbemLocator->ConnectServer(
-                _bstr_t(L"ROOT\\CIMV2"), // WMI namespace
-                NULL,                    // User name
-                NULL,                    // User password
-                0,                       // Locale
-                NULL,                    // Security flags                 
-                0,                       // Authority       
-                0,                       // Context object
-                & WbemServices                    // IWbemServices proxy
-                );
+        _bstr_t(L"ROOT\\CIMV2"), // WMI namespace
+        NULL,                    // User name
+        NULL,                    // User password
+        0,                       // Locale
+        NULL,                    // Security flags                 
+        0,                       // Authority       
+        0,                       // Context object
+        &WbemServices                    // IWbemServices proxy
+    );
     //Run the WQL Query
     hr = WbemServices->ExecQuery(_bstr_t(L"WQL"), _bstr_t(Query.c_str()), WBEM_FLAG_FORWARD_ONLY, NULL, &EnumWbem);
 
@@ -274,9 +274,8 @@ std::wstring utils::GetProcessCommandLine(DWORD pid)
             VARIANT procCommandLine;
 
             // access the properties
-            hr = result->Get( L"CommandLine", 0, &procCommandLine, 0, 0);
-            if (hr == S_OK)
-            {
+            hr = result->Get(L"CommandLine", 0, &procCommandLine, 0, 0);
+            if (hr == S_OK) {
                 if (!(procCommandLine.vt == VT_NULL))
                     CommandLine = std::wstring(procCommandLine.bstrVal);
             }
@@ -295,7 +294,7 @@ std::wstring utils::GetProcessCommandLine(DWORD pid)
 }
 
 // Kill a process
-BOOL utils::killProcess(DWORD dwProcessId, UINT uExitCode)
+BOOL killProcess(DWORD dwProcessId, UINT uExitCode)
 {
     constexpr DWORD dwDesiredAccess = PROCESS_TERMINATE;
     constexpr BOOL  bInheritHandle = FALSE;
@@ -303,6 +302,7 @@ BOOL utils::killProcess(DWORD dwProcessId, UINT uExitCode)
     if (!hProcess) {
         return FALSE;
     }
+
     return TerminateProcess(hProcess, uExitCode);
 }
 
@@ -333,17 +333,17 @@ bool isAllowListed(DWORD pid)
     return false;
 }
 
-utils::ProcessDetail::ProcessDetail(DWORD dwPid)
+ProcessDetail::ProcessDetail(DWORD dwPid)
 {
     ProcessDetailStruct = { 0 };
     ProcessDetailStruct.dwPid = dwPid;
 }
 
-std::wstring utils::ProcessDetail::ToString(std::wstring szPrefix)
+std::wstring ProcessDetail::ToString(const std::wstring& szPrefix)
 {
-    DWORD pid = ProcessDetailStruct.dwPid;
+    const DWORD pid = ProcessDetailStruct.dwPid;
 
-    std::wstring YaraDef = L" -d ";
+    const std::wstring YaraDef = L" -d ";
 
     ProcessDetailStruct.Priority = GetPriorityClassByPid(pid);
 
@@ -359,11 +359,27 @@ std::wstring utils::ProcessDetail::ToString(std::wstring szPrefix)
     // need to replace any internal doublequotes in these strings.
 
     std::wstring full_string = YaraDef + L" FromRaccine=\"true\" " + YaraDef + L" " + szPrefix + L"Name=\"" + ProcessDetailStruct.ExeName + L"\""
-    + YaraDef + L" " + szPrefix + L"ExecutablePath=\"" + ProcessDetailStruct.ExePath + L"\""
-    + YaraDef + L" " + szPrefix + L"CommandLine=\"" + ProcessDetailStruct.CommandLine + L"\""
-    + YaraDef + L" " + szPrefix + L"Priority=" + std::to_wstring(ProcessDetailStruct.Priority) + L"";
+        + YaraDef + L" " + szPrefix + L"ExecutablePath=\"" + ProcessDetailStruct.ExePath + L"\""
+        + YaraDef + L" " + szPrefix + L"CommandLine=\"" + ProcessDetailStruct.CommandLine + L"\""
+        + YaraDef + L" " + szPrefix + L"Priority=" + std::to_wstring(ProcessDetailStruct.Priority) + L"";
 
     return full_string;
 }
 
 
+
+std::wstring expand_environment_strings(const std::wstring& input)
+{
+    constexpr size_t MAX_STRING_SIZE = 2 << 15;
+    std::vector<wchar_t> output(MAX_STRING_SIZE, 0);
+    const DWORD ret = ExpandEnvironmentStringsW(input.c_str(),
+                                                output.data(),
+                                                static_cast<DWORD>(output.size()));
+    if (ret == 0) {
+        return input;
+    }
+
+    return std::wstring(output.data());
+}
+
+}
