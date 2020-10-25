@@ -9,7 +9,6 @@
 
 #include <Shlwapi.h>
 
-#include "source/RaccineLib/HandleWrapper.h"
 #include "source/RaccineLib/RaccineConfig.h"
 
 int wmain(int argc, WCHAR* argv[])
@@ -30,20 +29,33 @@ int wmain(int argc, WCHAR* argv[])
     // Launch the new child in a suspended state (CREATE_SUSPENDED)
     // this will allow yara rules to run against this process
     // if we should block, we will terminate it later
-    std::wstring sCommandLineStr = sCommandLine;
-    if (bPowerShellWorkaround) {
+    std::wstring sCommandLineStr;
+    if (needs_powershell_workaround(sCommandLine)) {
         sCommandLineStr = std::wstring(L"powershell.exe ").append(sCommandLine);
+    } else {
+        sCommandLineStr = sCommandLine;
     }
 
-    createChildProcessWithDebugger(sCommandLineStr, CREATE_SUSPENDED, &dwChildPid, &hProcess, &hThread);
+    HANDLE hThread = INVALID_HANDLE_VALUE;
+    HANDLE hProcess = INVALID_HANDLE_VALUE;
+    DWORD dwChildPid = 0;
+
+    createChildProcessWithDebugger(sCommandLineStr,
+                                   CREATE_SUSPENDED,
+                                   &dwChildPid,
+                                   &hProcess,
+                                   &hThread);
 
 
-    DWORD dwParentPid = utils::getParentPid(GetCurrentProcessId());
+    const DWORD dwParentPid = utils::getParentPid(GetCurrentProcessId());
+
+    bool bBlock = is_malicious_command_line(command_line);
+
     std::wstring szYaraOutput;
-    const bool fYaraRuleMatched = EvaluateYaraRules(configuration.yara_rules_directory(), 
-                                                    sCommandLine, 
-                                                    szYaraOutput, 
-                                                    dwChildPid, 
+    const bool fYaraRuleMatched = EvaluateYaraRules(configuration,
+                                                    sCommandLine,
+                                                    szYaraOutput,
+                                                    dwChildPid,
                                                     dwParentPid);
 
     if (fYaraRuleMatched) {
@@ -91,22 +103,17 @@ int wmain(int argc, WCHAR* argv[])
 
 
     // if we're in simulation mode or we didn't need to block the process, let it run
-    if (g_fLogOnly || !bBlock)
-    {
-        if (hThread != INVALID_HANDLE_VALUE && hProcess != INVALID_HANDLE_VALUE)
-        {
+    if (configuration.log_only() || !bBlock) {
+        if (hThread != INVALID_HANDLE_VALUE && hProcess != INVALID_HANDLE_VALUE) {
 
             ResumeThread(hThread);
             WaitForSingleObject(hProcess, INFINITE);
             CloseHandle(hThread);
             CloseHandle(hProcess);
         }
-    }
-    else
-    {
-        if (bBlock)
-        {
-           utils::killProcess(dwChildPid, 1);
+    } else {
+        if (bBlock) {
+            utils::killProcess(dwChildPid, 1);
             CloseHandle(hThread);
             CloseHandle(hProcess);
         }

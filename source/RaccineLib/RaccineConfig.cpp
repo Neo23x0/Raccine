@@ -10,6 +10,7 @@
 RaccineConfig::RaccineConfig() :
     m_log_only(read_flag_from_registry(L"LogOnly")),
     m_show_gui(read_flag_from_registry(L"ShowGui")),
+    m_is_debug_mode(read_flag_from_registry(L"Debug")),
     m_yara_rules_directory(get_yara_rules_directory())
 {
 }
@@ -22,6 +23,11 @@ bool RaccineConfig::log_only() const
 bool RaccineConfig::show_gui() const
 {
     return m_show_gui;
+}
+
+bool RaccineConfig::is_debug_mode() const
+{
+    return m_is_debug_mode;
 }
 
 std::wstring RaccineConfig::yara_rules_directory() const

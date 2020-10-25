@@ -10,6 +10,8 @@
 #include <set>
 #include <Windows.h>
 #include <string>
+
+#include "RaccineConfig.h"
 #include "YaraRuleRunner.h"
 #include "utils.h"
 
@@ -27,23 +29,14 @@
 #define RACCINE_USER_CONTEXT_DIRECTORY  L"%TEMP%\\RaccineUserContext"
 
 
-enum class Integrity
-{
-    Error = 0, // Indicates integrity level could not be found
-    Low = 1,
-    Medium = 2,
-    High = 3,
-    System = 4,
-
-
 /// <summary>
 /// Evaluate a set of yara rules on a command line
 /// </summary>
-/// <param name="yara_rules_directory">The directory containing the yara rules</param>
+/// <param name="raccine_config">The raccine configuration</param>
 /// <param name="lpCommandLine">The command line to test</param>
 /// <param name="outYaraOutput">if not empty, an output string containing match results is written to this parameter.</param>
 /// <returns>TRUE if at least one match result was found</returns>
-bool EvaluateYaraRules(const std::wstring& yara_rules_directory,
+bool EvaluateYaraRules(const RaccineConfig& raccine_config,
                        const std::wstring& lpCommandLine, 
                        std::wstring& outYaraOutput, 
                        DWORD dwChildPid, 
@@ -64,7 +57,6 @@ void trigger_gui_event();
 
 // Check if process is in allowed list
 bool isAllowListed(DWORD pid);
-
 
 // Get timestamp
 std::string getTimeStamp();
