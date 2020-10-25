@@ -7,10 +7,8 @@
 
 #include <cwchar>
 #include <Windows.h>
-#include <TlHelp32.h>
 #include <cstdio>
 #include <cstring>
-#include <Psapi.h>
 #include <string>
 #include <array>
 #include <chrono>
@@ -23,11 +21,14 @@
 
 #include "Raccine.h"
 
+
 #include "HandleWrapper.h"
 #include "YaraRuleRunner.h"
 
 #pragma comment(lib,"advapi32.lib")
 #pragma comment(lib,"shlwapi.lib")
+#pragma comment(lib,"Wbemuuid.lib")
+
 
 /// <summary>
 /// Evaluate a set of yara rules on a command line
@@ -35,7 +36,7 @@
 /// <param name="lpCommandLine">The command line to test</param>
 /// <param name="outYaraOutput">if not empty, an output string containing match results is written to this parameter.</param>
 /// <returns>TRUE if at least one match result was found</returns>
-BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput, DWORD dwChildPid)
+BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput, DWORD dwChildPid, DWORD dwParentPid)
 {
     if (g_fDebug) {
         wprintf(L"Running YARA on: %s\n", lpCommandLine);
@@ -90,15 +91,14 @@ BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput, DWORD 
         BOOL fSuccess = TRUE;
 
         DWORD dwCurrPid = dwChildPid;
-        DWORD dwCurrParentPid = getParentPid(dwCurrPid);
+        DWORD dwCurrParentPid = dwParentPid;
         DWORD dwCurrSessionId = 0;
         if (!ProcessIdToSessionId(dwCurrPid, &dwCurrSessionId))
         {
             fSuccess = FALSE;
         }
 
-        DWORD dwParentPid = getParentPid(GetCurrentProcessId());
-        DWORD dwParentParentPid = getParentPid(dwParentPid);
+        DWORD dwParentParentPid = utils::getParentPid(dwParentPid);
         DWORD dwParentSessionId = 0;
         if (!ProcessIdToSessionId(dwParentPid, &dwParentSessionId))
         {
@@ -113,6 +113,12 @@ BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput, DWORD 
             wprintf(L"Everything OK? %d\n", fSuccess);
         }
 
+        CreateContextFileForProgram(dwCurrPid, dwCurrSessionId, dwCurrParentPid, false);
+
+        CreateContextFileForProgram(dwParentPid, dwParentSessionId, dwParentParentPid, true);
+
+        // BUGBUG clean up after files
+
         if (fSuccess)
         {
             fRetVal = rule_runner.run_yara_rules_on_file(wTestFilename, lpCommandLine, outYaraOutput, AdditionalYaraDefines);
@@ -121,6 +127,69 @@ BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput, DWORD 
     }
 cleanup:
     return fRetVal;
+}
+
+void CreateContextFileForProgram(DWORD pid, DWORD sessionid, DWORD parentPid, bool fParent)
+{
+    utils::ProcessDetail details = utils::ProcessDetail(pid);
+
+    std::wstring strDetails;
+
+    if (fParent)
+    {
+        strDetails = details.ToString(L"Parent");
+    }
+    else
+    {
+        strDetails = details.ToString(L"");;
+    }
+
+    LPSTR lpDetails = static_cast<LPSTR>(LocalAlloc(LPTR, strDetails.length() + 1));
+    if (!lpDetails)
+    {
+        return;
+    }
+
+    WCHAR wContextPath[MAX_PATH] = { 0 };
+    ExpandEnvironmentStringsW(RACCINE_USER_CONTEXT_DIRECTORY, wContextPath, ARRAYSIZE(wContextPath) - 1);
+    WCHAR wContextFileName[100] = { 0 };
+    if (FAILED(StringCchPrintf(wContextFileName, ARRAYSIZE(wContextFileName), L"\\RaccineYaraContext-%d-%d-%d.txt", sessionid, pid, parentPid)))
+        return;
+
+    if (SUCCEEDED(StringCchCat(wContextPath, ARRAYSIZE(wContextPath), wContextFileName)))
+    {
+        //  Creates the new file to write to for the upper-case version.
+        HANDLE hTempFile = CreateFileW(wContextPath, // file name 
+            GENERIC_WRITE,        // open for write 
+            0,                    // do not share 
+            NULL,                 // default security 
+            CREATE_ALWAYS,        // overwrite existing
+            FILE_ATTRIBUTE_NORMAL,// normal file 
+            NULL);                // no template 
+        if (hTempFile == INVALID_HANDLE_VALUE)
+        {
+            return;
+        }
+        DWORD dwWritten = 0;
+
+        if (WideCharToMultiByte(
+            CP_ACP,
+            0,
+            strDetails.c_str(),
+            (int)strDetails.length(),
+            lpDetails,
+            (int)strDetails.length() + 1,
+            NULL,
+            NULL
+        ))
+        {
+            if (!WriteFile(hTempFile, lpDetails, lstrlenA(lpDetails) + 1, &dwWritten, NULL))
+            {
+                ;
+            }
+        }
+        CloseHandle(hTempFile);
+    }
 }
 
 /// This function will optionally log messages to the eventlog
@@ -154,180 +223,6 @@ void WriteEventLogEntry(LPWSTR  pszMessage)
     WriteEventLogEntryWithId(pszMessage, RACCINE_DEFAULT_EVENTID);
 }
 
-// Get Parent Process ID
-DWORD getParentPid(DWORD pid)
-{
-    SnapshotHandleWrapper hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-
-    if (!hSnapshot) {
-        return 0;
-    }
-
-    PROCESSENTRY32W pe32{};
-    ZeroMemory(&pe32, sizeof(pe32));
-    pe32.dwSize = sizeof(pe32);
-    if (!Process32FirstW(hSnapshot, &pe32)) {
-        return 0;
-    }
-
-    do {
-        if (pe32.th32ProcessID == pid) {
-            return pe32.th32ParentProcessID;
-        }
-    } while (Process32NextW(hSnapshot, &pe32));
-
-    return 0;
-}
-
-// Get integrity level of process
-Integrity getIntegrityLevel(HANDLE hProcess)
-{
-
-    TokenHandleWrapper hToken = INVALID_HANDLE_VALUE;
-
-    if (!OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
-        return Integrity::Error;
-    }
-
-    PTOKEN_MANDATORY_LABEL pTIL;
-    DWORD dwLengthNeeded = sizeof pTIL;
-    GetTokenInformation(hToken, TokenIntegrityLevel, NULL, 0, &dwLengthNeeded);
-    pTIL = static_cast<PTOKEN_MANDATORY_LABEL>(LocalAlloc(0, dwLengthNeeded));
-    if (!pTIL) {
-        return Integrity::Error;
-    }
-
-    if (GetTokenInformation(hToken, TokenIntegrityLevel,
-                            pTIL, dwLengthNeeded, &dwLengthNeeded)) {
-        const DWORD dwIntegrityLevel = *GetSidSubAuthority(pTIL->Label.Sid,
-                                                           static_cast<DWORD>(static_cast<UCHAR>(*GetSidSubAuthorityCount(pTIL->Label.Sid) - 1)));
-
-        LocalFree(pTIL);
-
-        if (dwIntegrityLevel == SECURITY_MANDATORY_LOW_RID) {
-            return Integrity::Low;
-        }
-
-        if (dwIntegrityLevel >= SECURITY_MANDATORY_MEDIUM_RID &&
-            dwIntegrityLevel < SECURITY_MANDATORY_HIGH_RID) {
-            return Integrity::Medium;
-        }
-
-        if (dwIntegrityLevel >= SECURITY_MANDATORY_HIGH_RID &&
-            dwIntegrityLevel < SECURITY_MANDATORY_SYSTEM_RID) {
-            return Integrity::High;
-        }
-
-        if (dwIntegrityLevel >= SECURITY_MANDATORY_SYSTEM_RID) {
-            return Integrity::System;
-        }
-
-        return Integrity::Error;
-    }
-
-    LocalFree(pTIL);
-    return Integrity::Error;
-}
-
-// Get the image name of the process
-std::wstring getImageName(DWORD pid)
-{
-    PROCESSENTRY32W pe32{};
-    SnapshotHandleWrapper hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-
-    if (!hSnapshot) {
-        return L"(unavailable)";
-    }
-
-    ZeroMemory(&pe32, sizeof(pe32));
-    pe32.dwSize = sizeof(pe32);
-
-    if (!Process32FirstW(hSnapshot, &pe32)) {
-        return L"(unavailable)";
-    }
-
-    do {
-        if (pe32.th32ProcessID == pid) {
-            return std::wstring(static_cast<wchar_t*>(pe32.szExeFile));
-        }
-    } while (Process32NextW(hSnapshot, &pe32));
-
-    return L"(unavailable)";
-}
-
-// Helper for isAllowListed, checks if a specific process is allowed
-bool isProcessAllowed(const PROCESSENTRY32W& pe32)
-{
-    ProcessHandleWrapper hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe32.th32ProcessID);
-    if (!hProcess) {
-        return false;
-    }
-
-    const std::array<std::wstring, 3> allow_list{ L"wininit.exe", L"winlogon.exe", L"explorer.exe" };
-    for (const std::wstring& allowed_name : allow_list) {
-        if (_wcsicmp(static_cast<const wchar_t*>(pe32.szExeFile), allowed_name.c_str()) != 0) {
-            continue;
-        }
-
-        wchar_t filePath[MAX_PATH] = { 0 };
-        if (GetModuleFileNameEx(hProcess, NULL, filePath, MAX_PATH)) {
-            // Are they in the Windows directory?
-            const std::wstring system32_path = L"C:\\Windows\\System32\\";
-            if (_wcsnicmp(filePath, system32_path.c_str(), system32_path.length()) == 0) {
-                // Is the process running as SYSTEM
-                return getIntegrityLevel(hProcess) == Integrity::System;
-            }
-
-            // Are you explorer running in the Windows dir
-            const std::wstring explorer_path = L"C:\\Windows\\Explorer.exe";
-            if (_wcsnicmp(filePath, explorer_path.c_str(), explorer_path.length()) == 0) {
-                // Is the process running as MEDIUM (which Explorer does)
-                return getIntegrityLevel(hProcess) == Integrity::Medium;
-            }
-        }
-    }
-
-    return false;
-}
-
-// Check if process is in allowed list
-bool isAllowListed(DWORD pid)
-{
-    SnapshotHandleWrapper hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-
-    if (!hSnapshot) {
-        return false;
-    }
-
-    PROCESSENTRY32W pe32{};
-    pe32.dwSize = sizeof pe32;
-
-    if (!Process32FirstW(hSnapshot, &pe32)) {
-        return false;
-    }
-
-    do {
-        if (pe32.th32ProcessID != pid) {
-            continue;
-        }
-
-        return isProcessAllowed(pe32);
-    } while (Process32NextW(hSnapshot, &pe32));
-
-    return false;
-}
-
-// Kill a process
-BOOL killProcess(DWORD dwProcessId, UINT uExitCode)
-{
-    constexpr DWORD dwDesiredAccess = PROCESS_TERMINATE;
-    constexpr BOOL  bInheritHandle = FALSE;
-    ProcessHandleWrapper hProcess = OpenProcess(dwDesiredAccess, bInheritHandle, dwProcessId);
-    if (!hProcess) {
-        return FALSE;
-    }
-    return TerminateProcess(hProcess, uExitCode);
-}
 
 // Get timestamp
 std::string getTimeStamp()
@@ -500,12 +395,12 @@ void find_and_kill_processes(const std::wstring& sCommandLine, std::wstring& sLi
     DWORD pid = GetCurrentProcessId();
 
     while (true) {
-        pid = getParentPid(pid);
+        pid = utils::getParentPid(pid);
         if (pid == 0) {
             break;
         }
 
-        std::wstring imageName = getImageName(pid);
+        std::wstring imageName = utils::getImageName(pid);
 
         if (!isAllowListed(pid)) {
             wprintf(L"\nCollecting IMAGE %s with PID %d for a kill\n", imageName.c_str(), pid);
@@ -519,12 +414,12 @@ void find_and_kill_processes(const std::wstring& sCommandLine, std::wstring& sLi
 
     // Loop over collected PIDs and try to kill the processes
     for (DWORD process_id : pids) {
-        std::wstring imageName = getImageName(process_id);
+        std::wstring imageName = utils::getImageName(process_id);
         // If no simulation flag is set
         if (!g_fLogOnly) {
             // Kill
             wprintf(L"Kill process IMAGE %s with PID %d\n", imageName.c_str(), process_id);
-            killProcess(process_id, 1);
+            utils::killProcess(process_id, 1);
             sListLogs.append(logFormatAction(process_id, imageName, sCommandLine, L"Terminated"));
         }
         else {

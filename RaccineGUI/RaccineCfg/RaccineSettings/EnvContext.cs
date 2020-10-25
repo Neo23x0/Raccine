@@ -107,59 +107,51 @@ namespace RaccineSettings
             {
                 using (StreamWriter outputFile = new StreamWriter(szContextPath))
                 {
-                    string szName = "raccine_Caption";
+                    string szName = "-d Caption";
                     string szValue = EscapeString(process.Caption);
                     outputFile.Write(" " + szName + "=" + szValue + " ");
 
-                    szName = "raccine_CommandLine";
+                    szName = "-d CommandLine";
                     szValue = EscapeString(process.CommandLine);
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "raccine_ExecutablePath";
+                    szName = "-d ExecutablePath";
                     szValue = EscapeString(process.ExecutablePath);
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "raccine_HandleCount";
+                    szName = "-d HandleCount";
                     szValue = process.HandleCount.ToString();
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "raccine_Name";
+                    szName = "-d Name";
                     szValue = EscapeString(process.Name);
-                    outputFile.Write(szName + "=" + szValue + " ");
+                    outputFile.Write(szName + "=\"" + szValue + "\" ");
 
-                    szName = "raccine_OSName";
+                    szName = "-d OSName";
                     szValue = EscapeString(process.OSName);
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "raccine_Priority";
+                    szName = "-d Priority";
                     szValue = process.Priority.ToString();
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "raccine_ProcessId";
-                    szValue = process.ProcessId.ToString();
-                    outputFile.Write(szName + "=" + szValue + " ");
-
-                    szName = "raccine_ParentProcessId";
-                    szValue = process.ParentProcessId.ToString();
-                    outputFile.Write(szName + "=" + szValue + " ");
-
-                    szName = "raccine_SessionId";
+                    szName = "-d SessionId";
                     szValue = process.SessionId.ToString();
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "raccine_ThreadCount";
+                    szName = "-d ThreadCount";
                     szValue = process.ThreadCount.ToString();
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "raccine_WindowsVersion";
+                    szName = "-d WindowsVersion";
                     szValue = process.WindowsVersion;
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "raccine_WriteOperationCount";
+                    szName = "-d WriteOperationCount";
                     szValue = process.WriteOperationCount.ToString();
                     outputFile.Write(szName + "=" + szValue + " ");
 
-                    szName = "raccine_WriteTransferCount";
+                    szName = "-d WriteTransferCount";
                     szValue = process.WriteTransferCount.ToString();
                     outputFile.Write(szName + "=" + szValue + " ");
                 }
@@ -185,7 +177,10 @@ namespace RaccineSettings
                                 szValue = "";
                             else
                                 szValue = EscapeString(subprop.Value.ToString());
-                            outputFile.Write(" raccine_" + subprop.Name + "=" + szValue + " ");
+                            if (subprop.Name == "Name" && szValue.IndexOf("\"") == -1)
+                                szValue = "\"" + szValue + "\"";
+
+                            outputFile.Write(" -d " + subprop.Name + "=" + szValue + " ");
                         }
                     }
                 }

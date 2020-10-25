@@ -9,9 +9,10 @@
 
 #include <cwchar>
 #include <Windows.h>
-#include <TlHelp32.h>
 #include <string>
 #include "YaraRuleRunner.h"
+#include "utils.h"
+
 
 // Version
 #define VERSION "1.0.4 BETA"
@@ -31,6 +32,7 @@ constexpr UINT MAX_MESSAGE = 1000;
 #define RACCINE_PROGRAM_DIRECTORY  L"%PROGRAMFILES%\\Raccine"
 inline WCHAR g_wRaccineDataDirectory[MAX_PATH] = { 0 };  // ENV expanded RACCINE_DATA_DIRECTORY
 inline WCHAR g_wRaccineProgramDirectory[MAX_PATH] = { 0 };  // ENV expanded RACCINE_PROGRAM_DIRECTORY
+#define RACCINE_USER_CONTEXT_DIRECTORY  L"%TEMP%\\RaccineUserContext"
 
 // YARA Matching
 inline WCHAR g_wYaraRulesDir[MAX_PATH] = { 0 };
@@ -42,15 +44,7 @@ constexpr UINT MAX_YARA_RULE_FILES = 200;
 #define RACCINE_DEFAULT_EVENTID  1
 #define RACCINE_EVENTID_MALICIOUS_ACTIVITY  2
 
-enum class Integrity
-{
-    Error = 0, // Indicates integrity level could not be found
-    Low = 1,
-    Medium = 2,
-    High = 3,
-    System = 4,
 
-};
 
 /// <summary>
 /// Evaluate a set of yara rules on a command line
@@ -58,30 +52,16 @@ enum class Integrity
 /// <param name="lpCommandLine">The command line to test</param>
 /// <param name="outYaraOutput">if not empty, an output string containing match results is written to this parameter.</param>
 /// <returns>TRUE if at least one match result was found</returns>
-BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput, DWORD dwChildPid);
+BOOL EvaluateYaraRules(LPWSTR lpCommandLine, std::wstring& outYaraOutput, DWORD dwChildPid, DWORD dwParentPid);
 
 /// This function will optionally log messages to the eventlog
 void WriteEventLogEntryWithId(LPWSTR pszMessage, DWORD dwEventId);
 
 void WriteEventLogEntry(LPWSTR  pszMessage);
 
-// Get Parent Process ID
-DWORD getParentPid(DWORD pid);
-
-// Get integrity level of process
-Integrity getIntegrityLevel(HANDLE hProcess);
-
-// Get the image name of the process
-std::wstring getImageName(DWORD pid);
-
-// Helper for isAllowListed, checks if a specific process is allowed
-bool isProcessAllowed(const PROCESSENTRY32W& pe32);
-
 // Check if process is in allowed list
 bool isAllowListed(DWORD pid);
 
-// Kill a process
-BOOL killProcess(DWORD dwProcessId, UINT uExitCode);
 
 // Get timestamp
 std::string getTimeStamp();
@@ -106,3 +86,5 @@ void createChildProcessWithDebugger(std::wstring command_line, DWORD dwAdditiona
 
 // Find all parent processes and kill them
 void find_and_kill_processes(const std::wstring& sCommandLine, std::wstring& sListLogs);
+
+void CreateContextFileForProgram(DWORD pid, DWORD sessionid, DWORD parentPid, bool fParent);

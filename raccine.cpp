@@ -76,7 +76,6 @@ int wmain(int argc, WCHAR* argv[])
     }
 
     createChildProcessWithDebugger(sCommandLineStr, CREATE_SUSPENDED, &dwChildPid, &hProcess, &hThread);
-    Sleep(300);
 
     if (argc > 1)
     {
@@ -109,8 +108,9 @@ int wmain(int argc, WCHAR* argv[])
 
     InitializeSettings();
 
+    DWORD dwParentPid = utils::getParentPid(GetCurrentProcessId());
     std::wstring szYaraOutput;
-    BOOL fYaraRuleMatched = EvaluateYaraRules(static_cast<LPWSTR>(sCommandLine.data()), szYaraOutput, dwChildPid);
+    BOOL fYaraRuleMatched = EvaluateYaraRules((LPWSTR)(sCommandLine.c_str()), szYaraOutput, dwChildPid, dwParentPid);
 
     if (fYaraRuleMatched) {
         bBlock = true;
@@ -255,7 +255,7 @@ int wmain(int argc, WCHAR* argv[])
     {
         if (bBlock)
         {
-            killProcess(dwChildPid, 1);
+           utils::killProcess(dwChildPid, 1);
             CloseHandle(hThread);
             CloseHandle(hProcess);
         }
