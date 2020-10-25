@@ -104,7 +104,7 @@ std::vector<std::filesystem::path> YaraRuleRunner::get_yara_rules(const std::fil
     std::vector<std::filesystem::path> yara_rules;
     //wprintf(L"Checking Rules Directory: %s\n", yara_rules_dir.c_str());
     const std::wstring ext(L".yar");
-    for (const auto& p : std::filesystem::directory_iterator(yara_rules_dir)) {
+    for (const auto& p : std::filesystem::directory_iterator(yara_rules_dir.c_str())) {
         if (p.path().extension() == ext) {
             //wprintf(L"Found: %s\n", p.path().c_str());
             yara_rules.push_back(p.path());
