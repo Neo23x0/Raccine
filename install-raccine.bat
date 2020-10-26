@@ -68,6 +68,12 @@ ECHO   U - Uninstall Raccine
 ECHO   E - EXIT
 ECHO.
 
+:: Option set via ENV variables
+IF "%SELECTED_OPTION%"=="FULL" GOTO FULL
+IF "%SELECTED_OPTION%"=="SOFT" GOTO SOFT
+IF "%SELECTED_OPTION%"=="UNINSTALL" GOTO UNINSTALL
+
+:: Options set by user
 SET /P M=" Select an option and then press ENTER: "
 IF %M%==1 GOTO FULL
 IF %M%==2 GOTO FULL_SIMU
@@ -129,6 +135,8 @@ REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d %ProgramData%\Raccine
 :: Registering and starting the GUI elements
 REG ADD "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /t REG_SZ /F /D "%ProgramFiles%\Raccine\RaccineSettings.exe"
 START "" "%ProgramFiles%\Raccine\RaccineSettings.exe"
+:: in case of automation, directly got to EOF
+IF NOT "%SELECTED_OPTION%"=="" GOTO EOF
 TIMEOUT /t 30
 GOTO MENU
 
@@ -178,6 +186,8 @@ REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d %ProgramData%\Raccine
 :: Registering and starting the GUI elements
 REG ADD "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /t REG_SZ /F /D "%ProgramFiles%\Raccine\RaccineSettings.exe"
 START "" "%ProgramFiles%\Raccine\RaccineSettings.exe"
+:: in case of automation, directly got to EOF
+IF NOT "%SELECTED_OPTION%"=="" GOTO EOF
 TIMEOUT /t 30
 GOTO MENU
 
@@ -223,6 +233,8 @@ REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d %ProgramData%\Raccine
 :: Registering and starting the GUI elements
 REG ADD "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /t REG_SZ /F /D "%ProgramFiles%\Raccine\RaccineSettings.exe"
 START "" "%ProgramFiles%\Raccine\RaccineSettings.exe"
+:: in case of automation, directly got to EOF
+IF NOT "%SELECTED_OPTION%"=="" GOTO EOF
 TIMEOUT /t 30
 GOTO MENU
 
@@ -272,6 +284,8 @@ IF '%errorlevel%' NEQ '0' (
 )
 TASKKILL /F /IM RaccineSettings.exe
 REG DELETE "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /F
+:: in case of automation, directly got to EOF
+IF NOT "%SELECTED_OPTION%"=="" GOTO EOF
 TIMEOUT /t 30
 GOTO MENU
 
