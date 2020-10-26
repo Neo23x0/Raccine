@@ -36,5 +36,5 @@ rule PowerShell_Susp_Parameter_Combo {
       $fp1 = "Chocolatey Software"
       $fp2 = "VBOX_MSI_INSTALL_PATH"
    condition:
-      filesize < 3000KB and 4 of ($s*) and not 1 of ($fp*)
+      4 of ($s*) and not 1 of ($fp*)
 }
