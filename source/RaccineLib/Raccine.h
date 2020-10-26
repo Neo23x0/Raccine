@@ -11,9 +11,10 @@
 #include <Windows.h>
 #include <string>
 
+
+#include "HandleWrapper.h"
 #include "RaccineConfig.h"
 #include "YaraRuleRunner.h"
-#include "utils.h"
 
 
 // Version
@@ -37,9 +38,9 @@
 /// <param name="outYaraOutput">if not empty, an output string containing match results is written to this parameter.</param>
 /// <returns>TRUE if at least one match result was found</returns>
 bool EvaluateYaraRules(const RaccineConfig& raccine_config,
-                       const std::wstring& lpCommandLine, 
-                       std::wstring& outYaraOutput, 
-                       DWORD dwChildPid, 
+                       const std::wstring& lpCommandLine,
+                       std::wstring& outYaraOutput,
+                       DWORD dwChildPid,
                        DWORD dwParentPid);
 
 /// This function will optionally log messages to the eventlog
@@ -72,14 +73,17 @@ std::wstring logFormatAction(DWORD pid, const std::wstring& imageName, const std
 // Log to file
 void logSend(const std::wstring& logStr);
 
-void createChildProcessWithDebugger(std::wstring command_line, DWORD dwAdditionalCreateParams, PDWORD pdwChildPid, PHANDLE phProcess, PHANDLE phThread);
+DWORD createChildProcessWithDebugger(std::wstring command_line,
+                                     DWORD dwAdditionalCreateParams,
+                                     ProcessHandleWrapper& phProcess,
+                                     ThreadHandleWrapper& phThread);
 
 // Find all parent processes
 std::set<DWORD> find_processes_to_kill(const std::wstring& sCommandLine, std::wstring& sListLogs);
 
 // Find all parent processes and kill them
-void find_and_kill_processes(bool log_only, 
-                             const std::wstring& sCommandLine, 
+void find_and_kill_processes(bool log_only,
+                             const std::wstring& sCommandLine,
                              std::wstring& sListLogs);
 
-void CreateContextFileForProgram(DWORD pid, DWORD sessionid, DWORD parentPid, bool fParent);
+void CreateContextFileForProgram(DWORD pid, DWORD session_id, DWORD parentPid, bool fParent);
