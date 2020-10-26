@@ -20,6 +20,7 @@ public:
 
     [[nodiscard]] bool log_only() const;
     [[nodiscard]] bool show_gui() const;
+    [[nodiscard]] bool is_debug_mode() const;
     [[nodiscard]] std::wstring yara_rules_directory() const;
 
     RaccineConfig(const RaccineConfig&) = delete;
@@ -43,5 +44,6 @@ private:
 
     const bool m_log_only;
     const bool m_show_gui;
+    const bool m_is_debug_mode;
     std::wstring m_yara_rules_directory;
 };
