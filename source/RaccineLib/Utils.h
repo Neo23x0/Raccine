@@ -1,4 +1,6 @@
 #pragma once
+#include <filesystem>
+#include <optional>
 #include <string>
 #include <Windows.h>
 #include <TlHelp32.h>
@@ -13,7 +15,7 @@ public:
 
     ~ProcessDetail() = default;
 
-    std::wstring ToString(const std::wstring& szPrefix);
+    [[nodiscard]] std::wstring ToString(const std::wstring& szPrefix) const;
 
 private:
     struct PROCESS_DETAIL
@@ -58,5 +60,9 @@ std::wstring GetProcessCommandLine(DWORD pid);
 DWORD GetPriorityClassByPid(DWORD pid);
 
 std::wstring expand_environment_strings(const std::wstring& input);
+
+bool write_string_to_file(const std::filesystem::path file_path, const std::wstring& string_to_write);
+
+std::optional<std::string> convert_wstring_to_string(const std::wstring& input);
 
 }

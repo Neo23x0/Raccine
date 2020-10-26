@@ -8,7 +8,7 @@
 #include "HandleWrapper.h"
 #include <array>
 #include <strsafe.h>
-#include <wbemidl.h>
+#include <WbemIdl.h>
 #include <comdef.h>
 
 namespace utils
@@ -96,53 +96,10 @@ Integrity getIntegrityLevel(HANDLE hProcess)
     return Integrity::Error;
 }
 
-BOOL GetWin32FileName(const WCHAR* pszNativeFileName, WCHAR* pszWin32FileName)
-{
-    BOOL bFound = FALSE;
-
-    // Translate path with device name to drive letters.
-    WCHAR szTemp[MAX_PATH];
-    szTemp[0] = '\0';
-
-    if (GetLogicalDriveStrings(MAX_PATH - 1, szTemp)) {
-        WCHAR szName[MAX_PATH];
-        WCHAR szDrive[3] = TEXT(" :");
-        WCHAR* p = szTemp;
-
-        do {
-            // Copy the drive letter to the template string
-            *szDrive = *p;
-
-            // Look up each device name
-            if (QueryDosDevice(szDrive, szName, MAX_PATH)) {
-                const size_t uNameLen = wcslen(szName);
-
-                if (uNameLen < MAX_PATH) {
-                    bFound = _wcsnicmp(pszNativeFileName, szName, uNameLen) == 0
-                        && *(pszNativeFileName + uNameLen) == L'\\';
-
-                    if (bFound) {
-                        // Replace device path with DOS path
-                        StringCchPrintf(pszWin32FileName,
-                                        MAX_PATH,
-                                        L"%s%s",
-                                        szDrive,
-                                        pszNativeFileName + uNameLen);
-                    }
-                }
-            }
-            // Go to the next NULL character.
-            while (*p++);
-        } while (!bFound && *p);
-    }
-
-    return(bFound);
-}
-
 DWORD GetPriorityClassByPid(DWORD pid)
 {
     ProcessHandleWrapper hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION,
-                                                FALSE, 
+                                                FALSE,
                                                 pid);
     if (hProcess != NULL) {
         return GetPriorityClass(hProcess);
@@ -155,22 +112,21 @@ std::wstring getImageEXEPath(DWORD pid)
 {
     WCHAR wEXEPath[MAX_PATH] = { 0 };
 
-    ProcessHandleWrapper hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
+    ProcessHandleWrapper hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION,
+                                                FALSE,
+                                                pid);
 
-    //this API returned \\Device\\HardDisk1\\foo\\bar. We want a drive letter version.
-    GetProcessImageFileName(hProcess, wEXEPath, ARRAYSIZE(wEXEPath) - 1);
-    std::wstring ExePath(wEXEPath);
-
-    //see if we need to convert it to C:
-    if (to_lower(ExePath).rfind(L"\\device\\harddisk", 0) == 0) {
-        WCHAR wWin32EXEPath[MAX_PATH] = { 0 };
-        if (GetWin32FileName(ExePath.c_str(), wWin32EXEPath)) {
-            return std::wstring(wWin32EXEPath);
-        }
+    DWORD size = MAX_PATH - 1;
+    constexpr DWORD NO_FLAGS = 0;
+    const BOOL res = QueryFullProcessImageNameW(hProcess,
+                                                NO_FLAGS,
+                                                wEXEPath,
+                                                &size);
+    if (res == NULL) {
+        return L"";
     }
 
-
-    return ExePath;
+    return std::wstring(wEXEPath);
 }
 
 std::wstring getImageName(DWORD pid)
@@ -197,7 +153,6 @@ std::wstring getImageName(DWORD pid)
     return L"(unavailable)";
 }
 
-// Helper for isAllowListed, checks if a specific process is allowed
 bool isProcessAllowed(const PROCESSENTRY32W& pe32)
 {
     ProcessHandleWrapper hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe32.th32ProcessID);
@@ -205,24 +160,27 @@ bool isProcessAllowed(const PROCESSENTRY32W& pe32)
         return false;
     }
 
+    const std::wstring exe_name(pe32.szExeFile);
+
     const std::array<std::wstring, 3> allow_list{ L"wininit.exe", L"winlogon.exe", L"explorer.exe" };
     for (const std::wstring& allowed_name : allow_list) {
-        if (_wcsicmp(static_cast<const wchar_t*>(pe32.szExeFile), allowed_name.c_str()) != 0) {
+        if (exe_name != allowed_name) {
             continue;
         }
 
         wchar_t filePath[MAX_PATH] = { 0 };
         if (GetModuleFileNameEx(hProcess, NULL, filePath, MAX_PATH)) {
+            const std::wstring file_path(utils::to_lower(filePath));
+
             // Are they in the Windows directory?
-            const std::wstring system32_path = L"C:\\Windows\\System32\\";
-            if (_wcsnicmp(filePath, system32_path.c_str(), system32_path.length()) == 0) {
+            if (file_path.starts_with(L"c:\\windows\\system32\\")) {
                 // Is the process running as SYSTEM
                 return getIntegrityLevel(hProcess) == Integrity::System;
             }
 
             // Are you explorer running in the Windows dir
-            const std::wstring explorer_path = L"C:\\Windows\\Explorer.exe";
-            if (_wcsnicmp(filePath, explorer_path.c_str(), explorer_path.length()) == 0) {
+            const std::wstring explorer_path = L"c:\\windows\\explorer.exe";
+            if (file_path == explorer_path) {
                 // Is the process running as MEDIUM (which Explorer does)
                 return getIntegrityLevel(hProcess) == Integrity::Medium;
             }
@@ -236,9 +194,9 @@ std::wstring GetProcessCommandLine(DWORD pid)
 {
     std::wstring CommandLine;
     HRESULT hr = 0;
-    IWbemLocator* WbemLocator = NULL;
-    IWbemServices* WbemServices = NULL;
-    IEnumWbemClassObject* EnumWbem = NULL;
+    IWbemLocator* WbemLocator = nullptr;
+    IWbemServices* WbemServices = nullptr;
+    IEnumWbemClassObject* EnumWbem = nullptr;
     std::wstring Query = L"SELECT CommandLine FROM Win32_Process WHERE ProcessID = " + std::to_wstring(pid);
 
     // initialize the Windows security
@@ -249,29 +207,29 @@ std::wstring GetProcessCommandLine(DWORD pid)
     hr = CoCreateInstance(CLSID_WbemLocator,
                           0,
                           CLSCTX_INPROC_SERVER,
-                          IID_IWbemLocator, 
+                          IID_IWbemLocator,
                           reinterpret_cast<LPVOID*>(&WbemLocator));
     //connect to the WMI
     hr = WbemLocator->ConnectServer(
         _bstr_t(L"ROOT\\CIMV2"), // WMI namespace
-        NULL,                    // User name
-        NULL,                    // User password
-        0,                       // Locale
-        NULL,                    // Security flags                 
-        0,                       // Authority       
-        0,                       // Context object
-        &WbemServices                    // IWbemServices proxy
+        NULL,                      // User name
+        NULL,                      // User password
+        0,                         // Locale
+        NULL,                      // Security flags                 
+        0,                         // Authority       
+        0,                         // Context object
+        &WbemServices              // IWbemServices proxy
     );
     //Run the WQL Query
     hr = WbemServices->ExecQuery(_bstr_t(L"WQL"), _bstr_t(Query.c_str()), WBEM_FLAG_FORWARD_ONLY, NULL, &EnumWbem);
 
     // Iterate over the enumerator
-    if (EnumWbem != NULL) {
-        IWbemClassObject* result = NULL;
+    if (EnumWbem != nullptr) {
+        IWbemClassObject* result = nullptr;
         ULONG returnedCount = 0;
 
         while ((hr = EnumWbem->Next(WBEM_INFINITE, 1, &result, &returnedCount)) == S_OK) {
-            VARIANT procCommandLine;
+            VARIANT procCommandLine{};
 
             // access the properties
             hr = result->Get(L"CommandLine", 0, &procCommandLine, 0, 0);
@@ -293,7 +251,6 @@ std::wstring GetProcessCommandLine(DWORD pid)
     return CommandLine;
 }
 
-// Kill a process
 BOOL killProcess(DWORD dwProcessId, UINT uExitCode)
 {
     constexpr DWORD dwDesiredAccess = PROCESS_TERMINATE;
@@ -306,7 +263,6 @@ BOOL killProcess(DWORD dwProcessId, UINT uExitCode)
     return TerminateProcess(hProcess, uExitCode);
 }
 
-// Check if process is in allowed list
 bool isAllowListed(DWORD pid)
 {
     SnapshotHandleWrapper hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -333,30 +289,25 @@ bool isAllowListed(DWORD pid)
     return false;
 }
 
-ProcessDetail::ProcessDetail(DWORD dwPid)
+ProcessDetail::ProcessDetail(DWORD dwPid) :
+    ProcessDetailStruct{}
 {
-    ProcessDetailStruct = { 0 };
     ProcessDetailStruct.dwPid = dwPid;
-}
+    ProcessDetailStruct.Priority = GetPriorityClassByPid(dwPid);
 
-std::wstring ProcessDetail::ToString(const std::wstring& szPrefix)
-{
-    const DWORD pid = ProcessDetailStruct.dwPid;
-
-    const std::wstring YaraDef = L" -d ";
-
-    ProcessDetailStruct.Priority = GetPriorityClassByPid(pid);
-
-    ProcessDetailStruct.ExeName = utils::getImageName(pid);
+    ProcessDetailStruct.ExeName = getImageName(dwPid);
     std::replace(ProcessDetailStruct.ExeName.begin(), ProcessDetailStruct.ExeName.end(), '"', '\'');
 
-    ProcessDetailStruct.ExePath = utils::getImageEXEPath(pid);
+    ProcessDetailStruct.ExePath = getImageEXEPath(dwPid);
     std::replace(ProcessDetailStruct.ExePath.begin(), ProcessDetailStruct.ExePath.end(), '"', '\'');
 
-    ProcessDetailStruct.CommandLine = utils::GetProcessCommandLine(pid);
+    ProcessDetailStruct.CommandLine = GetProcessCommandLine(dwPid);
     std::replace(ProcessDetailStruct.CommandLine.begin(), ProcessDetailStruct.CommandLine.end(), '"', '\'');
+}
 
-    // need to replace any internal doublequotes in these strings.
+std::wstring ProcessDetail::ToString(const std::wstring& szPrefix) const
+{
+    const std::wstring YaraDef = L" -d ";
 
     std::wstring full_string = YaraDef + L" FromRaccine=\"true\" " + YaraDef + L" " + szPrefix + L"Name=\"" + ProcessDetailStruct.ExeName + L"\""
         + YaraDef + L" " + szPrefix + L"ExecutablePath=\"" + ProcessDetailStruct.ExePath + L"\""
@@ -365,8 +316,6 @@ std::wstring ProcessDetail::ToString(const std::wstring& szPrefix)
 
     return full_string;
 }
-
-
 
 std::wstring expand_environment_strings(const std::wstring& input)
 {
@@ -380,6 +329,59 @@ std::wstring expand_environment_strings(const std::wstring& input)
     }
 
     return std::wstring(output.data());
+}
+
+bool write_string_to_file(const std::filesystem::path file_path, const std::wstring& string_to_write)
+{
+    //  Creates the new file to write to for the upper-case version.
+    FileHandleWrapper hTempFile = CreateFileW(file_path.c_str(),    // file name 
+                                              GENERIC_WRITE,        // open for write 
+                                              0,                    // do not share 
+                                              NULL,                 // default security 
+                                              CREATE_ALWAYS,        // overwrite existing
+                                              FILE_ATTRIBUTE_NORMAL,// normal file 
+                                              NULL);     // no template 
+    if (!hTempFile) {
+        return false;
+    }
+
+    DWORD dwWritten = 0;
+
+    std::optional<std::string> ansi_command_line = utils::convert_wstring_to_string(string_to_write);
+
+    if (!ansi_command_line.has_value()) {
+        return false;
+    }
+
+    // TODO: check for error and handle
+    WriteFile(hTempFile,
+              ansi_command_line->c_str(),
+              static_cast<DWORD>(ansi_command_line->length()),
+              &dwWritten, 
+              NULL);
+
+    return true;
+}
+
+std::optional<std::string> convert_wstring_to_string(const std::wstring& input)
+{
+    std::vector<char> ansi_command_line(input.length() + 1, 0);
+
+    const int ret = WideCharToMultiByte(
+        CP_ACP,
+        0,
+        input.c_str(),
+        static_cast<int>(input.length()),
+        ansi_command_line.data(),
+        static_cast<int>(input.size()),
+        NULL,
+        NULL
+    );
+    if (ret == 0) {
+        return std::nullopt;
+    }
+
+    return std::string(ansi_command_line.data());
 }
 
 }

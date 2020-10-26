@@ -18,11 +18,12 @@
 #include <strsafe.h>
 #include <Shlwapi.h>
 #include <vector>
+#include <thread>
 
 #include "Raccine.h"
 
-
 #include "HandleWrapper.h"
+#include "Utils.h"
 #include "YaraRuleRunner.h"
 
 #pragma comment(lib,"advapi32.lib")
@@ -30,148 +31,84 @@
 #pragma comment(lib,"Wbemuuid.lib")
 
 
-bool EvaluateYaraRules(const RaccineConfig& raccine_config, const std::wstring& lpCommandLine,
-                       std::wstring& outYaraOutput, DWORD dwChildPid, DWORD dwParentPid)
+bool EvaluateYaraRules(const RaccineConfig& raccine_config,
+                       const std::wstring& lpCommandLine,
+                       std::wstring& outYaraOutput,
+                       DWORD dwChildPid,
+                       DWORD dwParentPid)
 {
     if (raccine_config.is_debug_mode()) {
         wprintf(L"Running YARA on: %s\n", lpCommandLine.c_str());
     }
 
-    bool fRetVal = false;
     WCHAR wTestFilename[MAX_PATH] = { 0 };
 
     ExpandEnvironmentStringsW(RACCINE_YARA_DIRECTORY, wTestFilename, ARRAYSIZE(wTestFilename) - 1);
 
-    int c = GetTempFileNameW(wTestFilename, L"Raccine", 0, wTestFilename);
-    if (c != 0) {
-        //  Creates the new file to write to for the upper-case version.
-        HANDLE hTempFile = CreateFileW(wTestFilename, // file name 
-                                       GENERIC_WRITE,        // open for write 
-                                       0,                    // do not share 
-                                       NULL,                 // default security 
-                                       CREATE_ALWAYS,        // overwrite existing
-                                       FILE_ATTRIBUTE_NORMAL,// normal file 
-                                       NULL);                // no template 
-        if (hTempFile == INVALID_HANDLE_VALUE) {
-            return FALSE;
-        }
-        DWORD dwWritten = 0;
-
-        std::vector<char> ansi_command_line(lpCommandLine.length() + 1, 0);
-        if (WideCharToMultiByte(
-            CP_ACP,
-            0,
-            lpCommandLine.c_str(),
-            static_cast<int>(lpCommandLine.length()),
-            ansi_command_line.data(),
-            static_cast<int>(ansi_command_line.size()),
-            NULL,
-            NULL
-        )) {
-            if (!WriteFile(hTempFile,
-                           ansi_command_line.data(),
-                           lstrlenA(ansi_command_line.data()) + 1,
-                           &dwWritten,
-                           NULL)) {
-                CloseHandle(hTempFile);
-                goto cleanup;
-            }
-        }
-        CloseHandle(hTempFile);
-
-        BOOL fSuccess = TRUE;
-
-        DWORD dwCurrPid = dwChildPid;
-        DWORD dwCurrParentPid = dwParentPid;
-        DWORD dwCurrSessionId = 0;
-        if (!ProcessIdToSessionId(dwCurrPid, &dwCurrSessionId)) {
-            fSuccess = FALSE;
-        }
-
-        DWORD dwParentParentPid = utils::getParentPid(dwParentPid);
-        DWORD dwParentSessionId = 0;
-        if (!ProcessIdToSessionId(dwParentPid, &dwParentSessionId)) {
-            fSuccess = FALSE;
-        }
-
-        std::wstring AdditionalYaraDefines = L" " + std::to_wstring(dwCurrSessionId) + L" " + std::to_wstring(dwCurrPid) + L" " + std::to_wstring(dwCurrParentPid) +
-            L" " + std::to_wstring(dwParentSessionId) + L" " + std::to_wstring(dwParentPid) + L" " + std::to_wstring(dwParentParentPid) + L" ";
-
-        if (raccine_config.is_debug_mode()) {
-            wprintf(L"Composed test-string is: %s\n", AdditionalYaraDefines.c_str());
-            wprintf(L"Everything OK? %d\n", fSuccess);
-        }
-
-        CreateContextFileForProgram(dwCurrPid, dwCurrSessionId, dwCurrParentPid, false);
-
-        CreateContextFileForProgram(dwParentPid, dwParentSessionId, dwParentParentPid, true);
-
-        // BUGBUG clean up after files
-
-        if (fSuccess) {
-            YaraRuleRunner rule_runner(raccine_config.yara_rules_directory(),
-                                       utils::expand_environment_strings(RACCINE_PROGRAM_DIRECTORY));
-            fRetVal = rule_runner.run_yara_rules_on_file(wTestFilename, lpCommandLine, outYaraOutput, AdditionalYaraDefines);
-        }
-        DeleteFileW(wTestFilename);
+    const int c = GetTempFileNameW(wTestFilename, L"Raccine", 0, wTestFilename);
+    if (c == 0) {
+        return false;
     }
-cleanup:
+    utils::write_string_to_file(wTestFilename, lpCommandLine);
+
+    BOOL fSuccess = TRUE;
+
+    const DWORD dwCurrPid = dwChildPid;
+    const DWORD dwCurrParentPid = dwParentPid;
+    DWORD dwCurrSessionId = 0;
+    if (!ProcessIdToSessionId(dwCurrPid, &dwCurrSessionId)) {
+        fSuccess = FALSE;
+    }
+
+    const DWORD dwParentParentPid = utils::getParentPid(dwParentPid);
+    DWORD dwParentSessionId = 0;
+    if (!ProcessIdToSessionId(dwParentPid, &dwParentSessionId)) {
+        fSuccess = FALSE;
+    }
+
+    std::wstring AdditionalYaraDefines = L" " + std::to_wstring(dwCurrSessionId) + L" " + std::to_wstring(dwCurrPid) + L" " + std::to_wstring(dwCurrParentPid) +
+        L" " + std::to_wstring(dwParentSessionId) + L" " + std::to_wstring(dwParentPid) + L" " + std::to_wstring(dwParentParentPid) + L" ";
+
+    if (raccine_config.is_debug_mode()) {
+        wprintf(L"Composed test-string is: %s\n", AdditionalYaraDefines.c_str());
+        wprintf(L"Everything OK? %d\n", fSuccess);
+    }
+
+    CreateContextFileForProgram(dwCurrPid, dwCurrSessionId, dwCurrParentPid, false);
+
+    CreateContextFileForProgram(dwParentPid, dwParentSessionId, dwParentParentPid, true);
+
+    // BUGBUG clean up after files
+
+    bool fRetVal = false;
+
+    if (fSuccess) {
+        YaraRuleRunner rule_runner(raccine_config.yara_rules_directory(),
+                                   utils::expand_environment_strings(RACCINE_PROGRAM_DIRECTORY));
+        fRetVal = rule_runner.run_yara_rules_on_file(wTestFilename, lpCommandLine, outYaraOutput, AdditionalYaraDefines);
+    }
+    DeleteFileW(wTestFilename);
+
     return fRetVal;
 }
 
-void CreateContextFileForProgram(DWORD pid, DWORD sessionid, DWORD parentPid, bool fParent)
+void CreateContextFileForProgram(DWORD pid, DWORD session_id, DWORD parentPid, bool fParent)
 {
-    utils::ProcessDetail details = utils::ProcessDetail(pid);
+    const utils::ProcessDetail details(pid);
 
     std::wstring strDetails;
-
     if (fParent) {
         strDetails = details.ToString(L"Parent");
     } else {
-        strDetails = details.ToString(L"");;
+        strDetails = details.ToString(L"");
     }
 
-    LPSTR lpDetails = static_cast<LPSTR>(LocalAlloc(LPTR, strDetails.length() + 1));
-    if (!lpDetails) {
-        return;
-    }
+    std::wstring context_path = utils::expand_environment_strings(RACCINE_USER_CONTEXT_DIRECTORY);
+    context_path += L"\\RaccineYaraContext-" + std::to_wstring(session_id) +
+        L"-" + std::to_wstring(pid) +
+        L"-" + std::to_wstring(parentPid) + L".txt";
 
-    WCHAR wContextPath[MAX_PATH] = { 0 };
-    ExpandEnvironmentStringsW(RACCINE_USER_CONTEXT_DIRECTORY, wContextPath, ARRAYSIZE(wContextPath) - 1);
-    WCHAR wContextFileName[100] = { 0 };
-    if (FAILED(StringCchPrintf(wContextFileName, ARRAYSIZE(wContextFileName), L"\\RaccineYaraContext-%d-%d-%d.txt", sessionid, pid, parentPid)))
-        return;
-
-    if (SUCCEEDED(StringCchCat(wContextPath, ARRAYSIZE(wContextPath), wContextFileName))) {
-        //  Creates the new file to write to for the upper-case version.
-        HANDLE hTempFile = CreateFileW(wContextPath, // file name 
-                                       GENERIC_WRITE,        // open for write 
-                                       0,                    // do not share 
-                                       NULL,                 // default security 
-                                       CREATE_ALWAYS,        // overwrite existing
-                                       FILE_ATTRIBUTE_NORMAL,// normal file 
-                                       NULL);                // no template 
-        if (hTempFile == INVALID_HANDLE_VALUE) {
-            return;
-        }
-        DWORD dwWritten = 0;
-
-        if (WideCharToMultiByte(
-            CP_ACP,
-            0,
-            strDetails.c_str(),
-            (int)strDetails.length(),
-            lpDetails,
-            (int)strDetails.length() + 1,
-            NULL,
-            NULL
-        )) {
-            if (!WriteFile(hTempFile, lpDetails, lstrlenA(lpDetails) + 1, &dwWritten, NULL)) {
-                ;
-            }
-        }
-        CloseHandle(hTempFile);
-    }
+    utils::write_string_to_file(context_path, strDetails);
 }
 
 void WriteEventLogEntryWithId(const std::wstring& pszMessage, DWORD dwEventId)
@@ -417,7 +354,6 @@ std::wstring logFormatLine(const std::wstring& line)
     return logLine;
 }
 
-// Format the activity log lines
 std::wstring logFormatAction(DWORD pid, const std::wstring& imageName, const std::wstring& cmdLine, const std::wstring& comment)
 {
     const std::string timeString = getTimeStamp();
@@ -452,7 +388,10 @@ void logSend(const std::wstring& logStr)
     }
 }
 
-void createChildProcessWithDebugger(std::wstring command_line, DWORD dwAdditionalCreateParams, PDWORD pdwChildPid, PHANDLE phProcess, PHANDLE phThread)
+DWORD createChildProcessWithDebugger(std::wstring command_line,
+                                    DWORD dwAdditionalCreateParams,
+                                    ProcessHandleWrapper& phProcess,
+                                    ThreadHandleWrapper& phThread)
 {
     STARTUPINFO info = { sizeof(info) };
     PROCESS_INFORMATION processInfo{};
@@ -473,20 +412,14 @@ void createChildProcessWithDebugger(std::wstring command_line, DWORD dwAdditiona
                                     &info,
                                     &processInfo);
     if (res == 0) {
-        return;
+        return 0;
     }
 
     DebugActiveProcessStop(processInfo.dwProcessId);
 
-    if (phProcess != NULL) {
-        *phProcess = processInfo.hProcess;  // Caller responsible for closing
-    }
-    if (phThread != NULL) {
-        *phThread = processInfo.hThread;  // Caller responsible for closing
-    }
-    if (pdwChildPid != NULL) {
-        *pdwChildPid = processInfo.dwProcessId;
-    }
+    phProcess = processInfo.hProcess;  // Caller responsible for closing
+    phThread = processInfo.hThread;  // Caller responsible for closing
+    return processInfo.dwProcessId;
 }
 
 std::set<DWORD> find_processes_to_kill(const std::wstring& sCommandLine, std::wstring& sListLogs)
@@ -518,9 +451,8 @@ void find_and_kill_processes(bool log_only, const std::wstring& sCommandLine, st
 {
     const std::set<DWORD> pids = find_processes_to_kill(sCommandLine, sListLogs);
 
-    // Loop over collected PIDs and try to kill the processes
     for (DWORD process_id : pids) {
-        std::wstring imageName = utils::getImageName(process_id);
+        const std::wstring imageName = utils::getImageName(process_id);
         // If no simulation flag is set
         if (!log_only) {
             // Kill
@@ -534,7 +466,6 @@ void find_and_kill_processes(bool log_only, const std::wstring& sCommandLine, st
         }
     }
 
-    // Finish message
     printf("\nRaccine v%s finished\n", VERSION);
-    Sleep(5000);
+    std::this_thread::sleep_for(std::chrono::seconds(5));
 }
