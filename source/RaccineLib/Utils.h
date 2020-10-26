@@ -26,7 +26,7 @@ private:
         std::wstring CommandLine;
         UINT HandleCount;
         UINT Priority;
-        UINT SecondsSinceExeCreation;
+        ULONG TimeSinceExeCreation;
     };
     PROCESS_DETAIL ProcessDetailStruct;
 };
@@ -64,5 +64,7 @@ std::wstring expand_environment_strings(const std::wstring& input);
 bool write_string_to_file(const std::filesystem::path file_path, const std::wstring& string_to_write);
 
 std::optional<std::string> convert_wstring_to_string(const std::wstring& input);
+
+ULONG getLastWriteTime(std::wstring szFilePath);
 
 }
