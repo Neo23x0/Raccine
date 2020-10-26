@@ -303,6 +303,8 @@ ProcessDetail::ProcessDetail(DWORD dwPid) :
 
     ProcessDetailStruct.CommandLine = GetProcessCommandLine(dwPid);
     std::replace(ProcessDetailStruct.CommandLine.begin(), ProcessDetailStruct.CommandLine.end(), '"', '\'');
+
+    ProcessDetailStruct.TimeSinceExeCreation = getLastWriteTime(ProcessDetailStruct.ExePath);
 }
 
 std::wstring ProcessDetail::ToString(const std::wstring& szPrefix) const
@@ -312,6 +314,7 @@ std::wstring ProcessDetail::ToString(const std::wstring& szPrefix) const
     std::wstring full_string = YaraDef + L" FromRaccine=\"true\" " + YaraDef + L" " + szPrefix + L"Name=\"" + ProcessDetailStruct.ExeName + L"\""
         + YaraDef + L" " + szPrefix + L"ExecutablePath=\"" + ProcessDetailStruct.ExePath + L"\""
         + YaraDef + L" " + szPrefix + L"CommandLine=\"" + ProcessDetailStruct.CommandLine + L"\""
+        + YaraDef + L" " + szPrefix + L"TimeSinceExeCreation=" + std::to_wstring(ProcessDetailStruct.TimeSinceExeCreation)
         + YaraDef + L" " + szPrefix + L"Priority=" + std::to_wstring(ProcessDetailStruct.Priority) + L"";
 
     return full_string;
@@ -329,6 +332,45 @@ std::wstring expand_environment_strings(const std::wstring& input)
     }
 
     return std::wstring(output.data());
+}
+
+ULONG utils::getLastWriteTime(std::wstring szFilePath)
+{
+    HANDLE hFile = CreateFile(szFilePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+    if (hFile == INVALID_HANDLE_VALUE)
+        return 0;
+
+    ULARGE_INTEGER ulNow = { 0 }, ulFile = { 0 }, ulDiff = { 0 };
+    ULONG  timeDiff = 999999999;
+    FILETIME timeFile, timeNow = { 0 };
+    SYSTEMTIME stNow = { 0 };
+    GetSystemTime(&stNow);
+    SystemTimeToFileTime(&stNow, &timeNow);
+
+    if (!GetFileTime(hFile, NULL, NULL, &timeFile))
+    {
+        CloseHandle(hFile);
+        return 0;
+    }
+    CloseHandle(hFile);
+
+    ulNow.HighPart = timeNow.dwHighDateTime;
+    ulNow.LowPart = timeNow.dwLowDateTime;
+    ulFile.HighPart = timeFile.dwHighDateTime;
+    ulFile.LowPart = timeFile.dwLowDateTime;
+
+    memcpy(&ulNow, &timeNow, sizeof(ulNow));
+    memcpy(&ulFile, &timeFile, sizeof(timeFile));
+
+
+    if (ulNow.QuadPart > ulFile.QuadPart)
+    {
+        ulDiff.QuadPart = ulNow.QuadPart - ulFile.QuadPart;
+        ULONG diff = ((ULONG)(ulDiff.QuadPart / (10000 * 1000)) / (60 * 60 * 24));  // 
+
+        return diff;
+    }
+    return timeDiff;
 }
 
 bool write_string_to_file(const std::filesystem::path file_path, const std::wstring& string_to_write)

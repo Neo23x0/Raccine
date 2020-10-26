@@ -18,5 +18,10 @@ namespace RaccineSettings
             InitializeComponent();
             txtLog.Text = e.TimeCreated + "\r\n" + e.FormatDescription().Trim();
         }
+
+        private void lnkWebsite_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            System.Diagnostics.Process.Start("https://github.com/Neo23x0/Raccine/");
+        }
     }
 }

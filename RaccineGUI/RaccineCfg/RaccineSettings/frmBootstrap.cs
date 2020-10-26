@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 
 /// <summary>
 /// Raccine settings launcher
@@ -90,6 +91,61 @@ namespace RaccineSettings
         {
             this.singleInstanceMutex.Close();
             this.envMonitor.Stop();
+        }
+
+        private void CreateTroubleShootingLogs()
+        {
+            try
+            {
+                string szRaccineTroubleshootingDir = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\RaccineLogs";
+                Directory.CreateDirectory(szRaccineTroubleshootingDir);
+
+                string[] RegCommands = {
+                    @"EXPORT HKLM\Software\Raccine """ +  szRaccineTroubleshootingDir + "\\" + @"HKLM-Raccine-settings.reg.txt"" /y",
+                    @"EXPORT HKLM\Software\Policies\Raccine " +  szRaccineTroubleshootingDir + "\\" + @"HKLM-Raccine-Policies-settings.reg.txt"" /y",
+                    @"EXPORT HKLM\Software\WOW6432Node\Raccine " +  szRaccineTroubleshootingDir + "\\" + @"HKLM-Raccine-WOW6432Node.reg.txt"" /y",
+                    @"EXPORT ""HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options"" """ +  szRaccineTroubleshootingDir + "\\" + @"HKLM-Raccine-IFEO.reg.txt"" /y /reg:64",
+                    @"EXPORT ""HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion\Image File Execution Options"" """ +  szRaccineTroubleshootingDir + "\\" + @"HKLM-Raccine-IFEO-WOW6432Node.reg.txt"" /y"};
+
+                Dictionary<string, string> dictSaveCmdOutput = new Dictionary<string, string>();
+                dictSaveCmdOutput["eventlogs.txt"] = @"wevtutil qe /rd Application /q:""*[System[Provider[@Name='Raccine']]]"" /uni:false /f:text ";
+                dictSaveCmdOutput["PROGRAMDATA.txt"] = @"dir /s %PROGRAMDATA%\Raccine";
+                dictSaveCmdOutput["PROGRAMFILES.txt"] = @"dir /s ""%PROGRAMFILES%\Raccine""";
+
+                foreach (string command in RegCommands)
+                {
+                    ProcessStartInfo psi = new ProcessStartInfo("REG.EXE");
+                    psi.Arguments = command;
+                    psi.WindowStyle = ProcessWindowStyle.Minimized;
+                    psi.UseShellExecute = true;
+                    Process.Start(psi);
+                }
+                foreach (string savefile in dictSaveCmdOutput.Keys)
+                {
+                    string command = dictSaveCmdOutput[savefile];
+                    ProcessStartInfo psi = new ProcessStartInfo("cmd.exe");
+                    psi.Arguments = "/c " + command + " > \"" + szRaccineTroubleshootingDir + "\\" + savefile+ "\"";
+                    psi.WindowStyle = ProcessWindowStyle.Minimized;
+                    Process.Start(psi);
+                }
+                string szRaccineLogFile = Environment.ExpandEnvironmentVariables("%PROGRAMDATA%") + @"\Raccine\Raccine_log.txt";
+                if (File.Exists(szRaccineLogFile))
+                {
+                    File.Copy(szRaccineLogFile, szRaccineTroubleshootingDir + @"\Raccine_log.txt",true);
+                }
+                MessageBox.Show("Troubleshooting logs saved to " + szRaccineTroubleshootingDir, "Logs Saved", MessageBoxButtons.OK,MessageBoxIcon.Information );
+
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Error creating logs: " + e.Message);
+            }
+
+        }
+
+        private void createTroubleshootingLogsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            CreateTroubleShootingLogs();
         }
     }
 

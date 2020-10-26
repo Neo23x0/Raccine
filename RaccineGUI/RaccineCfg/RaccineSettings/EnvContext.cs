@@ -1,10 +1,12 @@
 ﻿using System;
+using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 using System.Windows.Forms;
 
 /// <summary>
@@ -18,10 +20,11 @@ namespace RaccineSettings
         ManagementEventWatcher processStartEvent = new ManagementEventWatcher("SELECT * FROM Win32_ProcessStartTrace");
         ManagementEventWatcher processStopEvent = new ManagementEventWatcher("SELECT * FROM Win32_ProcessStopTrace");
         private UInt32 SessionId = 0;
-        private string RaccineUserContextRootFolder = null;
+        private static string RaccineUserContextRootFolder = null;
+        System.Timers.Timer cleanupTimer = null;
         public EnvMonitor(string RaccineUserContextRootFolder)
         {
-            this.RaccineUserContextRootFolder = RaccineUserContextRootFolder;
+            EnvMonitor.RaccineUserContextRootFolder = RaccineUserContextRootFolder;
             this.SessionId = (UInt32)System.Diagnostics.Process.GetCurrentProcess().SessionId; // only watch processes in this session
 
             CleanupOldContextFiles();
@@ -35,6 +38,56 @@ namespace RaccineSettings
             processStopEvent.EventArrived += new EventArrivedEventHandler(processStopEvent_EventArrived);
             processStartEvent.Start();
             processStopEvent.Start();
+
+
+            this.cleanupTimer = new System.Timers.Timer();
+            this.cleanupTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
+            this.cleanupTimer.Interval = 1000 * 60;  // every 60 seconds do cleanup procedure
+            this.cleanupTimer.Enabled = true;
+        }
+
+        private static void OnTimedEvent(object source, ElapsedEventArgs e)
+        {
+            uint SessionId = (uint)System.Diagnostics.Process.GetCurrentProcess().SessionId; // only watch processes in this session
+
+            string qry = "SELECT * FROM Win32_Process WHERE SessionId =" + SessionId;
+
+            ManagementObjectSearcher moSearch = new ManagementObjectSearcher(qry);
+            ManagementObjectCollection moCollection = moSearch.Get();
+
+            List<string> lstFileNames = new List<string>();
+
+            foreach (ManagementObject mo in moCollection)
+            {
+                Win32Process process = new Win32Process(mo);
+                if (process.SessionId == SessionId)
+                    lstFileNames.Add(GenerateContextFileName(process));
+            }
+
+            //sweep time
+            // we don't get reliable notification in the current implementation
+            // to avoid excessive saving of context files, we periodically sweep any file not associated with a running process
+            try
+            {
+                var files = Directory.EnumerateFiles(EnvMonitor.RaccineUserContextRootFolder, "RaccineYaraContext*.txt");
+
+                foreach (string currentFile in files)
+                {
+                    string fileName = Path.GetFileName (currentFile);
+                    if (lstFileNames.Contains(fileName))
+                    {
+                        ; // keep it as the process is still running
+                    }
+                    else
+                    {
+                        ;
+                        //File.Delete currentFile;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
         }
 
         public void LogInitialProcesses()
@@ -56,9 +109,10 @@ namespace RaccineSettings
         {
             processStartEvent.Stop();
             processStopEvent.Stop();
-        }
+            this.cleanupTimer.Stop();
+            this.cleanupTimer.Dispose();
 
-        public static bool exit = false;
+        }
 
         private string GenerateContextFileName(PropertyDataCollection props)
         {
@@ -68,7 +122,7 @@ namespace RaccineSettings
                     (UInt32)(props["ParentProcessId"].Value));
             return szFileName;
         }
-        private string GenerateContextFileName(Win32Process process)
+        private static string GenerateContextFileName(Win32Process process)
         {
             string szFileName = String.Format("RaccineYaraContext-{0}-{1}-{2}.txt",
                     process.SessionId,
@@ -79,7 +133,7 @@ namespace RaccineSettings
 
         private void CleanupOldContextFiles()
         {
-            var lstFiles = Directory.EnumerateFiles(this.RaccineUserContextRootFolder, "RaccineYaraContext*.txt", SearchOption.AllDirectories);
+            var lstFiles = Directory.EnumerateFiles(RaccineUserContextRootFolder, "RaccineYaraContext*.txt", SearchOption.AllDirectories);
 
             foreach (string currFileName in lstFiles)
             {
@@ -101,9 +155,9 @@ namespace RaccineSettings
         }
         private void WriteContextFile(Win32Process process)
         {
-            string szContextPath = this.RaccineUserContextRootFolder + @"\" + GenerateContextFileName(process);
+            string szContextPath = RaccineUserContextRootFolder + @"\" + GenerateContextFileName(process);
 
-            if (Directory.Exists(this.RaccineUserContextRootFolder))
+            if (Directory.Exists(RaccineUserContextRootFolder))
             {
                 using (StreamWriter outputFile = new StreamWriter(szContextPath))
                 {
@@ -159,9 +213,9 @@ namespace RaccineSettings
         }
         private void WriteContextFile(PropertyDataCollection props)
         {
-            string szContextPath = this.RaccineUserContextRootFolder + @"\" + GenerateContextFileName(props);
+            string szContextPath = RaccineUserContextRootFolder + @"\" + GenerateContextFileName(props);
 
-            if (Directory.Exists(this.RaccineUserContextRootFolder))
+            if (Directory.Exists(RaccineUserContextRootFolder))
             {
                 // Write the string array to a new file named "WriteLines.txt".
                 using (StreamWriter outputFile = new StreamWriter(szContextPath))
@@ -189,15 +243,16 @@ namespace RaccineSettings
 
         private void DeleteContextFile(PropertyDataCollection props)
         {
-            string szContextPath = this.RaccineUserContextRootFolder + @"\" + GenerateContextFileName(props);
+            string szContextPath = RaccineUserContextRootFolder + @"\" + GenerateContextFileName(props);
 
             try
             {
                 File.Delete(szContextPath);
             }
-            catch (Exception e)
+            catch (Exception )
             {
-                MessageBox.Show("Error deleting " + szContextPath + "\n" + e.Message); //error deleting file
+                ;
+                //MessageBox.Show("Error deleting " + szContextPath + "\n" + e.Message); //error deleting file
             }
 
         }
