@@ -52,6 +52,44 @@ Powershell list of encoded commands: `JAB`, `SQBFAF`, `SQBuAH`, `SUVYI`, `cwBhA`
 
 Since version 1.0, Raccine additionally uses YARA rules to determine if a process command line is malicious or not. The current YARA rules are in the `./yara` sub folder. 
 
+### YARA External Variables
+
+Since version 1.1 we pass a list of external variables into the YARA matching process to allow for much more complex and clever YARA rules that take attributes of the process and its parent into account. 
+
+
+| Variable             | Description                              | Example Value                     |
+|----------------------|------------------------------------------|-----------------------------------|
+| FromRaccine          |                                          | true                              |
+| Name                 | Image file name                          | WMIC.exe                          |
+| ExecutablePath       | Full path to binary                      | C:\Windows\System32\wbem\WMIC.exe |
+| CommandLine          | Full command line with parameters        | WMIC.exe delete justatest         |
+| Priority             | Process priority                         | 32                                |
+| ParentName           | Parent image file name                   | cmd.exe                           |
+| ParentExecutablePath | Full path to parent executable           | C:\Windows\System32\cmd.exe       | 
+| ParentCommandLine    | Full parent command line with parameters | C:\WINDOWS\system32\cmd.exe       |
+| ParentPriority       | Parent process priority                  | 32                                |
+
+The matching process looks like this on the command line:
+
+```batch
+"C:\Program Files\Raccine\yara64.exe" -d FromRaccine="true" -d Name="WMIC.exe" -d ExecutablePath="C:\Windows\System32\wbem\WMIC.exe" -d CommandLine="WMIC.exe delete justatest" -d  Priority=32 -d FromRaccine="true" -d ParentName="cmd.exe" -d ParentExecutablePath="C:\Windows\System32\cmd.exe" -d ParentCommandLine="'C:\WINDOWS\system32\cmd.exe' " -d ParentPriority=32 C:\ProgramData\Raccine\yarayara\mal_emotet.yar C:\ProgramData\Raccine\yara\Rac1C6A.tmp
+```
+
+The following listing shows an example YARA rule that makes use of the external variables in its coindition. 
+
+```javascript 
+rule env_vars_test {
+    condition:
+        Name contains "WMIC.exe"
+        and CommandLine contains "delete justatest"
+        and ParentPriority >= 8
+        and (
+            ParentCommandLine contains "cmd"
+            or ParentCommandLine contains "powershell"
+        )
+}
+```
+
 ## Example
 
 Emotet without Raccine - [Link](https://app.any.run/tasks/b12f8ee2-f6cc-4571-bcc2-51e34c19941f/)
@@ -96,6 +134,7 @@ If you have a solid security monitoring that logs all process executions, you co
 - 0.10.2 - Includes `diskshadow.exe delete shadows` command
 - 0.10.3-5 - Minor fixes and additions
 - 1.0 BETA - GUI elements and YARA rule scanning of command line params
+- 1.1 BETA - YARA rule matching with external variables
 
 ## Installation
 
@@ -173,10 +212,6 @@ In case that the Ransomware that your're currently handling uses a certain proce
 
 I'd like to extend Raccine but lack the C++ coding skills, especially o the Windows platform.
 
-1. Pass [external variables](https://yara.readthedocs.io/en/v3.4.0/commandline.html#cmdoption-yara-d) to the YARA matching process 
-2. Extend coverage according to [this](https://github.com/Neo23x0/sigma/blob/master/rules/windows/process_creation/win_office_shell.yml) sigma rule comparing a list of child process names with their parents' to block many office droppers - we need to pass external variables to the YARA matching process for that
-3. Add MD5/SHA1/SHA256 hash values to log (I fear the OpenSSl ... maybe we don't include a hash)
-
 ## Other Info
 
 The right pronounciation is "Rax-Een".
@@ -184,7 +219,8 @@ The right pronounciation is "Rax-Een".
 ## Credits
 
 - Florian Roth [@cyb3rops](https://twitter.com/cyb3rops)
-- Ollie Whitehouse [@ollieatnccgroup](https://twitter.com/ollieatnccgroup)
 - John Lambert [@JohnLaTwC](https://twitter.com/JohnLaTwC)
+- Eran Yom-Tov [@eran_yom_tov](https://twitter.com/eran_yom_tov)
+- Ollie Whitehouse [@ollieatnccgroup](https://twitter.com/ollieatnccgroup)
 - Branislav Đalić [@LordOfThePies4](https://twitter.com/LordOfThePies4)
 - Hilko Bengen [@_hillu_](https://twitter.com/_hillu_)
