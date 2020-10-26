@@ -5,8 +5,8 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("RaccineSettings")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("RaccineSettings BETA")]
+[assembly: AssemblyDescription("Project website: https://github.com/Neo23x0/Raccine")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("RaccineSettings")]
