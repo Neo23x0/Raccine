@@ -110,7 +110,6 @@ std::optional<std::wstring> RaccineConfig::read_string_from_registry(const std::
     }
 
     result.resize(size);
-    size = static_cast<DWORD>(result.size());
 
     status = RegGetValueW(HKEY_LOCAL_MACHINE,
                           key_path.c_str(),
@@ -122,6 +121,8 @@ std::optional<std::wstring> RaccineConfig::read_string_from_registry(const std::
     if (status != ERROR_SUCCESS) {
         return std::nullopt;
     }
+
+    result.erase(std::find(result.begin(), result.end(), '\0'), result.end());
 
     return result;
 }
