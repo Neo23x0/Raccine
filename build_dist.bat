@@ -4,22 +4,22 @@ DEL /F Raccine.zip
 @RD /S /Q ".\Raccine"
 MKDIR Raccine
 :: Binaries
-COPY x64\Release\Raccine.exe Raccine\Raccine.exe
-COPY Release\Raccine.exe Raccine\Raccine_x86.exe
+XCOPY x64\Release\Raccine.exe Raccine\Raccine.exe*
+XCOPY Release\Raccine.exe Raccine\Raccine_x86.exe*
 :: Installer Batch
-COPY install-raccine.bat Raccine\
+XCOPY install-raccine.bat Raccine\
 :: Scripts
 MKDIR Raccine\scripts\
-COPY scripts\windows-hardening.bat Raccine\scripts\
+XCOPY scripts\windows-hardening.bat Raccine\scripts\
 :: Registry Patches
 MKDIR Raccine\reg-patches\
-COPY reg-patches\*.reg Raccine\reg-patches\
+XCOPY reg-patches\*.reg Raccine\reg-patches\
 
 :: YARA Feature
 MKDIR Raccine\yara\
-COPY yara\*.* Raccine\yara\
-COPY tools\yara64.exe Raccine\yara\
+XCOPY yara\*.* Raccine\yara\
+XCOPY tools\yara64.exe Raccine\yara\
 
 :: GUI
-COPY RaccineGUI\RaccineCfg\RaccineElevatedCfg\bin\Release\RaccineElevatedCfg.exe Raccine\
-COPY RaccineGUI\RaccineCfg\RaccineSettings\bin\Release\RaccineSettings.exe Raccine\
+XCOPY RaccineGUI\RaccineCfg\RaccineElevatedCfg\bin\Release\RaccineElevatedCfg.exe Raccine\
+XCOPY RaccineGUI\RaccineCfg\RaccineSettings\bin\Release\RaccineSettings.exe Raccine\
