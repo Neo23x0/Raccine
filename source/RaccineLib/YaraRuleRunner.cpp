@@ -53,7 +53,7 @@ bool YaraRuleRunner::run_yara_rule_on_file(const std::filesystem::path& yara_rul
 
     std::filesystem::remove(result_file_path);
 
-    out_yara_output = L"Rule file: " + yara_rule.wstring() + L"\n" + yara_output + L"\n" + L"Command line:\n" + command_line + L"\n\n";
+    out_yara_output = L"Rule file: " + yara_rule.wstring() + L"\r\nYARA Output: " + yara_output + L"\r\n" + L"Command line: " + command_line + L"\r\n";
 
     return true;
 }

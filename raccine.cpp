@@ -70,12 +70,12 @@ int wmain(int argc, WCHAR* argv[])
         // Log to the windows Eventlog
         if (!configuration.log_only()) {
             // Eventlog
-            message = L"Raccine detected malicious activity:\n" + sCommandLine + L"\n";
+            message = L"Raccine detected malicious activity:\r\n" + sCommandLine + L"\r\n";
             // Log to the text log file
             sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity"));
         } else {
             // Eventlog
-            message = L"Raccine detected malicious activity:\n" + sCommandLine + L"\n(simulation mode)";
+            message = L"Raccine detected malicious activity:\r\n" + sCommandLine + L"\r\n(simulation mode)";
             // Log to the text log file
             sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity (simulation mode)"));
         }
@@ -85,7 +85,7 @@ int wmain(int argc, WCHAR* argv[])
 
         // YARA Matches Detected
         if (fYaraRuleMatched && !szYaraOutput.empty()) {
-            message += L"\r\nYara matches:\r\n" + szYaraOutput;
+            message += L"\r\n\r\nYara matches:\r\n" + szYaraOutput;
             WriteEventLogEntryWithId(message, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
             sListLogs.append(logFormatLine(szYaraOutput));
         }
