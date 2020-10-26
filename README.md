@@ -134,7 +134,7 @@ If you have a solid security monitoring that logs all process executions, you co
 - 0.10.2 - Includes `diskshadow.exe delete shadows` command
 - 0.10.3-5 - Minor fixes and additions
 - 1.0 BETA - GUI elements and YARA rule scanning of command line params
-- 1.1 BETA - YARA rule matching with external variables
+- 1.1 BETA - YARA rule matching with external variables, troubleshooting functions
 
 ## Installation
 
