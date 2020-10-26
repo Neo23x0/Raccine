@@ -9,7 +9,10 @@
 
 #include <Shlwapi.h>
 
+
+#include "source/RaccineLib/HandleWrapper.h"
 #include "source/RaccineLib/RaccineConfig.h"
+#include "source/RaccineLib/Utils.h"
 
 int wmain(int argc, WCHAR* argv[])
 {
@@ -36,16 +39,13 @@ int wmain(int argc, WCHAR* argv[])
         sCommandLineStr = sCommandLine;
     }
 
-    HANDLE hThread = INVALID_HANDLE_VALUE;
-    HANDLE hProcess = INVALID_HANDLE_VALUE;
-    DWORD dwChildPid = 0;
-
-    createChildProcessWithDebugger(sCommandLineStr,
-                                   CREATE_SUSPENDED,
-                                   &dwChildPid,
-                                   &hProcess,
-                                   &hThread);
-
+    ThreadHandleWrapper hThread = INVALID_HANDLE_VALUE;
+    ProcessHandleWrapper hProcess = INVALID_HANDLE_VALUE;
+    const DWORD dwChildPid = createChildProcessWithDebugger(sCommandLineStr,
+                                                            CREATE_SUSPENDED,
+                                                            hProcess,
+                                                            hThread);
+    // TODO: What happens if the process isn't created?
 
     const DWORD dwParentPid = utils::getParentPid(GetCurrentProcessId());
 
@@ -108,14 +108,10 @@ int wmain(int argc, WCHAR* argv[])
 
             ResumeThread(hThread);
             WaitForSingleObject(hProcess, INFINITE);
-            CloseHandle(hThread);
-            CloseHandle(hProcess);
         }
     } else {
         if (bBlock) {
             utils::killProcess(dwChildPid, 1);
-            CloseHandle(hThread);
-            CloseHandle(hProcess);
         }
     }
 

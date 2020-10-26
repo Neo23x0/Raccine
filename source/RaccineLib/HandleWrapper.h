@@ -79,6 +79,18 @@ struct ProcessHandleTraits
     }
 };
 
+// Handle wrapper for handles from OpenThread
+struct ThreadHandleTraits
+{
+    typedef HANDLE HandleType;
+    inline static const HANDLE InvalidValue = NULL;
+
+    static void Close(HANDLE value)
+    {
+        CloseHandle(value);
+    }
+
+};
 // Handle wrapper for handles from RegisterEventSourceW
 struct EventSourceHandleTraits
 {
@@ -127,9 +139,23 @@ struct EventHandleTraits
     }
 };
 
+// Handle wrapper for handles from CreateFileW
+struct FileHandleTraits
+{
+    typedef HANDLE HandleType;
+    inline static const HANDLE InvalidValue = INVALID_HANDLE_VALUE;
+
+    static void Close(HANDLE value)
+    {
+        CloseHandle(value);
+    }
+};
+
 using SnapshotHandleWrapper = HandleWrapper< SnapshotHandleTraits>;
 using ProcessHandleWrapper = HandleWrapper< ProcessHandleTraits>;
+using ThreadHandleWrapper = HandleWrapper< ThreadHandleTraits>;
 using EventSourceHandleWrapper = HandleWrapper< EventSourceHandleTraits>;
 using FindFileHandleWrapper = HandleWrapper< FindFileHandleTraits>;
 using TokenHandleWrapper = HandleWrapper< TokenHandleTraits>;
 using EventHandleWrapper = HandleWrapper< EventHandleTraits>;
+using FileHandleWrapper = HandleWrapper< FileHandleTraits>;

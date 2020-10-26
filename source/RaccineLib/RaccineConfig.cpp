@@ -47,7 +47,7 @@ std::wstring RaccineConfig::get_yara_rules_directory()
         return yara_directory;
     }
 
-    return utils::expand_environment_strings(RACCINE_DATA_DIRECTORY);
+    return utils::expand_environment_strings(RACCINE_YARA_DIRECTORY);
 }
 
 bool RaccineConfig::read_flag_from_registry(const std::wstring& flag_name)
