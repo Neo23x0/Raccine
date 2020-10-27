@@ -8,19 +8,19 @@ $LogFile = "C:\ProgramData\Raccine\Raccine_log.txt"
 
 # Functions
 function Uninstall-Raccine {
-    $Command = "$($RaccineInstallerFolder)\install-raccine.bat UNINSTALL"
-    Invoke-Expression $Command
-    Start-Sleep -s 1
+    $Proc = Start-Process -FilePath "$($RaccineInstallerFolder)\install-raccine.bat" -ArgumentList "UNINSTALL" -PassThru
+    $Proc.WaitForExit()
+    Start-Sleep -s 10
 }
 function Install-Raccine {
-    $Command = "$($RaccineInstallerFolder)\install-raccine.bat FULL"
-    Invoke-Expression $Command
-    Start-Sleep -s 1
+    $Proc = Start-Process -FilePath "$($RaccineInstallerFolder)\install-raccine.bat" -ArgumentList "FULL" -PassThru
+    $Proc.WaitForExit()
+    Start-Sleep -s 10
 }
 function Install-Raccine-LogOnly {
-    $Command = "$($RaccineInstallerFolder)\install-raccine.bat FULL_SIMU"
-    Invoke-Expression $Command
-    Start-Sleep -s 1
+    $Proc = Start-Process -FilePath "$($RaccineInstallerFolder)\install-raccine.bat" -ArgumentList "FULL_SIMU" -PassThru 
+    $Proc.WaitForExit()
+    Start-Sleep -s 10
 }
 function Is-Running($ProcessName) {
     $process = Get-Process $ProcessName -ErrorAction SilentlyContinue
@@ -31,11 +31,13 @@ function Is-Running($ProcessName) {
 }
 
 # ###########################################################
+# Preperations
+
+# ###########################################################
 # Test 1 - Log Only : Vssadmin Delete Shadows
 Install-Raccine-LogOnly
-Start-Sleep -s 1
-Invoke-Expression "vssadmin delete shadows"
-Start-Sleep -s 2
+Invoke-Expression "vssadmin.exe delete shadows" 
+Start-Sleep -s 10
 
 # Check correct handling
 # Log File
@@ -58,7 +60,6 @@ If ( Is-Running("vssadmin") ) {
     Write-Host "Process is still running"
     exit 1
 }
-Start-Sleep -s 10
 
 # Cleanup
 # Uninstall Raccine
