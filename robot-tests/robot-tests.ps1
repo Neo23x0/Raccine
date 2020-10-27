@@ -12,6 +12,11 @@ function Uninstall-Raccine {
     Invoke-Expression $Command
     Start-Sleep -s 1
 }
+function Install-Raccine {
+    $Command = "$($RaccineInstallerFolder)\install-raccine.bat FULL"
+    Invoke-Expression $Command
+    Start-Sleep -s 1
+}
 function Install-Raccine-LogOnly {
     $Command = "$($RaccineInstallerFolder)\install-raccine.bat FULL_SIMU"
     Invoke-Expression $Command
@@ -27,8 +32,7 @@ function Is-Running($ProcessName) {
 
 # ###########################################################
 # Test 1 - Log Only : Vssadmin Delete Shadows
-Uninstall-Raccine
-Install-Raccine-LogOnly
+Install-Raccine
 Start-Sleep -s 1
 Invoke-Expression "vssadmin delete shadows"
 Start-Sleep -s 2
