@@ -32,7 +32,7 @@ Invoke-Expression "vssadmin delete shadows"
 # Check correct handling
 # Evenlog
 $Result = Get-EventLog -LogName Application -Message *Raccine* -Newest 1
-If ( $Result.Message -NotMatch "deleteX shadows" ) { 
+If ( $Result.Message -NotMatch "delete shadows" ) { 
     Write-Host "Eventlog entry of detection not found"
     exit 1 
 }
