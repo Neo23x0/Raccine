@@ -33,7 +33,7 @@ function Is-Running($ProcessName) {
 # ###########################################################
 # Test 1 : Vssadmin Delete Shadows
 Install-Raccine
-Invoke-Expression "Raccine.exe vssadmin.exe delete shadows" 
+Invoke-Expression "& 'C:\Program Files\Raccine\Raccine.exe' vssadmin.exe delete shadows" 
 Start-Sleep -s 10
 
 # Check correct handling
