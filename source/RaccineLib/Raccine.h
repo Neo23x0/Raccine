@@ -73,10 +73,8 @@ std::wstring logFormatAction(DWORD pid, const std::wstring& imageName, const std
 // Log to file
 void logSend(const std::wstring& logStr);
 
-DWORD createChildProcessWithDebugger(std::wstring command_line,
-                                     DWORD dwAdditionalCreateParams,
-                                     ProcessHandleWrapper& phProcess,
-                                     ThreadHandleWrapper& phThread);
+std::tuple<DWORD, ProcessHandleWrapper, ThreadHandleWrapper> createChildProcessWithDebugger(std::wstring command_line,
+                                                                                            DWORD dwAdditionalCreateParams);
 
 // Find all parent processes
 std::set<DWORD> find_processes_to_kill(const std::wstring& sCommandLine, std::wstring& sListLogs);

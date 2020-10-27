@@ -39,12 +39,8 @@ int wmain(int argc, WCHAR* argv[])
         sCommandLineStr = sCommandLine;
     }
 
-    ThreadHandleWrapper hThread = INVALID_HANDLE_VALUE;
-    ProcessHandleWrapper hProcess = INVALID_HANDLE_VALUE;
-    const DWORD dwChildPid = createChildProcessWithDebugger(sCommandLineStr,
-                                                            CREATE_SUSPENDED,
-                                                            hProcess,
-                                                            hThread);
+    auto [dwChildPid, hProcess, hThread] = createChildProcessWithDebugger(sCommandLineStr,
+                                                                          CREATE_SUSPENDED);
     // TODO: What happens if the process isn't created?
 
     const DWORD dwParentPid = utils::getParentPid(GetCurrentProcessId());
