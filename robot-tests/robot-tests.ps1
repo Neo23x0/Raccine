@@ -32,7 +32,7 @@ function Is-Running($ProcessName) {
 
 # ###########################################################
 # Test 1 - Log Only : Vssadmin Delete Shadows
-Install-Raccine
+Install-Raccine-LogOnly
 Start-Sleep -s 1
 Invoke-Expression "vssadmin delete shadows"
 Start-Sleep -s 2

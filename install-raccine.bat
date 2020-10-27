@@ -124,6 +124,8 @@ IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry. Installation failed.
     GOTO MENU
 )
+REG QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\vssadmin.exe" /v Debugger
+TIMEOUT /t 3
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-wmic.reg 
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-wbadmin.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
@@ -176,6 +178,8 @@ IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry. Installation failed.
     GOTO MENU
 )
+REG QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\vssadmin.exe" /v Debugger
+TIMEOUT /t 3
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-wmic.reg 
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-wbadmin.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
@@ -227,6 +231,8 @@ IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry. Installation failed.
     GOTO MENU
 )
+REG QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\vssadmin.exe" /v Debugger
+TIMEOUT /t 3
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
 ECHO Registering Eventlog Events
 eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine Setup: Registration of Event ID 1" 2> nul
