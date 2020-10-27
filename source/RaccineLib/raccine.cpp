@@ -388,11 +388,10 @@ void logSend(const std::wstring& logStr)
     }
 }
 
-DWORD createChildProcessWithDebugger(std::wstring command_line,
-                                    DWORD dwAdditionalCreateParams,
-                                    ProcessHandleWrapper& phProcess,
-                                    ThreadHandleWrapper& phThread)
+std::tuple<DWORD, ProcessHandleWrapper, ThreadHandleWrapper> createChildProcessWithDebugger(std::wstring command_line,
+                                                                                            DWORD dwAdditionalCreateParams)
 {
+
     STARTUPINFO info = { sizeof(info) };
     PROCESS_INFORMATION processInfo{};
 
@@ -412,14 +411,12 @@ DWORD createChildProcessWithDebugger(std::wstring command_line,
                                     &info,
                                     &processInfo);
     if (res == 0) {
-        return 0;
+        return {0, INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE };
     }
 
     DebugActiveProcessStop(processInfo.dwProcessId);
 
-    phProcess = processInfo.hProcess;  // Caller responsible for closing
-    phThread = processInfo.hThread;  // Caller responsible for closing
-    return processInfo.dwProcessId;
+    return { processInfo.dwProcessId, processInfo.hProcess, processInfo.hThread };
 }
 
 std::set<DWORD> find_processes_to_kill(const std::wstring& sCommandLine, std::wstring& sListLogs)
@@ -467,5 +464,5 @@ void find_and_kill_processes(bool log_only, const std::wstring& sCommandLine, st
     }
 
     printf("\nRaccine v%s finished\n", VERSION);
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    //std::this_thread::sleep_for(std::chrono::seconds(5));
 }
