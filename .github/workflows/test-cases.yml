@@ -12,7 +12,7 @@ on:
     - main
 
 jobs:
-  msbuild:
+  build:
     runs-on: 'windows-latest'
     steps:
     - name: Checkout Raccine
@@ -46,5 +46,5 @@ jobs:
       shell: cmd
 
     - name: Run Test 1
-      run: ./robot-test/robot-tests.ps1
+      run: ./robot-tests/robot-tests.ps1
       shell: powershell
