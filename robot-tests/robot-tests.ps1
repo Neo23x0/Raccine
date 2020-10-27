@@ -4,6 +4,7 @@
 # Florian Roth
 
 $RaccineInstallerFolder = ".\Raccine"
+$LogFile = "C:\ProgramData\Raccine\Raccine_log.txt"
 
 # Functions
 function Uninstall-Raccine {
@@ -24,17 +25,27 @@ function Is-Running($ProcessName) {
     return $False
 }
 
+# ###########################################################
 # Test 1 - Log Only : Vssadmin Delete Shadows
 Uninstall-Raccine
 Install-Raccine-LogOnly
 Start-Sleep -s 1
 Invoke-Expression "vssadmin delete shadows"
 Start-Sleep -s 2
+
 # Check correct handling
+# Log File
+$LogContent = Get-Content $LogFile
+$cointainsKeywords = $LogContent | %{$_ -match "vssadmin"}
+If ( -Not $cointainsKeywords ) { 
+    Write-Host $LogContent
+    Write-Host "Log file entry of detection not found"
+    exit 1 
+}
 # Evenlog
 $Result = Get-EventLog -LogName Application -Message *Raccine* -Newest 1
-Write-Host $Result.Message
 If ( $Result.Message -NotMatch "delete shadows" ) { 
+    Write-Host $Result.Message
     Write-Host "Eventlog entry of detection not found"
     exit 1 
 }
@@ -43,8 +54,8 @@ If ( Is-Running("vssadmin") ) {
     Write-Host "Process is still running"
     exit 1
 }
-Start-Sleep -s 5
+Start-Sleep -s 10
 
 # Cleanup
 # Uninstall Raccine
-Uninstall-Raccine
+#Uninstall-Raccine
