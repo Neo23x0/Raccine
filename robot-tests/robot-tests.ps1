@@ -8,18 +8,15 @@ $LogFile = "C:\ProgramData\Raccine\Raccine_log.txt"
 
 # Functions
 function Uninstall-Raccine {
-    $Proc = Start-Process -FilePath "$($RaccineInstallerFolder)\install-raccine.bat" -ArgumentList "UNINSTALL" -PassThru
-    $Proc.WaitForExit()
+    Invoke-Expression "$($RaccineInstallerFolder)\install-raccine.bat UNINSTALL"
     Start-Sleep -s 10
 }
 function Install-Raccine {
-    $Proc = Start-Process -FilePath "$($RaccineInstallerFolder)\install-raccine.bat" -ArgumentList "FULL" -PassThru
-    $Proc.WaitForExit()
+    Invoke-Expression "$($RaccineInstallerFolder)\install-raccine.bat FULL"
     Start-Sleep -s 10
 }
 function Install-Raccine-LogOnly {
-    $Proc = Start-Process -FilePath "$($RaccineInstallerFolder)\install-raccine.bat" -ArgumentList "FULL_SIMU" -PassThru 
-    $Proc.WaitForExit()
+    Invoke-Expression "$($RaccineInstallerFolder)\install-raccine.bat FULL_SIM"
     Start-Sleep -s 10
 }
 function Is-Running($ProcessName) {
@@ -34,8 +31,8 @@ function Is-Running($ProcessName) {
 # Preperations
 
 # ###########################################################
-# Test 1 - Log Only : Vssadmin Delete Shadows
-Install-Raccine-LogOnly
+# Test 1 : Vssadmin Delete Shadows
+Install-Raccine
 Invoke-Expression "vssadmin.exe delete shadows" 
 Start-Sleep -s 10
 
