@@ -12,7 +12,7 @@ on:
     - main
 
 jobs:
-  build:
+  robot-tests:
     runs-on: 'windows-latest'
     steps:
     - name: Checkout Raccine
@@ -48,3 +48,6 @@ jobs:
     - name: Run Test 1
       run: ./robot-tests/robot-tests.ps1
       shell: powershell
+
+    - name: Hard End
+      run: git config --local --get remote.origin.url
