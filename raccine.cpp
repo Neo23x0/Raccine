@@ -18,8 +18,6 @@ int wmain(int argc, WCHAR* argv[])
 {
     setlocale(LC_ALL, "");
 
-    getchar();
-
     std::vector<std::wstring> command_line;
     std::wstring sCommandLine;
 
