@@ -18,6 +18,8 @@ int wmain(int argc, WCHAR* argv[])
 {
     setlocale(LC_ALL, "");
 
+    getchar();
+
     std::vector<std::wstring> command_line;
     std::wstring sCommandLine;
 
@@ -103,7 +105,7 @@ int wmain(int argc, WCHAR* argv[])
         if (hThread != INVALID_HANDLE_VALUE && hProcess != INVALID_HANDLE_VALUE) {
 
             ResumeThread(hThread);
-            //WaitForSingleObject(hProcess, INFINITE);
+            WaitForSingleObject(hProcess, INFINITE);
         }
     } else {
         if (bBlock) {
