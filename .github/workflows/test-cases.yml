@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  # Trigger the workflow on push or pull requests, but only for the
+  # main branch
+  push:
+    branches:
+    - main
+    - '*/ci'
+  pull_request:
+    branches:
+    - main
+
+jobs:
+  msbuild:
+    runs-on: 'windows-latest'
+    steps:
+    - name: Checkout Raccine
+      uses: actions/checkout@v2
+
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.2
+      
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.2
+    
+    - name: Nuget Restore
+      run: nuget restore Raccine.sln
+
+    - name: Run msbuild of Raccine for x86 release
+      run: msbuild -m /p:Configuration=Release /p:Platform=x86
+
+    - name: Run msbuild of Raccine for x64 release
+      run: msbuild -m /p:Configuration=Release /p:Platform=x64
+
+    - name: Run msbuild of RaccineGUI for release
+      run: msbuild -m /p:Configuration=Release
+      working-directory: ./RaccineGUI/RaccineCfg
+
+    - name: Run msbuild of RaccineGUI for release
+      run: msbuild -m /p:Configuration=Release
+      working-directory: ./RaccineGUI/RaccineCfg
+
+    - name: Run build_dist.bat
+      run: ./build_dist.bat
+      shell: cmd
+
+    - name: Run Test 1
+      run: ./robot-test/robot-tests.ps1
+      shell: powershell
