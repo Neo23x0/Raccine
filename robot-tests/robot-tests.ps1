@@ -16,7 +16,7 @@ function Install-Raccine {
     Start-Sleep -s 10
 }
 function Install-Raccine-LogOnly {
-    Invoke-Expression "$($RaccineInstallerFolder)\install-raccine.bat FULL_SIM"
+    Invoke-Expression "$($RaccineInstallerFolder)\install-raccine.bat FULL_SIMU"
     Start-Sleep -s 10
 }
 function Is-Running($ProcessName) {
