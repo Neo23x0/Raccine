@@ -3,6 +3,9 @@ SET __COMPAT_LAYER=RunAsInvoker
 SETLOCAL EnableDelayedExpansion
 CLS 
 
+:: Command Line Param
+SET SELECTED_OPTION=%1
+
 :: BatchGotAdmin
 :: Source: https://stackoverflow.com/a/10052222
 :-------------------------------------
@@ -71,6 +74,7 @@ ECHO.
 :: Option set via ENV variables
 IF "%SELECTED_OPTION%"=="FULL" GOTO FULL
 IF "%SELECTED_OPTION%"=="SOFT" GOTO SOFT
+IF "%SELECTED_OPTION%"=="FULL_SIMU" GOTO FULL_SIMU
 IF "%SELECTED_OPTION%"=="UNINSTALL" GOTO UNINSTALL
 
 :: Options set by user
