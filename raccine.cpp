@@ -107,7 +107,7 @@ int wmain(int argc, WCHAR* argv[])
         if (hThread != INVALID_HANDLE_VALUE && hProcess != INVALID_HANDLE_VALUE) {
 
             ResumeThread(hThread);
-            WaitForSingleObject(hProcess, INFINITE);
+            //WaitForSingleObject(hProcess, INFINITE);
         }
     } else {
         if (bBlock) {
