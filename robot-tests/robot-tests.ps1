@@ -28,9 +28,6 @@ function Is-Running($ProcessName) {
 }
 
 # ###########################################################
-# Preperations
-
-# ###########################################################
 # Test 1 : Vssadmin Delete Shadows
 Install-Raccine-LogOnly
 Invoke-Expression "& 'C:\Program Files\Raccine\Raccine.exe' vssadmin.exe delete shadows" 
@@ -57,6 +54,9 @@ If ( Is-Running("vssadmin") ) {
     Write-Host "Process is still running"
     exit 1
 }
+
+# End Message
+Write-Host "All checks completed successfully"
 
 # Cleanup
 # Uninstall Raccine
