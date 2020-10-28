@@ -388,7 +388,7 @@ void logSend(const std::wstring& logStr)
     }
 }
 
-std::tuple<DWORD, ProcessHandleWrapper, ThreadHandleWrapper> createChildProcessWithDebugger(std::wstring command_line,
+std::tuple<DWORD, ProcessHandleWrapper, ThreadHandleWrapper> createChildProcessWithDebugger(LPWSTR lpzchildCommandLine,
                                                                                             DWORD dwAdditionalCreateParams)
 {
 
@@ -400,8 +400,10 @@ std::tuple<DWORD, ProcessHandleWrapper, ThreadHandleWrapper> createChildProcessW
     constexpr BOOL INHERIT_HANDLES = TRUE;
     constexpr LPVOID USE_CALLER_ENVIRONMENT = nullptr;
     constexpr LPCWSTR USE_CALLER_WORKING_DIRECTORY = nullptr;
+
+
     const BOOL res = CreateProcessW(NO_APPLICATION_NAME,
-                                    static_cast<LPWSTR>(command_line.data()),
+                                     lpzchildCommandLine,
                                     DEFAULT_SECURITY_ATTRIBUTES,
                                     DEFAULT_SECURITY_ATTRIBUTES,
                                     INHERIT_HANDLES,

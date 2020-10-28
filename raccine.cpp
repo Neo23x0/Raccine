@@ -32,15 +32,14 @@ int wmain(int argc, WCHAR* argv[])
     // Launch the new child in a suspended state (CREATE_SUSPENDED)
     // this will allow yara rules to run against this process
     // if we should block, we will terminate it later
-    std::wstring sCommandLineStr;
+
+    //skip argv[0] and create a new command line string from our argv
+    LPWSTR lpzchildCommandLine = GetCommandLine() + (wcslen(argv[0]) + 1);
     if (needs_powershell_workaround(sCommandLine)) {
-        sCommandLineStr = std::wstring(L"powershell.exe ").append(sCommandLine);
-    } else {
-        sCommandLineStr = sCommandLine;
+        lpzchildCommandLine = (LPWSTR) std::wstring(L"powershell.exe ").append(sCommandLine).c_str();
     }
 
-    auto [dwChildPid, hProcess, hThread] = createChildProcessWithDebugger(sCommandLineStr,
-                                                                          CREATE_SUSPENDED);
+    auto [dwChildPid, hProcess, hThread] = createChildProcessWithDebugger(lpzchildCommandLine, CREATE_SUSPENDED);
     // TODO: What happens if the process isn't created?
 
     const DWORD dwParentPid = utils::getParentPid(GetCurrentProcessId());
@@ -49,10 +48,10 @@ int wmain(int argc, WCHAR* argv[])
 
     std::wstring szYaraOutput;
     const bool fYaraRuleMatched = EvaluateYaraRules(configuration,
-                                                    sCommandLine,
-                                                    szYaraOutput,
-                                                    dwChildPid,
-                                                    dwParentPid);
+        sCommandLine,
+        szYaraOutput,
+        dwChildPid,
+        dwParentPid);
 
     if (fYaraRuleMatched) {
         bBlock = true;
@@ -69,7 +68,8 @@ int wmain(int argc, WCHAR* argv[])
             message = L"Raccine detected malicious activity:\r\n" + sCommandLine + L"\r\n";
             // Log to the text log file
             sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity"));
-        } else {
+        }
+        else {
             // Eventlog
             message = L"Raccine detected malicious activity:\r\n" + sCommandLine + L"\r\n(simulation mode)";
             // Log to the text log file
@@ -105,7 +105,8 @@ int wmain(int argc, WCHAR* argv[])
             ResumeThread(hThread);
             WaitForSingleObject(hProcess, INFINITE);
         }
-    } else {
+    }
+    else {
         if (bBlock) {
             utils::killProcess(dwChildPid, 1);
         }
