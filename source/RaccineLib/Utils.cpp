@@ -303,6 +303,8 @@ ProcessDetail::ProcessDetail(DWORD dwPid) :
 
     ProcessDetailStruct.CommandLine = GetProcessCommandLine(dwPid);
     std::replace(ProcessDetailStruct.CommandLine.begin(), ProcessDetailStruct.CommandLine.end(), '"', '\'');
+    ProcessDetailStruct.CommandLine.erase(std::remove(ProcessDetailStruct.CommandLine.begin(), ProcessDetailStruct.CommandLine.end(), '\r'));
+    ProcessDetailStruct.CommandLine.erase(std::remove(ProcessDetailStruct.CommandLine.begin(), ProcessDetailStruct.CommandLine.end(), '\n'));
 
     ProcessDetailStruct.TimeSinceExeCreation = getLastWriteTime(ProcessDetailStruct.ExePath);
 }

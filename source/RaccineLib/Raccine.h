@@ -73,7 +73,7 @@ std::wstring logFormatAction(DWORD pid, const std::wstring& imageName, const std
 // Log to file
 void logSend(const std::wstring& logStr);
 
-std::tuple<DWORD, ProcessHandleWrapper, ThreadHandleWrapper> createChildProcessWithDebugger(std::wstring command_line,
+std::tuple<DWORD, ProcessHandleWrapper, ThreadHandleWrapper> createChildProcessWithDebugger(LPWSTR lpzchildCommandLine,
                                                                                             DWORD dwAdditionalCreateParams);
 
 // Find all parent processes
