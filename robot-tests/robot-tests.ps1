@@ -35,7 +35,7 @@ $MalCmds = @(
 
 $GoodCmds = @(
     "vssadmin.exe", 
-    "powershell.exe -EncodedCommand AllIsGood", 
+    "powershell.exe -EncodedCommand AllIsGood" 
 )
 
 # ########################################################
