@@ -33,6 +33,15 @@ $MalCmds = @(
     "WMIC.exe delete justatest"
 )
 
+$GoodCmds = @(
+    "vssadmin.exe", 
+    "powershell.exe -EncodedCommand AllIsGood", 
+)
+
+# ########################################################
+# Malicious Command Tests
+# 
+
 Foreach ($Cmd in $MalCmds) {
 
     # Save some substrings
@@ -76,6 +85,51 @@ Foreach ($Cmd in $MalCmds) {
 
     # End Message
     Write-Host "All checks completed successfully in test case: '$($Cmd)'"
+    Start-Sleep -s 5
+
+    # Cleanup
+    Uninstall-Raccine
+}
+
+
+# ########################################################
+# Good Command Tests
+# 
+
+Foreach ($Cmd in $GoodCmds) {
+
+    # Save some substrings
+    $Img = $Cmd.Split(" ")[0]
+    $ImgBase = $Img.Split(".")[0]
+    Write-Host "Image File: $($Img)"
+
+    # Install Raccine
+    Install-Raccine-LogOnly
+
+    # Run malicious command
+    Invoke-Expression "& 'C:\Program Files\Raccine\Raccine.exe' $($Cmd)" 
+    Start-Sleep -s 10
+
+    # Check correct handling
+    # Log File
+    $LogContent = Get-Content $LogFile
+    $cointainsKeywords = $LogContent | %{$_ -Match $Cmd}
+    If ( $cointainsKeywords ) { 
+        Write-Host $LogContent
+        Write-Host "Error: Log file entry of detection found"
+        exit 1 
+    }
+
+    # Evenlog
+    $Result = Get-EventLog -LogName Application -Message *Raccine* -Newest 1
+    If ( $Result.Message -Match $Cmd ) { 
+        Write-Host $Result.Message
+        Write-Host "Error: Eventlog entry of detection found"
+        exit 1 
+    }
+
+    # End Message
+    Write-Host "All good command checks completed successfully in test case: '$($Cmd)'"
     Start-Sleep -s 5
 
     # Cleanup
