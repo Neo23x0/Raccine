@@ -44,6 +44,11 @@ $GoodCmds = @(
 
 Foreach ($Cmd in $MalCmds) {
 
+    Write-Host " ########################################################## "
+    Write-Host " MALICIOUS Command"
+    Write-Host " $($Cmd)"
+    Write-Host " ########################################################## "
+
     # Save some substrings
     $Img = $Cmd.Split(" ")[0]
     $ImgBase = $Img.Split(".")[0]
@@ -76,7 +81,7 @@ Foreach ($Cmd in $MalCmds) {
 
     # Killed process / not hanging process
     if ( $ImgBase -NotMatch 'powershell') {
-        Write-Host "Testing if process $($ImgBase) is still running ..."
+        #Write-Host "Testing if process $($ImgBase) is still running ..."
         If ( Is-Running($ImgBase) ) { 
             Write-Host "Error: Malicious process is still running (probably suspended)"
             exit 1
@@ -97,6 +102,11 @@ Foreach ($Cmd in $MalCmds) {
 # 
 
 Foreach ($Cmd in $GoodCmds) {
+
+    Write-Host " ########################################################## "
+    Write-Host " GOOD Command"
+    Write-Host " $($Cmd)"
+    Write-Host " ########################################################## "
 
     # Save some substrings
     $Img = $Cmd.Split(" ")[0]
