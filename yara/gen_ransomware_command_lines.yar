@@ -19,7 +19,6 @@ rule ransomware_command_lines
         $p_recoveryenabled   = "recoveryenabled" fullword nocase
         $p_ignoreallfailures = "ignoreallfailures" fullword nocase
         $p_win32_shadowcopy = "win32_shadowcopy" fullword nocase
-        $p_encodedCommand = " -e" 
     
     condition:
             (
@@ -32,7 +31,6 @@ rule ransomware_command_lines
                 or ( $e_bcdedit and $p_recoveryenabled)
                 or ( $e_diskshadow and $p_delete and $p_shadows)
                 or ( $e_powershell and $p_win32_shadowcopy)
-                or ( $e_powershell and $p_encodedCommand)
             )
         
 }

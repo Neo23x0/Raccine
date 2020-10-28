@@ -3,6 +3,9 @@ SET __COMPAT_LAYER=RunAsInvoker
 SETLOCAL EnableDelayedExpansion
 CLS 
 
+:: Command Line Param
+SET SELECTED_OPTION=%1
+
 :: BatchGotAdmin
 :: Source: https://stackoverflow.com/a/10052222
 :-------------------------------------
@@ -71,6 +74,7 @@ ECHO.
 :: Option set via ENV variables
 IF "%SELECTED_OPTION%"=="FULL" GOTO FULL
 IF "%SELECTED_OPTION%"=="SOFT" GOTO SOFT
+IF "%SELECTED_OPTION%"=="FULL_SIMU" GOTO FULL_SIMU
 IF "%SELECTED_OPTION%"=="UNINSTALL" GOTO UNINSTALL
 
 :: Options set by user
@@ -120,6 +124,8 @@ IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry. Installation failed.
     GOTO MENU
 )
+REG QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\vssadmin.exe" /v Debugger
+TIMEOUT /t 3
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-wmic.reg 
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-wbadmin.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
@@ -172,6 +178,8 @@ IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry. Installation failed.
     GOTO MENU
 )
+REG QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\vssadmin.exe" /v Debugger
+TIMEOUT /t 3
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-wmic.reg 
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-wbadmin.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
@@ -223,6 +231,8 @@ IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry. Installation failed.
     GOTO MENU
 )
+REG QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\vssadmin.exe" /v Debugger
+TIMEOUT /t 3
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
 ECHO Registering Eventlog Events
 eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine Setup: Registration of Event ID 1" 2> nul
@@ -290,3 +300,4 @@ TIMEOUT /t 30
 GOTO MENU
 
 :EOF
+EXIT /B %ERRORLEVEL%
