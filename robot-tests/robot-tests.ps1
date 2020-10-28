@@ -30,7 +30,8 @@ function Is-Running($ProcessName) {
 $MalCmds = @(
     "vssadmin.exe delete shadows", 
     "powershell.exe -e JABbaTheHutt", 
-    "WMIC.exe delete justatest"
+    # "WMIC.exe delete justatest"  # doesn't create a YARA match in Github workflow
+    "bcdedit.exe recoveryenabled"
 )
 
 $GoodCmds = @(
@@ -66,8 +67,8 @@ Foreach ($Cmd in $MalCmds) {
     $LogContent = Get-Content $LogFile
     $cointainsKeywords = $LogContent | %{$_ -match $Cmd}
     If ( -Not $cointainsKeywords ) { 
-        Write-Host $LogContent
-        Write-Host "Error: Log file entry of detection not found"
+        Write-Host "Log file content: $($LogContent)"
+        Write-Host "Error: Log file entry of detection not found (Command: $($Cmd)"
         exit 1 
     }
 
