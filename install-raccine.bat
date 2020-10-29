@@ -40,9 +40,11 @@ IF '%errorlevel%' NEQ '0' (
 
 :: Check Architecture and set postfix
 SET ARCH=
+SET ARCH_YARA=64
 IF "%PROCESSOR_ARCHITECTURE%" EQU "x86" (
     ECHO Detected x86 architecture
     SET ARCH=_x86
+    SET ARCH_YARA=86
 )
 
 :MENU
@@ -105,7 +107,7 @@ COPY RaccineSettings.exe "%ProgramFiles%\Raccine\"
 :: Raccine Program Files
 COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
 COPY yara\runyara.bat "%ProgramFiles%\Raccine\"
-COPY yara\yara64.exe "%ProgramFiles%\Raccine\"
+COPY yara\yara%ARCH_YARA%.exe "%ProgramFiles%\Raccine\"
 :: Setting the Path
 SETX /M Path "%PATH%;%ProgramFiles%\Raccine"
 :: Raccine Data
@@ -158,7 +160,7 @@ COPY RaccineSettings.exe "%ProgramFiles%\Raccine\"
 :: Raccine Program Files
 COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
 COPY yara\runyara.bat "%ProgramFiles%\Raccine\"
-COPY yara\yara64.exe "%ProgramFiles%\Raccine\"
+COPY yara\yara%ARCH_YARA%.exe "%ProgramFiles%\Raccine\"
 :: Setting the Path
 SETX /M Path "%PATH%;%ProgramFiles%\Raccine"
 :: Raccine Data
@@ -210,7 +212,7 @@ COPY RaccineSettings.exe "%ProgramFiles%\Raccine\"
 :: Raccine Program Files
 COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
 COPY yara\runyara.bat "%ProgramFiles%\Raccine\"
-COPY yara\yara64.exe "%ProgramFiles%\Raccine\"
+COPY yara\yara%ARCH_YARA%.exe "%ProgramFiles%\Raccine\"
 :: Setting the Path
 SETX /M Path "%PATH%;%ProgramFiles%\Raccine"
 :: Raccine Data
