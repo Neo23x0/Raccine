@@ -66,7 +66,8 @@ ECHO   1 - Install Raccine for all possible methods
 ECHO   2 - Install Raccine for all possible methods (simulation mode, logging only)
 ECHO   3 - Install Raccine for Vssadmin and BcdEdit only
 ECHO   4 - Disable GUI elements (alert window, settings tray icon)
-ECHo   5 - Run Windows Hardening Script (select 4 for more information)
+ECHO   5 - Disable automatic rule updates
+ECHo   6 - Run Windows Hardening Script
 ECHO   U - Uninstall Raccine
 ECHO   E - EXIT
 ECHO.
@@ -83,7 +84,8 @@ IF %M%==1 GOTO FULL
 IF %M%==2 GOTO FULL_SIMU
 IF %M%==3 GOTO SOFT
 IF %M%==4 GOTO DISABLEGUI
-IF %M%==5 GOTO HARDENING
+IF %M%==5 GOTO DISABLEUPDATES
+IF %M%==6 GOTO HARDENING
 IF %M%==U GOTO UNINSTALL
 IF %M%==u GOTO UNINSTALL
 IF %M%==E GOTO EOF
@@ -96,6 +98,7 @@ GOTO MENU
 :FULL
 ECHO.
 :: Cleanup existing elements
+TASKKILL /F /IM Raccine.exe
 TASKKILL /F /IM RaccineSettings.exe
 TASKKILL /F /IM RaccineRulesSync.exe.exe
 :: Raccine GUI Elements
@@ -108,14 +111,15 @@ COPY RaccineRulesSync.exe "%ProgramFiles%\Raccine\"
 COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
 COPY yara\runyara.bat "%ProgramFiles%\Raccine\"
 COPY yara\yara64.exe "%ProgramFiles%\Raccine\"
+:: YARA Rules
+MKDIR "%ProgramFiles%\Raccine\yara"
+ECHO Copying YARA rules to the directory ...
+COPY yara\*.yar "%ProgramFiles%\Raccine\yara"
 :: Setting the Path
 SETX /M Path "%PATH%;%ProgramFiles%\Raccine"
 :: Raccine Data
 ECHO Creating data directory "%ProgramData%\Raccine" ...
 MKDIR "%ProgramData%\Raccine"
-MKDIR "%ProgramData%\Raccine\yara"
-ECHO Copying YARA rules to the directory ...
-COPY yara\*.yar "%ProgramData%\Raccine\yara"
 ECHO Creating empty log file ...
 echo. 2>"%ProgramData%\Raccine\Raccine_log.txt"
 icacls "%ProgramData%\Raccine\Raccine_log.txt" /grant Users:F
@@ -138,13 +142,13 @@ eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine Setu
 :: Registry Settings
 REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 0 /F
 REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 2 /F
-REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d %ProgramData%\Raccine\yara /F
+REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d "%ProgramFiles%\Raccine\yara" /F
 :: Registering and starting the GUI elements
 REG ADD "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /t REG_SZ /F /D "%ProgramFiles%\Raccine\RaccineSettings.exe"
 START "" "%ProgramFiles%\Raccine\RaccineSettings.exe"
 :: Scheduled Task
 ECHO Adding scheduled task for rule updates
-SCHTASKS /create /tn "Raccine Rules Updater" /tr "\"%PROGRAMFILES%\Raccine\RaccineRulesSync.exe\"" /sc DAILY /mo 1 /f /RL highest
+SCHTASKS /create /tn "Raccine Rules Updater" /tr "\"%PROGRAMFILES%\Raccine\RaccineRulesSync.exe\"" /sc DAILY /mo 1 /f /RL highest /RU "NT AUTHORITY\SYSTEM" /NP
 SCHTASKS /RUN /TN "Raccine Rules Updater"
 :: in case of automation, directly got to EOF
 IF NOT "%SELECTED_OPTION%"=="" GOTO EOF
@@ -155,6 +159,7 @@ GOTO MENU
 :FULL_SIMU
 ECHO.
 :: Cleanup existing elements
+TASKKILL /F /IM Raccine.exe
 TASKKILL /F /IM RaccineSettings.exe
 TASKKILL /F /IM RaccineRulesSync.exe.exe
 :: Raccine GUI Elements
@@ -167,14 +172,15 @@ COPY RaccineRulesSync.exe "%ProgramFiles%\Raccine\"
 COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
 COPY yara\runyara.bat "%ProgramFiles%\Raccine\"
 COPY yara\yara64.exe "%ProgramFiles%\Raccine\"
+:: YARA Rules
+MKDIR "%ProgramFiles%\Raccine\yara"
+ECHO Copying YARA rules to the directory ...
+COPY yara\*.yar "%ProgramFiles%\Raccine\yara"
 :: Setting the Path
 SETX /M Path "%PATH%;%ProgramFiles%\Raccine"
 :: Raccine Data
 ECHO Creating data directory "%ProgramData%\Raccine" ...
 MKDIR "%ProgramData%\Raccine"
-MKDIR "%ProgramData%\Raccine\yara"
-ECHO Copying YARA rules to the directory ...
-COPY yara\*.yar "%ProgramData%\Raccine\yara"
 ECHO Creating empty log file ...
 echo. 2>"%ProgramData%\Raccine\Raccine_log.txt"
 icacls "%ProgramData%\Raccine\Raccine_log.txt" /grant Users:F
@@ -196,13 +202,13 @@ eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine Setu
 eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine Setup: Registration of Event ID 2" 2> nul
 REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 2 /F
 REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 2 /F
-REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d %ProgramData%\Raccine\yara /F
+REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d "%ProgramFiles%\Raccine\yara" /F
 :: Registering and starting the GUI elements
 REG ADD "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /t REG_SZ /F /D "%ProgramFiles%\Raccine\RaccineSettings.exe"
 START "" "%ProgramFiles%\Raccine\RaccineSettings.exe"
 :: Scheduled Task
 ECHO Adding scheduled task for rule updates
-SCHTASKS /create /tn "Raccine Rules Updater" /tr "\"%PROGRAMFILES%\Raccine\RaccineRulesSync.exe\"" /sc DAILY /mo 1 /f /RL highest
+SCHTASKS /create /tn "Raccine Rules Updater" /tr "\"%PROGRAMFILES%\Raccine\RaccineRulesSync.exe\"" /sc DAILY /mo 1 /f /RL highest /RU "NT AUTHORITY\SYSTEM" /NP
 SCHTASKS /RUN /TN "Raccine Rules Updater"
 :: in case of automation, directly got to EOF
 IF NOT "%SELECTED_OPTION%"=="" GOTO EOF
@@ -213,6 +219,7 @@ GOTO MENU
 :SOFT 
 ECHO.
 :: Cleanup existing elements
+TASKKILL /F /IM Raccine.exe
 TASKKILL /F /IM RaccineSettings.exe
 TASKKILL /F /IM RaccineRulesSync.exe.exe
 :: Raccine GUI Elements
@@ -225,14 +232,15 @@ COPY RaccineRulesSync.exe "%ProgramFiles%\Raccine\"
 COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
 COPY yara\runyara.bat "%ProgramFiles%\Raccine\"
 COPY yara\yara64.exe "%ProgramFiles%\Raccine\"
+:: YARA Rules
+MKDIR "%ProgramFiles%\Raccine\yara"
+ECHO Copying YARA rules to the directory ...
+COPY yara\*.yar "%ProgramFiles%\Raccine\yara"
 :: Setting the Path
 SETX /M Path "%PATH%;%ProgramFiles%\Raccine"
 :: Raccine Data
 ECHO Creating data directory "%ProgramData%\Raccine" ...
 MKDIR "%ProgramData%\Raccine"
-MKDIR "%ProgramData%\Raccine\yara"
-ECHO Copying YARA rules to the directory ...
-COPY yara\*.yar "%ProgramData%\Raccine\yara"
 ECHO Creating empty log file ...
 echo. 2>"%ProgramData%\Raccine\Raccine_log.txt"
 icacls "%ProgramData%\Raccine\Raccine_log.txt" /grant Users:F
@@ -250,13 +258,13 @@ eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine Setu
 eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine Setup: Registration of Event ID 2" 2> nul
 REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 0 /F
 REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 2 /F
-REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d %ProgramData%\Raccine\yara /F
+REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d "%ProgramFiles%\Raccine\yara" /F
 :: Registering and starting the GUI elements
 REG ADD "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /t REG_SZ /F /D "%ProgramFiles%\Raccine\RaccineSettings.exe"
 START "" "%ProgramFiles%\Raccine\RaccineSettings.exe"
 :: Scheduled Task
 ECHO Adding scheduled task for rule updates
-SCHTASKS /create /tn "Raccine Rules Updater" /tr "\"%PROGRAMFILES%\Raccine\RaccineRulesSync.exe\"" /sc DAILY /mo 1 /f /RL highest
+SCHTASKS /create /tn "Raccine Rules Updater" /tr "\"%PROGRAMFILES%\Raccine\RaccineRulesSync.exe\"" /sc DAILY /mo 1 /f /RL highest /RU "NT AUTHORITY\SYSTEM" /NP
 SCHTASKS /RUN /TN "Raccine Rules Updater"
 :: in case of automation, directly got to EOF
 IF NOT "%SELECTED_OPTION%"=="" GOTO EOF
@@ -271,6 +279,19 @@ ECHO.
 REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 2 /F
 TASKKILL /F /IM RaccineSettings.exe
 REG DELETE "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /F
+IF '%errorlevel%' NEQ '0' (
+    ECHO Something went wrong. Sorry.
+    GOTO MENU
+)
+TIMEOUT /t 30
+GOTO MENU
+
+:: Disable Updates
+:DISABLEUPDATES 
+ECHO.
+ECHO Disabling automatic updates ...
+ECHO.
+SCHTASKS /DELETE /TN "Raccine Rules Updater" /F
 IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry.
     GOTO MENU
@@ -294,6 +315,9 @@ GOTO MENU
 :: Uninstall
 :UNINSTALL
 ECHO.
+TASKKILL /F /IM Raccine.exe
+TASKKILL /F /IM RaccineSettings.exe
+TASKKILL /F /IM RaccineRulesSync.exe.exe
 ECHO Removing Raccine folders ...
 @RD /S /Q "%ProgramData%\Raccine"
 @RD /S /Q "%ProgramFiles%\Raccine"
@@ -310,6 +334,8 @@ IF '%errorlevel%' NEQ '0' (
 TASKKILL /F /IM RaccineSettings.exe
 TASKKILL /F /IM RaccineRulesSync.exe.exe
 REG DELETE "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /F
+:: Uninstall update task
+SCHTASKS /DELETE /TN "Raccine Rules Updater" /F
 :: in case of automation, directly got to EOF
 IF NOT "%SELECTED_OPTION%"=="" GOTO EOF
 TIMEOUT /t 30

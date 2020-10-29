@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Web.Script.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Win32;
 
@@ -35,7 +36,6 @@ namespace RaccineSettings
 
                 string szRulesDir = RulesDir;
 
-
                 JavaScriptSerializer js = new JavaScriptSerializer();
                 Rule[] rules = js.Deserialize<Rule[]>(jsonData);
                 uint iRuleCount = 0;
@@ -61,10 +61,12 @@ namespace RaccineSettings
                     }
                 }
                 Console.WriteLine("Updated {0} rules.", iRuleCount);
+                Thread.Sleep(2000);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
+                Thread.Sleep(4000);
             }
 
             return true;
@@ -74,12 +76,13 @@ namespace RaccineSettings
         {
             get
             {
-                string setting = Convert.ToString(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Raccine", "RulesDir", null));
-
+                RegistryKey RaccineKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Raccine", false);
+                String setting = (String)RaccineKey.GetValue("RulesDir");
                 if (String.IsNullOrEmpty(setting))
                 {
                     setting = Environment.ExpandEnvironmentVariables(@"%PROGRAMFILES%\Raccine\yara");
                 }
+                Console.WriteLine("YARA Rules directory is: {0}", setting);
                 return setting;
             }
 

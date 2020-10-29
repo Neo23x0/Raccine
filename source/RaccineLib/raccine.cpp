@@ -83,6 +83,7 @@ bool EvaluateYaraRules(const RaccineConfig& raccine_config,
     bool fRetVal = false;
 
     if (fSuccess) {
+        //wprintf(L"Checking rule dir: %s", raccine_config.yara_rules_directory().c_str());
         YaraRuleRunner rule_runner(raccine_config.yara_rules_directory(),
             utils::expand_environment_strings(RACCINE_PROGRAM_DIRECTORY));
         fRetVal = rule_runner.run_yara_rules_on_file(wTestFilename, lpCommandLine, outYaraOutput, AdditionalYaraDefines);

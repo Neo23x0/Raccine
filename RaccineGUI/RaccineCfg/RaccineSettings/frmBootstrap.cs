@@ -69,6 +69,7 @@ namespace RaccineSettings
 
             this.FormClosing += frmBootstrap_FormClosing;
             SetUacShield(mnuSettings);
+            SetUacShield(mnuUpdateRules);
         }
 
         private void SetUacShield(ToolStripMenuItem menuItem)
@@ -183,8 +184,8 @@ namespace RaccineSettings
         {
             string dir = AppDomain.CurrentDomain.BaseDirectory;
 
-            ProcessStartInfo psi = new ProcessStartInfo(Environment.SystemDirectory + "\\SCHTASKS.EXE");
-            psi.Arguments = "/Run /TN \"Raccine Rules Updater\"";
+            ProcessStartInfo psi = new ProcessStartInfo(dir + "\\RaccineRulesSync.exe");
+
             Process.Start(psi);
         }
     }
