@@ -23,3 +23,4 @@ XCOPY tools\yara64.exe Raccine\yara\
 :: GUI
 XCOPY RaccineGUI\RaccineCfg\RaccineElevatedCfg\bin\Release\RaccineElevatedCfg.exe Raccine\
 XCOPY RaccineGUI\RaccineCfg\RaccineSettings\bin\Release\RaccineSettings.exe Raccine\
+XCOPY RaccineGUI\RaccineCfg\RaccineRulesSync\bin\Release\RaccineRulesSync.exe Raccine\
