@@ -34,9 +34,9 @@
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.mnuSettings = new System.Windows.Forms.ToolStripMenuItem();
             this.createTroubleshootingLogsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuUpdateRules = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuLastAlert = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuExit = new System.Windows.Forms.ToolStripMenuItem();
-            this.updateRulesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -53,7 +53,7 @@
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.mnuSettings,
             this.createTroubleshootingLogsToolStripMenuItem,
-            this.updateRulesToolStripMenuItem,
+            this.mnuUpdateRules,
             this.mnuLastAlert,
             this.mnuExit});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
@@ -63,7 +63,7 @@
             // 
             this.mnuSettings.Name = "mnuSettings";
             this.mnuSettings.Size = new System.Drawing.Size(311, 32);
-            this.mnuSettings.Text = "Settings";
+            this.mnuSettings.Text = "&Settings";
             this.mnuSettings.Click += new System.EventHandler(this.mnuSettings_Click);
             // 
             // createTroubleshootingLogsToolStripMenuItem
@@ -72,6 +72,13 @@
             this.createTroubleshootingLogsToolStripMenuItem.Size = new System.Drawing.Size(311, 32);
             this.createTroubleshootingLogsToolStripMenuItem.Text = "Create &Troubleshooting Logs";
             this.createTroubleshootingLogsToolStripMenuItem.Click += new System.EventHandler(this.createTroubleshootingLogsToolStripMenuItem_Click);
+            // 
+            // mnuUpdateRules
+            // 
+            this.mnuUpdateRules.Name = "mnuUpdateRules";
+            this.mnuUpdateRules.Size = new System.Drawing.Size(311, 32);
+            this.mnuUpdateRules.Text = "Update &Rules";
+            this.mnuUpdateRules.Click += new System.EventHandler(this.updateRulesToolStripMenuItem_Click);
             // 
             // mnuLastAlert
             // 
@@ -84,15 +91,8 @@
             // 
             this.mnuExit.Name = "mnuExit";
             this.mnuExit.Size = new System.Drawing.Size(311, 32);
-            this.mnuExit.Text = "Exit";
+            this.mnuExit.Text = "E&xit";
             this.mnuExit.Click += new System.EventHandler(this.mnuExit_Click);
-            // 
-            // updateRulesToolStripMenuItem
-            // 
-            this.updateRulesToolStripMenuItem.Name = "updateRulesToolStripMenuItem";
-            this.updateRulesToolStripMenuItem.Size = new System.Drawing.Size(311, 32);
-            this.updateRulesToolStripMenuItem.Text = "Update &Rules";
-            this.updateRulesToolStripMenuItem.Click += new System.EventHandler(this.updateRulesToolStripMenuItem_Click);
             // 
             // frmBootstrap
             // 
@@ -116,6 +116,6 @@
         private System.Windows.Forms.ToolStripMenuItem mnuExit;
         private System.Windows.Forms.ToolStripMenuItem mnuLastAlert;
         private System.Windows.Forms.ToolStripMenuItem createTroubleshootingLogsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem updateRulesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem mnuUpdateRules;
     }
 }

@@ -29,7 +29,7 @@ namespace RaccineSettings
             {
                 using (var webClient = new System.Net.WebClient())
                 {
-                    webClient.Headers.Add("user-agent", "Mozilla/4.0 Raccine Ransomware Vaccine Rules Sync");
+                    webClient.Headers.Add("user-agent", "Mozilla/4.0");
                     jsonData = webClient.DownloadString(contentsUrl);
                 }
 
@@ -45,7 +45,7 @@ namespace RaccineSettings
                     {
                         using (var webClient = new System.Net.WebClient())
                         {
-                            webClient.Headers.Add("user-agent", "Mozilla/4.0 Raccine Ransomware Vaccine Rules Sync");
+                            webClient.Headers.Add("user-agent", "Mozilla/4.0");
                             string yararule = webClient.DownloadString(rule.download_url);
 
                             string szRulePath = szRulesDir + "\\" + rule.name;
@@ -78,7 +78,7 @@ namespace RaccineSettings
 
                 if (String.IsNullOrEmpty(setting))
                 {
-                    setting = Environment.ExpandEnvironmentVariables(@"%PROGRAMDATA%\Raccine\yara");
+                    setting = Environment.ExpandEnvironmentVariables(@"%PROGRAMFILES%\Raccine\yara");
                 }
                 return setting;
             }

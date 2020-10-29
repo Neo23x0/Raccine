@@ -67,7 +67,27 @@ namespace RaccineSettings
                     szRaccineUserContextDirectory, ex.Message));
             }
 
+            this.FormClosing += frmBootstrap_FormClosing;
+            SetUacShield(mnuSettings);
+        }
 
+        private void SetUacShield(ToolStripMenuItem menuItem)
+        {
+            NativeApi.SHSTOCKICONINFO iconResult = new NativeApi.SHSTOCKICONINFO();
+            iconResult.cbSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(iconResult);
+
+            NativeApi.SHGetStockIconInfo(
+                NativeApi.SHSTOCKICONID.SIID_SHIELD,
+                NativeApi.SHGSI.SHGSI_ICON | NativeApi.SHGSI.SHGSI_SMALLICON,
+                ref iconResult);
+
+            menuItem.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
+            menuItem.Image = Bitmap.FromHicon(iconResult.hIcon);
+        }
+
+        private void frmBootstrap_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            ReleaseResources();
         }
 
         private void mnuLastAlert_Click(object sender, EventArgs e)
@@ -84,15 +104,24 @@ namespace RaccineSettings
         {
             string  dir = AppDomain.CurrentDomain.BaseDirectory;
 
-            ProcessStartInfo psi = new ProcessStartInfo(dir + "\\RaccineElevatedCfg.exe");
-            psi.UseShellExecute = true;
-            psi.Verb = "runas";
-            Process.Start(psi);
+            try
+            {
+                ProcessStartInfo psi = new ProcessStartInfo(dir + "\\RaccineElevatedCfg.exe");
+                psi.UseShellExecute = true;
+                psi.Verb = "runas";
+                Process.Start(psi);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
+
         private void ReleaseResources()
         {
             this.singleInstanceMutex.Close();
             this.envMonitor.Stop();
+            WatcherThread.exit = true;
         }
 
         private void CreateTroubleShootingLogs()
@@ -154,7 +183,8 @@ namespace RaccineSettings
         {
             string dir = AppDomain.CurrentDomain.BaseDirectory;
 
-            ProcessStartInfo psi = new ProcessStartInfo(dir + "\\RaccineRulesSync.exe");
+            ProcessStartInfo psi = new ProcessStartInfo(Environment.SystemDirectory + "\\SCHTASKS.EXE");
+            psi.Arguments = "/Run /TN \"Raccine Rules Updater\"";
             Process.Start(psi);
         }
     }
@@ -175,6 +205,33 @@ namespace RaccineSettings
 
         public static UInt32 INFINITE = 0xFFFFFFFF;
         public const UInt32 WAIT_TIMEOUT = 0x00000102;
+
+        [DllImport("Shell32.dll", SetLastError = false)]
+        public static extern Int32 SHGetStockIconInfo(SHSTOCKICONID siid, SHGSI uFlags, ref SHSTOCKICONINFO psii);
+
+        public enum SHSTOCKICONID : uint
+        {
+            SIID_SHIELD = 77
+        }
+
+        [Flags]
+        public enum SHGSI : uint
+        {
+            SHGSI_ICON = 0x000000100,
+            SHGSI_SMALLICON = 0x000000001
+        }
+
+        [StructLayoutAttribute(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct SHSTOCKICONINFO
+        {
+            public UInt32 cbSize;
+            public IntPtr hIcon;
+            public Int32 iSysIconIndex;
+            public Int32 iIcon;
+
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+            public string szPath;
+        }
 
     }
     public class WatcherThread

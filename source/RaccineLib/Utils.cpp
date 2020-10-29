@@ -313,7 +313,8 @@ std::wstring ProcessDetail::ToString(const std::wstring& szPrefix) const
 {
     const std::wstring YaraDef = L" -d ";
 
-    std::wstring full_string = YaraDef + L" FromRaccine=\"true\" " + YaraDef + L" " + szPrefix + L"Name=\"" + ProcessDetailStruct.ExeName + L"\""
+    // we only need to pass FromRaccine="true" in once, so do it for the child process
+    std::wstring full_string = (szPrefix.length() == 0 ? YaraDef + L" FromRaccine=\"true\" " : L"")  + YaraDef + L" " + szPrefix + L"Name=\"" + ProcessDetailStruct.ExeName + L"\""
         + YaraDef + L" " + szPrefix + L"ExecutablePath=\"" + ProcessDetailStruct.ExePath + L"\""
         + YaraDef + L" " + szPrefix + L"CommandLine=\"" + ProcessDetailStruct.CommandLine + L"\""
         + YaraDef + L" " + szPrefix + L"TimeSinceExeCreation=" + std::to_wstring(ProcessDetailStruct.TimeSinceExeCreation)
