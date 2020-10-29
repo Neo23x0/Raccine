@@ -67,7 +67,9 @@ namespace RaccineSettings
                     szRaccineUserContextDirectory, ex.Message));
             }
 
+
         }
+
         private void mnuLastAlert_Click(object sender, EventArgs e)
         {
             NativeApi.SetEvent(this.alertEvent);
@@ -146,6 +148,14 @@ namespace RaccineSettings
         private void createTroubleshootingLogsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CreateTroubleShootingLogs();
+        }
+
+        private void updateRulesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string dir = AppDomain.CurrentDomain.BaseDirectory;
+
+            ProcessStartInfo psi = new ProcessStartInfo(dir + "\\RaccineRulesSync.exe");
+            Process.Start(psi);
         }
     }
 
