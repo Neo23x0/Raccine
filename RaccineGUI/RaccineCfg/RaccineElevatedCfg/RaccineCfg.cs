@@ -192,7 +192,7 @@ namespace RaccineElevatedCfg
         {
             get
             {
-                string setting = Convert.ToString(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Raccine", "RulesDir", @"%ProgramData%\Raccine"));
+                string setting = Convert.ToString(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Raccine", "RulesDir", @"%ProgramFiles%\Raccine\yara"));
                 return setting;
             }
             set

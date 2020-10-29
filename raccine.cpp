@@ -33,10 +33,14 @@ int wmain(int argc, WCHAR* argv[])
     // this will allow yara rules to run against this process
     // if we should block, we will terminate it later
 
-    //skip argv[0] and create a new command line string from our argv
+    //skip argv[0] and create a new command line string from our argv,
+    //if we get a quoted path for the exe back, adjust the command line to skip past that.
     LPWSTR lpzchildCommandLine = GetCommandLine() + (wcslen(argv[0]) + 1);
+    std::wstring originalCommandLine(GetCommandLine());
+    if (originalCommandLine.starts_with(L"\"") && (wcslen(argv[0]) + 3) < originalCommandLine.length())
+        lpzchildCommandLine = GetCommandLine() + (wcslen(argv[0]) + 3);
     if (needs_powershell_workaround(sCommandLine)) {
-        lpzchildCommandLine = (LPWSTR) std::wstring(L"powershell.exe ").append(sCommandLine).c_str();
+        lpzchildCommandLine = (LPWSTR)std::wstring(L"powershell.exe ").append(sCommandLine).c_str();
     }
 
     auto [dwChildPid, hProcess, hThread] = createChildProcessWithDebugger(lpzchildCommandLine, CREATE_SUSPENDED);

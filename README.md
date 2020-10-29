@@ -135,6 +135,7 @@ If you have a solid security monitoring that logs all process executions, you co
 - 0.10.3-5 - Minor fixes and additions
 - 1.0 BETA - GUI elements and YARA rule scanning of command line params
 - 1.1 BETA - YARA rule matching with external variables, troubleshooting functions
+- 1.2 BETA - Signature Updater
 
 ## Installation
 
@@ -156,11 +157,16 @@ As Administrator do:
 2. Remove `%ProgramFiles%\Raccine` and `%ProgramData%\Raccine folders
 3. Run `reg delete HKCU\Software\Raccine /F`
 4. Run `taskkill /F /IM RaccineSettings.exe` 
-5. Run `reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /F` 
+5. Run `reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /F`
+6. Run `schtasks /DELETE /TN "Raccine Rules Updater" /F`
 
-### Upgrade
+### Program Upgrade
 
 We recommend an uninstall and reinstall to upgrade. An uninstall removes all registry keys with configurations. 
+
+### Signature Update
+
+Raccine has an integrated signature-updater since version 1.2. This program named `RaccineRulesSync.exe` is configured to run once a day via scheduled task. You can run a signature update manually using the option in the tray icon menu. 
 
 ## Deploy Configuration via GPO
 

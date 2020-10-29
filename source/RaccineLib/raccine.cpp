@@ -32,10 +32,10 @@
 
 
 bool EvaluateYaraRules(const RaccineConfig& raccine_config,
-                       const std::wstring& lpCommandLine,
-                       std::wstring& outYaraOutput,
-                       DWORD dwChildPid,
-                       DWORD dwParentPid)
+    const std::wstring& lpCommandLine,
+    std::wstring& outYaraOutput,
+    DWORD dwChildPid,
+    DWORD dwParentPid)
 {
     if (raccine_config.is_debug_mode()) {
         wprintf(L"Running YARA on: %s\n", lpCommandLine.c_str());
@@ -43,7 +43,7 @@ bool EvaluateYaraRules(const RaccineConfig& raccine_config,
 
     WCHAR wTestFilename[MAX_PATH] = { 0 };
 
-    ExpandEnvironmentStringsW(RACCINE_YARA_DIRECTORY, wTestFilename, ARRAYSIZE(wTestFilename) - 1);
+    ExpandEnvironmentStringsW(RACCINE_USER_CONTEXT_DIRECTORY, wTestFilename, ARRAYSIZE(wTestFilename) - 1);
 
     const int c = GetTempFileNameW(wTestFilename, L"Raccine", 0, wTestFilename);
     if (c == 0) {
@@ -83,8 +83,9 @@ bool EvaluateYaraRules(const RaccineConfig& raccine_config,
     bool fRetVal = false;
 
     if (fSuccess) {
+        //wprintf(L"Checking rule dir: %s", raccine_config.yara_rules_directory().c_str());
         YaraRuleRunner rule_runner(raccine_config.yara_rules_directory(),
-                                   utils::expand_environment_strings(RACCINE_PROGRAM_DIRECTORY));
+            utils::expand_environment_strings(RACCINE_PROGRAM_DIRECTORY));
         fRetVal = rule_runner.run_yara_rules_on_file(wTestFilename, lpCommandLine, outYaraOutput, AdditionalYaraDefines);
     }
     DeleteFileW(wTestFilename);
@@ -99,7 +100,8 @@ void CreateContextFileForProgram(DWORD pid, DWORD session_id, DWORD parentPid, b
     std::wstring strDetails;
     if (fParent) {
         strDetails = details.ToString(L"Parent");
-    } else {
+    }
+    else {
         strDetails = details.ToString(L"");
     }
 
@@ -115,7 +117,7 @@ void WriteEventLogEntryWithId(const std::wstring& pszMessage, DWORD dwEventId)
 {
     constexpr LPCWSTR LOCAL_COMPUTER = nullptr;
     EventSourceHandleWrapper hEventSource = RegisterEventSourceW(LOCAL_COMPUTER,
-                                                                 L"Raccine");
+        L"Raccine");
     if (!hEventSource) {
         return;
     }
@@ -125,14 +127,14 @@ void WriteEventLogEntryWithId(const std::wstring& pszMessage, DWORD dwEventId)
     constexpr PSID NO_USER_SID = nullptr;
     constexpr LPVOID NO_BINARY_DATA = nullptr;
     ReportEventW(hEventSource,               // Event log handle
-                 EVENTLOG_INFORMATION_TYPE,  // Event type
-                 0,                          // Event category
-                 dwEventId,                  // Event identifier
-                 NO_USER_SID,                // No security identifier
-                 1,                          // Size of lpszStrings array
-                 0,                          // No binary data
-                 lpszStrings,                // Array of strings
-                 NO_BINARY_DATA              // No binary data
+        EVENTLOG_INFORMATION_TYPE,  // Event type
+        0,                          // Event category
+        dwEventId,                  // Event identifier
+        NO_USER_SID,                // No security identifier
+        1,                          // Size of lpszStrings array
+        0,                          // No binary data
+        lpszStrings,                // Array of strings
+        NO_BINARY_DATA              // No binary data
     );
 }
 
@@ -197,7 +199,7 @@ bool is_malicious_command_line(const std::vector<std::wstring>& command_line)
 
     // Check for keywords in command line parameters
     std::vector<std::wstring> command_line_parameters(command_line.begin() + 1,
-                                                      command_line.end());
+        command_line.end());
     for (const std::wstring& parameter : command_line_parameters) {
         // Convert wchar to wide string so we can perform contains/find command
         const std::wstring convertedArg(utils::to_lower(parameter));
@@ -205,25 +207,35 @@ bool is_malicious_command_line(const std::vector<std::wstring>& command_line)
         // Simple flag checks
         if (convertedArg == L"delete") {
             bDelete = true;
-        } else if (convertedArg == L"shadows") {
+        }
+        else if (convertedArg == L"shadows") {
             bShadows = true;
-        } else if (convertedArg == L"shadowstorage") {
+        }
+        else if (convertedArg == L"shadowstorage") {
             bShadowStorage = true;
-        } else if (convertedArg == L"resize") {
+        }
+        else if (convertedArg == L"resize") {
             bResize = true;
-        } else if (convertedArg == L"shadowcopy") {
+        }
+        else if (convertedArg == L"shadowcopy") {
             bShadowCopy = true;
-        } else if (convertedArg == L"catalog") {
+        }
+        else if (convertedArg == L"catalog") {
             bCatalog = true;
-        } else if (convertedArg == L"-quiet" || convertedArg == L"/quiet") {
+        }
+        else if (convertedArg == L"-quiet" || convertedArg == L"/quiet") {
             bQuiet = true;
-        } else if (convertedArg == L"recoveryenabled") {
+        }
+        else if (convertedArg == L"recoveryenabled") {
             bRecoveryEnabled = true;
-        } else if (convertedArg == L"ignoreallfailures") {
+        }
+        else if (convertedArg == L"ignoreallfailures") {
             bIgnoreallFailures = true;
-        } else if (convertedArg.find(L"win32_shadowcopy") != std::string::npos) {
+        }
+        else if (convertedArg.find(L"win32_shadowcopy") != std::string::npos) {
             bWin32ShadowCopy = true;
-        } else if (convertedArg == L"-version" || convertedArg == L"/version") {
+        }
+        else if (convertedArg == L"-version" || convertedArg == L"/version") {
             bVersion = true;
         }
     }
@@ -294,8 +306,8 @@ void trigger_gui_event()
 {
     constexpr BOOL DO_NOT_INHERIT = FALSE;
     EventHandleWrapper hEvent = OpenEventW(EVENT_MODIFY_STATE,
-                                           DO_NOT_INHERIT,
-                                           L"RaccineAlertEvent");
+        DO_NOT_INHERIT,
+        L"RaccineAlertEvent");
     if (hEvent) {
         SetEvent(hEvent);
     }
@@ -389,7 +401,7 @@ void logSend(const std::wstring& logStr)
 }
 
 std::tuple<DWORD, ProcessHandleWrapper, ThreadHandleWrapper> createChildProcessWithDebugger(LPWSTR lpzchildCommandLine,
-                                                                                            DWORD dwAdditionalCreateParams)
+    DWORD dwAdditionalCreateParams)
 {
 
     STARTUPINFO info = { sizeof(info) };
@@ -403,17 +415,17 @@ std::tuple<DWORD, ProcessHandleWrapper, ThreadHandleWrapper> createChildProcessW
 
 
     const BOOL res = CreateProcessW(NO_APPLICATION_NAME,
-                                     lpzchildCommandLine,
-                                    DEFAULT_SECURITY_ATTRIBUTES,
-                                    DEFAULT_SECURITY_ATTRIBUTES,
-                                    INHERIT_HANDLES,
-                                    DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS | dwAdditionalCreateParams,
-                                    USE_CALLER_ENVIRONMENT,
-                                    USE_CALLER_WORKING_DIRECTORY,
-                                    &info,
-                                    &processInfo);
+        lpzchildCommandLine,
+        DEFAULT_SECURITY_ATTRIBUTES,
+        DEFAULT_SECURITY_ATTRIBUTES,
+        INHERIT_HANDLES,
+        DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS | dwAdditionalCreateParams,
+        USE_CALLER_ENVIRONMENT,
+        USE_CALLER_WORKING_DIRECTORY,
+        &info,
+        &processInfo);
     if (res == 0) {
-        return {0, INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE };
+        return { 0, INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE };
     }
 
     DebugActiveProcessStop(processInfo.dwProcessId);
@@ -437,7 +449,8 @@ std::set<DWORD> find_processes_to_kill(const std::wstring& sCommandLine, std::ws
         if (!isAllowListed(pid)) {
             wprintf(L"\nCollecting IMAGE %s with PID %d for a kill\n", imageName.c_str(), pid);
             pids.insert(pid);
-        } else {
+        }
+        else {
             wprintf(L"\nProcess IMAGE %s with PID %d is on allowlist\n", imageName.c_str(), pid);
             sListLogs.append(logFormatAction(pid, imageName, sCommandLine, L"Whitelisted"));
         }
@@ -458,7 +471,8 @@ void find_and_kill_processes(bool log_only, const std::wstring& sCommandLine, st
             wprintf(L"Kill process IMAGE %s with PID %d\n", imageName.c_str(), process_id);
             utils::killProcess(process_id, 1);
             sListLogs.append(logFormatAction(process_id, imageName, sCommandLine, L"Terminated"));
-        } else {
+        }
+        else {
             // Simulated kill
             wprintf(L"Simulated Kill IMAGE %s with PID %d\n", imageName.c_str(), process_id);
             sListLogs.append(logFormatAction(process_id, imageName, sCommandLine, L"Terminated (Simulated)"));

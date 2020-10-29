@@ -34,8 +34,8 @@ bool YaraRuleRunner::run_yara_rule_on_file(const std::filesystem::path& yara_rul
                                            std::wstring& out_yara_output,
                                            std::wstring& yara_cmd_optional_defines) const
 {
-    std::wstring yara_command_line = m_raccine_program_directory.wstring() + L"\\"
-        + YARA_INSTANCE + L" " + yara_rule.wstring() + L" " + target_file.wstring() + L" " + yara_cmd_optional_defines;
+    std::wstring yara_command_line = L"\"" + m_raccine_program_directory.wstring() + L"\\"
+        + YARA_INSTANCE + L"\" \"" + yara_rule.wstring() + L"\" " + target_file.wstring() + L" " + yara_cmd_optional_defines;
 
     const bool yara_succeeded = run_yara_process(yara_command_line);
     if (!yara_succeeded) {
