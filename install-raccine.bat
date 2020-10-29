@@ -64,7 +64,7 @@ ECHO ...........................................................................
 ECHO.
 ECHO   1 - Install Raccine for all possible methods
 ECHO   2 - Install Raccine for all possible methods (simulation mode, logging only)
-ECHO   3 - Install Raccine to block Ryuk only
+ECHO   3 - Install Raccine interception for less often used executables only (soft)
 ECHO   4 - Disable GUI elements (alert window, settings tray icon)
 ECHO   5 - Disable automatic rule updates
 ECHo   6 - Run Windows Hardening Script
@@ -248,11 +248,14 @@ echo. 2>"%ProgramData%\Raccine\Raccine_log.txt"
 icacls "%ProgramData%\Raccine\Raccine_log.txt" /grant Users:F
 :: Registry Patches
 ECHO Installing Registry patches ...
-REGEDIT.EXE /S reg-patches\raccine-reg-patch-net.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-vssadmin.reg
 IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry. Installation failed.
     GOTO MENU
 )
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-wbadmin.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-diskshadow.reg
 REG QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\net.exe" /v Debugger
 ECHO Registering Eventlog Events
 eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine Setup: Registration of Event ID 1" 2> nul
