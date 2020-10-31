@@ -53,32 +53,22 @@ bool EvaluateYaraRules(const RaccineConfig& raccine_config,
 
     BOOL fSuccess = TRUE;
 
-    const DWORD dwCurrPid = dwChildPid;
-    const DWORD dwCurrParentPid = dwParentPid;
-    DWORD dwCurrSessionId = 0;
-    if (!ProcessIdToSessionId(dwCurrPid, &dwCurrSessionId)) {
-        fSuccess = FALSE;
-    }
+    const DWORD dwGrandParentPid = utils::getParentPid(dwParentPid); // parent of parent of raccine.exe
 
-    const DWORD dwParentParentPid = utils::getParentPid(dwParentPid);
-    DWORD dwParentSessionId = 0;
-    if (!ProcessIdToSessionId(dwParentPid, &dwParentSessionId)) {
-        fSuccess = FALSE;
-    }
+    std::wstring childContext = CreateContextForProgram(dwChildPid, L"");
 
-    std::wstring AdditionalYaraDefines = L" " + std::to_wstring(dwCurrSessionId) + L" " + std::to_wstring(dwCurrPid) + L" " + std::to_wstring(dwCurrParentPid) +
-        L" " + std::to_wstring(dwParentSessionId) + L" " + std::to_wstring(dwParentPid) + L" " + std::to_wstring(dwParentParentPid) + L" ";
+    std::wstring parentContext = CreateContextForProgram(dwParentPid, L"Parent");
+
+    std::wstring grandparentContext = L"";
+    if (dwGrandParentPid != 0)
+        grandparentContext = CreateContextForProgram(dwGrandParentPid, L"GrandParent");
+
+    std::wstring combinedContext = childContext + L" " + parentContext +L" " + grandparentContext;
 
     if (raccine_config.is_debug_mode()) {
-        wprintf(L"Composed test-string is: %s\n", AdditionalYaraDefines.c_str());
+        wprintf(L"Composed test-string is: %s\n", combinedContext.c_str());
         wprintf(L"Everything OK? %d\n", fSuccess);
     }
-
-    CreateContextFileForProgram(dwCurrPid, dwCurrSessionId, dwCurrParentPid, false);
-
-    CreateContextFileForProgram(dwParentPid, dwParentSessionId, dwParentParentPid, true);
-
-    // BUGBUG clean up after files
 
     bool fRetVal = false;
 
@@ -86,31 +76,30 @@ bool EvaluateYaraRules(const RaccineConfig& raccine_config,
         //wprintf(L"Checking rule dir: %s", raccine_config.yara_rules_directory().c_str());
         YaraRuleRunner rule_runner(raccine_config.yara_rules_directory(),
             utils::expand_environment_strings(RACCINE_PROGRAM_DIRECTORY));
-        fRetVal = rule_runner.run_yara_rules_on_file(wTestFilename, lpCommandLine, outYaraOutput, AdditionalYaraDefines);
+        fRetVal = rule_runner.run_yara_rules_on_file(wTestFilename, lpCommandLine, outYaraOutput, combinedContext);
+
+        if (raccine_config.scan_memory())
+        {
+            YaraRuleRunner rule_runner_process(raccine_config.yara_in_memory_rules_directory(),
+                utils::expand_environment_strings(RACCINE_PROGRAM_DIRECTORY));
+            BOOL fProcessRetVal = rule_runner_process.run_yara_rules_on_process(dwParentPid, lpCommandLine, outYaraOutput, combinedContext);
+            if (!fRetVal)
+                fRetVal = fProcessRetVal;
+        }
     }
     DeleteFileW(wTestFilename);
 
     return fRetVal;
 }
 
-void CreateContextFileForProgram(DWORD pid, DWORD session_id, DWORD parentPid, bool fParent)
+std::wstring CreateContextForProgram(DWORD pid, std::wstring szDefinePrefix)
 {
     const utils::ProcessDetail details(pid);
 
     std::wstring strDetails;
-    if (fParent) {
-        strDetails = details.ToString(L"Parent");
-    }
-    else {
-        strDetails = details.ToString(L"");
-    }
+    strDetails = details.ToString(szDefinePrefix);
 
-    std::wstring context_path = utils::expand_environment_strings(RACCINE_USER_CONTEXT_DIRECTORY);
-    context_path += L"\\RaccineYaraContext-" + std::to_wstring(session_id) +
-        L"-" + std::to_wstring(pid) +
-        L"-" + std::to_wstring(parentPid) + L".txt";
-
-    utils::write_string_to_file(context_path, strDetails);
+    return strDetails;
 }
 
 void WriteEventLogEntryWithId(const std::wstring& pszMessage, DWORD dwEventId)

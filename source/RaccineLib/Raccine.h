@@ -18,7 +18,7 @@
 
 
 // Version
-#define VERSION "1.2.1 BETA"
+#define VERSION "1.3.0 BETA"
 
 // Log Config and Flags
 #define RACCINE_DEFAULT_EVENTID  1
@@ -84,4 +84,4 @@ void find_and_kill_processes(bool log_only,
                              const std::wstring& sCommandLine,
                              std::wstring& sListLogs);
 
-void CreateContextFileForProgram(DWORD pid, DWORD session_id, DWORD parentPid, bool fParent);
+std::wstring CreateContextForProgram(DWORD pid, std::wstring szDefinePrefix);

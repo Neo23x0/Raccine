@@ -293,7 +293,7 @@ ProcessDetail::ProcessDetail(DWORD dwPid) :
     ProcessDetailStruct{}
 {
     ProcessDetailStruct.dwPid = dwPid;
-    ProcessDetailStruct.Priority = GetPriorityClassByPid(dwPid);
+    //ProcessDetailStruct.Priority = GetPriorityClassByPid(dwPid);
 
     ProcessDetailStruct.ExeName = getImageName(dwPid);
     std::replace(ProcessDetailStruct.ExeName.begin(), ProcessDetailStruct.ExeName.end(), '"', '\'');
@@ -309,16 +309,15 @@ ProcessDetail::ProcessDetail(DWORD dwPid) :
     ProcessDetailStruct.TimeSinceExeCreation = getLastWriteTime(ProcessDetailStruct.ExePath);
 }
 
-std::wstring ProcessDetail::ToString(const std::wstring& szPrefix) const
+std::wstring ProcessDetail::ToString(const std::wstring szPrefix) const
 {
     const std::wstring YaraDef = L" -d ";
 
     // we only need to pass FromRaccine="true" in once, so do it for the child process
-    std::wstring full_string = (szPrefix.length() == 0 ? YaraDef + L" FromRaccine=\"true\" " : L"")  + YaraDef + L" " + szPrefix + L"Name=\"" + ProcessDetailStruct.ExeName + L"\""
+    std::wstring full_string = YaraDef + L" " + szPrefix + L"Name=\"" + ProcessDetailStruct.ExeName + L"\""
         + YaraDef + L" " + szPrefix + L"ExecutablePath=\"" + ProcessDetailStruct.ExePath + L"\""
         + YaraDef + L" " + szPrefix + L"CommandLine=\"" + ProcessDetailStruct.CommandLine + L"\""
-        + YaraDef + L" " + szPrefix + L"TimeSinceExeCreation=" + std::to_wstring(ProcessDetailStruct.TimeSinceExeCreation)
-        + YaraDef + L" " + szPrefix + L"Priority=" + std::to_wstring(ProcessDetailStruct.Priority) + L"";
+        + YaraDef + L" " + szPrefix + L"TimeSinceExeCreation=" + std::to_wstring(ProcessDetailStruct.TimeSinceExeCreation);
 
     return full_string;
 }

@@ -1,4 +1,4 @@
-﻿namespace RaccineElevatedCfg
+namespace RaccineElevatedCfg
 {
     partial class RaccineCfg
     {
@@ -31,6 +31,9 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(RaccineCfg));
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
+            this.btnRulesFolder = new System.Windows.Forms.Button();
+            this.chkScanMemory = new System.Windows.Forms.CheckBox();
+            this.label4 = new System.Windows.Forms.Label();
             this.btnViewLog = new System.Windows.Forms.Button();
             this.btnOK = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
@@ -68,6 +71,9 @@
             // 
             // tabPage1
             // 
+            this.tabPage1.Controls.Add(this.btnRulesFolder);
+            this.tabPage1.Controls.Add(this.chkScanMemory);
+            this.tabPage1.Controls.Add(this.label4);
             this.tabPage1.Controls.Add(this.btnViewLog);
             this.tabPage1.Controls.Add(this.btnOK);
             this.tabPage1.Controls.Add(this.btnCancel);
@@ -85,6 +91,36 @@
             this.tabPage1.Text = "Logging Settings";
             this.tabPage1.UseVisualStyleBackColor = true;
             // 
+            // btnRulesFolder
+            // 
+            this.btnRulesFolder.Location = new System.Drawing.Point(234, 295);
+            this.btnRulesFolder.Name = "btnRulesFolder";
+            this.btnRulesFolder.Size = new System.Drawing.Size(183, 41);
+            this.btnRulesFolder.TabIndex = 10;
+            this.btnRulesFolder.Text = "S&how Rules Folder";
+            this.btnRulesFolder.UseVisualStyleBackColor = true;
+            this.btnRulesFolder.Click += new System.EventHandler(this.btnRulesFolder_Click);
+            // 
+            // chkScanMemory
+            // 
+            this.chkScanMemory.AutoSize = true;
+            this.chkScanMemory.Location = new System.Drawing.Point(184, 145);
+            this.chkScanMemory.Name = "chkScanMemory";
+            this.chkScanMemory.Size = new System.Drawing.Size(56, 24);
+            this.chkScanMemory.TabIndex = 9;
+            this.chkScanMemory.Text = "On";
+            this.chkScanMemory.UseVisualStyleBackColor = true;
+            this.chkScanMemory.CheckedChanged += new System.EventHandler(this.chkScanMemory_CheckedChanged);
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(41, 150);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(110, 20);
+            this.label4.TabIndex = 8;
+            this.label4.Text = "Scan Memory:";
+            // 
             // btnViewLog
             // 
             this.btnViewLog.Location = new System.Drawing.Point(36, 295);
@@ -98,7 +134,7 @@
             // 
             // btnOK
             // 
-            this.btnOK.Location = new System.Drawing.Point(491, 295);
+            this.btnOK.Location = new System.Drawing.Point(504, 295);
             this.btnOK.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.btnOK.Name = "btnOK";
             this.btnOK.Size = new System.Drawing.Size(113, 41);
@@ -173,7 +209,7 @@
             this.tabPage3.Location = new System.Drawing.Point(4, 29);
             this.tabPage3.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.tabPage3.Name = "tabPage3";
-            this.tabPage3.Size = new System.Drawing.Size(726, 323);
+            this.tabPage3.Size = new System.Drawing.Size(768, 366);
             this.tabPage3.TabIndex = 2;
             this.tabPage3.Text = "Eventlog";
             // 
@@ -186,7 +222,7 @@
             this.dataGridView1.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.RowHeadersWidth = 62;
-            this.dataGridView1.Size = new System.Drawing.Size(726, 323);
+            this.dataGridView1.Size = new System.Drawing.Size(768, 366);
             this.dataGridView1.TabIndex = 0;
             this.dataGridView1.Text = "dataGridView1";
             // 
@@ -264,6 +300,8 @@
         private System.Windows.Forms.Button btnViewLog;
         private System.Windows.Forms.TabPage tabPage3;
         private System.Windows.Forms.DataGridView dataGridView1;
+        private System.Windows.Forms.Button btnRulesFolder;
+        private System.Windows.Forms.CheckBox chkScanMemory;
+        private System.Windows.Forms.Label label4;
     }
 }
-

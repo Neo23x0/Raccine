@@ -11,11 +11,11 @@ namespace utils
 class ProcessDetail final
 {
 public:
-    ProcessDetail(DWORD dwPid);
+    ProcessDetail(DWORD pid);
 
     ~ProcessDetail() = default;
 
-    [[nodiscard]] std::wstring ToString(const std::wstring& szPrefix) const;
+    [[nodiscard]] std::wstring ToString(const std::wstring szPrefix) const;
 
 private:
     struct PROCESS_DETAIL
@@ -24,8 +24,6 @@ private:
         std::wstring ExeName;
         std::wstring ExePath;
         std::wstring CommandLine;
-        UINT HandleCount;
-        UINT Priority;
         ULONG TimeSinceExeCreation;
     };
     PROCESS_DETAIL ProcessDetailStruct;
