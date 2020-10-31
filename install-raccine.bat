@@ -94,9 +94,11 @@ GOTO MENU
 
 :: Installer actions
 
-:: Full
-:FULL
+:: Actions to run in all modes
+:INSTALL
 ECHO.
+:: Visual C++ Runtime
+IF NOT EXIST C:\Windows\System32\vcruntime140.dll vcredist_x64.exe /q /norestart
 :: Cleanup existing elements
 TASKKILL /F /IM Raccine.exe
 TASKKILL /F /IM RaccineSettings.exe
@@ -124,25 +126,10 @@ MKDIR "%ProgramData%\Raccine"
 ECHO Creating empty log file ...
 echo. 2>"%ProgramData%\Raccine\Raccine_log.txt"
 icacls "%ProgramData%\Raccine\Raccine_log.txt" /grant Users:F
-:: Registry Patches
-ECHO Installing Registry patches ...
-REGEDIT.EXE /S reg-patches\raccine-reg-patch-vssadmin.reg
-IF '%errorlevel%' NEQ '0' (
-    ECHO Something went wrong. Sorry. Installation failed.
-    GOTO MENU
-)
-REG QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\vssadmin.exe" /v Debugger
-REGEDIT.EXE /S reg-patches\raccine-reg-patch-wmic.reg 
-REGEDIT.EXE /S reg-patches\raccine-reg-patch-wbadmin.reg
-REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
-REGEDIT.EXE /S reg-patches\raccine-reg-patch-powershell.reg
-REGEDIT.EXE /S reg-patches\raccine-reg-patch-diskshadow.reg
-REGEDIT.EXE /S reg-patches\raccine-reg-patch-net.reg
 ECHO Registering Eventlog Events
 eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine Setup: Registration of Event ID 1" 2> nul
 eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine Setup: Registration of Event ID 2" 2> nul
 :: Registry Settings
-REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 0 /F
 REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 2 /F
 REG.EXE ADD HKLM\Software\Raccine /v ScanMemory /t REG_DWORD /d 2 /F
 REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d "%ProgramFiles%\Raccine\yara" /F
@@ -158,36 +145,9 @@ IF NOT "%SELECTED_OPTION%"=="" GOTO EOF
 TIMEOUT /t 30
 GOTO MENU
 
-:: Simulation Mode
-:FULL_SIMU
+:: Full
+:FULL
 ECHO.
-:: Cleanup existing elements
-TASKKILL /F /IM Raccine.exe
-TASKKILL /F /IM RaccineSettings.exe
-TASKKILL /F /IM RaccineRulesSync.exe.exe
-:: Raccine GUI Elements
-ECHO Creating data directory "%ProgramFiles%\Raccine" ...
-MKDIR "%ProgramFiles%\Raccine"
-COPY RaccineElevatedCfg.exe "%ProgramFiles%\Raccine\"
-COPY RaccineSettings.exe "%ProgramFiles%\Raccine\"
-COPY RaccineRulesSync.exe "%ProgramFiles%\Raccine\"
-:: Raccine Program Files
-COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
-COPY yara\yara64.exe "%ProgramFiles%\Raccine\"
-:: YARA Rules
-MKDIR "%ProgramFiles%\Raccine\yara"
-MKDIR "%ProgramFiles%\Raccine\yara\in-memory"
-ECHO Copying YARA rules to the directory ...
-COPY yara\*.yar "%ProgramFiles%\Raccine\yara"
-COPY yara\in-memory\*.yar "%ProgramFiles%\Raccine\yara\in-memory"
-:: Setting the Path
-SETX /M Path "%PATH%;%ProgramFiles%\Raccine"
-:: Raccine Data
-ECHO Creating data directory "%ProgramData%\Raccine" ...
-MKDIR "%ProgramData%\Raccine"
-ECHO Creating empty log file ...
-echo. 2>"%ProgramData%\Raccine\Raccine_log.txt"
-icacls "%ProgramData%\Raccine\Raccine_log.txt" /grant Users:F
 :: Registry Patches
 ECHO Installing Registry patches ...
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-vssadmin.reg
@@ -195,62 +155,39 @@ IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry. Installation failed.
     GOTO MENU
 )
-REG QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\vssadmin.exe" /v Debugger
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-wmic.reg 
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-wbadmin.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-powershell.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-diskshadow.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-net.reg
-ECHO Registering Eventlog Events
-eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine Setup: Registration of Event ID 1" 2> nul
-eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine Setup: Registration of Event ID 2" 2> nul
+:: Simulation only
+REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 0 /F
+GOTO INSTALL
+
+:: Simulation Mode
+:FULL_SIMU
+ECHO.
+:: Registry Patches
+ECHO Installing Registry patches ...
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-vssadmin.reg
+IF '%errorlevel%' NEQ '0' (
+    ECHO Something went wrong. Sorry. Installation failed.
+    GOTO MENU
+)
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-wmic.reg 
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-wbadmin.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-powershell.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-diskshadow.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-net.reg
+:: Simulation only
 REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 2 /F
-REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 2 /F
-REG.EXE ADD HKLM\Software\Raccine /v ScanMemory /t REG_DWORD /d 2 /F
-REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d "%ProgramFiles%\Raccine\yara" /F
-:: Registering and starting the GUI elements
-REG ADD "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /t REG_SZ /F /D "%ProgramFiles%\Raccine\RaccineSettings.exe"
-START "" "%ProgramFiles%\Raccine\RaccineSettings.exe"
-:: Scheduled Task
-ECHO Adding scheduled task for rule updates
-SCHTASKS /create /tn "Raccine Rules Updater" /tr "\"%PROGRAMFILES%\Raccine\RaccineRulesSync.exe\"" /sc DAILY /mo 1 /f /RL highest /RU "NT AUTHORITY\SYSTEM" /NP
-SCHTASKS /RUN /TN "Raccine Rules Updater"
-:: in case of automation, directly got to EOF
-IF NOT "%SELECTED_OPTION%"=="" GOTO EOF
-TIMEOUT /t 30
-GOTO MENU
+GOTO INSTALL
 
 :: Soft
 :SOFT 
 ECHO.
-:: Cleanup existing elements
-TASKKILL /F /IM Raccine.exe
-TASKKILL /F /IM RaccineSettings.exe
-TASKKILL /F /IM RaccineRulesSync.exe.exe
-:: Raccine GUI Elements
-ECHO Creating data directory "%ProgramFiles%\Raccine" ...
-MKDIR "%ProgramFiles%\Raccine"
-COPY RaccineElevatedCfg.exe "%ProgramFiles%\Raccine\"
-COPY RaccineSettings.exe "%ProgramFiles%\Raccine\"
-COPY RaccineRulesSync.exe "%ProgramFiles%\Raccine\"
-:: Raccine Program Files
-COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
-COPY yara\yara64.exe "%ProgramFiles%\Raccine\"
-:: YARA Rules
-MKDIR "%ProgramFiles%\Raccine\yara"
-MKDIR "%ProgramFiles%\Raccine\yara\in-memory"
-ECHO Copying YARA rules to the directory ...
-COPY yara\*.yar "%ProgramFiles%\Raccine\yara"
-COPY yara\in-memory\*.yar "%ProgramFiles%\Raccine\yara\in-memory"
-:: Setting the Path
-SETX /M Path "%PATH%;%ProgramFiles%\Raccine"
-:: Raccine Data
-ECHO Creating data directory "%ProgramData%\Raccine" ...
-MKDIR "%ProgramData%\Raccine"
-ECHO Creating empty log file ...
-echo. 2>"%ProgramData%\Raccine\Raccine_log.txt"
-icacls "%ProgramData%\Raccine\Raccine_log.txt" /grant Users:F
 :: Registry Patches
 ECHO Installing Registry patches ...
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-vssadmin.reg
@@ -261,24 +198,9 @@ IF '%errorlevel%' NEQ '0' (
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-wbadmin.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-diskshadow.reg
-REG QUERY "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\net.exe" /v Debugger
-ECHO Registering Eventlog Events
-eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine Setup: Registration of Event ID 1" 2> nul
-eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine Setup: Registration of Event ID 2" 2> nul
+:: Simulation only
 REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 0 /F
-REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 2 /F
-REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d "%ProgramFiles%\Raccine\yara" /F
-:: Registering and starting the GUI elements
-REG ADD "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /t REG_SZ /F /D "%ProgramFiles%\Raccine\RaccineSettings.exe"
-START "" "%ProgramFiles%\Raccine\RaccineSettings.exe"
-:: Scheduled Task
-ECHO Adding scheduled task for rule updates
-SCHTASKS /create /tn "Raccine Rules Updater" /tr "\"%PROGRAMFILES%\Raccine\RaccineRulesSync.exe\"" /sc DAILY /mo 1 /f /RL highest /RU "NT AUTHORITY\SYSTEM" /NP
-SCHTASKS /RUN /TN "Raccine Rules Updater"
-:: in case of automation, directly got to EOF
-IF NOT "%SELECTED_OPTION%"=="" GOTO EOF
-TIMEOUT /t 30
-GOTO MENU
+GOTO INSTALL
 
 :: Disable GUI Elements
 :DISABLEGUI 
