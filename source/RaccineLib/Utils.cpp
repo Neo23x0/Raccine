@@ -309,7 +309,7 @@ ProcessDetail::ProcessDetail(DWORD dwPid) :
     ProcessDetailStruct.TimeSinceExeCreation = getLastWriteTime(ProcessDetailStruct.ExePath);
 }
 
-std::wstring ProcessDetail::ToString(const std::wstring szPrefix) const
+std::wstring ProcessDetail::ToString(const std::wstring& szPrefix) const
 {
     const std::wstring YaraDef = L" -d ";
 
@@ -336,14 +336,19 @@ std::wstring expand_environment_strings(const std::wstring& input)
     return std::wstring(output.data());
 }
 
-ULONG utils::getLastWriteTime(std::wstring szFilePath)
+ULONG getLastWriteTime(const std::wstring& szFilePath)
 {
-    HANDLE hFile = CreateFile(szFilePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
-    if (hFile == INVALID_HANDLE_VALUE)
+    FileHandleWrapper hFile = CreateFileW(szFilePath.c_str(),
+                                          GENERIC_READ,
+                                          FILE_SHARE_READ, 
+                                          NULL, 
+                                          OPEN_EXISTING, 
+                                          0,
+                                          NULL);
+    if (hFile == INVALID_HANDLE_VALUE){
         return 0;
+    }
 
-    ULARGE_INTEGER ulNow = { 0 }, ulFile = { 0 }, ulDiff = { 0 };
-    ULONG  timeDiff = 999999999;
     FILETIME timeFile, timeNow = { 0 };
     SYSTEMTIME stNow = { 0 };
     GetSystemTime(&stNow);
@@ -351,10 +356,10 @@ ULONG utils::getLastWriteTime(std::wstring szFilePath)
 
     if (!GetFileTime(hFile, NULL, NULL, &timeFile))
     {
-        CloseHandle(hFile);
         return 0;
     }
-    CloseHandle(hFile);
+
+    ULARGE_INTEGER ulNow = { 0 }, ulFile = { 0 }, ulDiff = { 0 };
 
     ulNow.HighPart = timeNow.dwHighDateTime;
     ulNow.LowPart = timeNow.dwLowDateTime;
@@ -368,14 +373,16 @@ ULONG utils::getLastWriteTime(std::wstring szFilePath)
     if (ulNow.QuadPart > ulFile.QuadPart)
     {
         ulDiff.QuadPart = ulNow.QuadPart - ulFile.QuadPart;
-        ULONG diff = ((ULONG)(ulDiff.QuadPart / (10000 * 1000)) / (60 * 60 * 24));  // 
+        const ULONG diff = (static_cast<ULONG>(ulDiff.QuadPart / (10000 * 1000)) / (60 * 60 * 24)); 
 
         return diff;
     }
+
+    const ULONG  timeDiff = 999999999;
     return timeDiff;
 }
 
-bool write_string_to_file(const std::filesystem::path file_path, const std::wstring& string_to_write)
+bool write_string_to_file(const std::filesystem::path& file_path, const std::wstring& string_to_write)
 {
     //  Creates the new file to write to for the upper-case version.
     FileHandleWrapper hTempFile = CreateFileW(file_path.c_str(),    // file name 

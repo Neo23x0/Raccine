@@ -8,7 +8,6 @@
 #include <cwchar>
 #include <Windows.h>
 #include <cstdio>
-#include <cstring>
 #include <string>
 #include <array>
 #include <chrono>
@@ -59,9 +58,10 @@ bool EvaluateYaraRules(const RaccineConfig& raccine_config,
 
     std::wstring parentContext = CreateContextForProgram(dwParentPid, L"Parent");
 
-    std::wstring grandparentContext = L"";
-    if (dwGrandParentPid != 0)
+    std::wstring grandparentContext;
+    if (dwGrandParentPid != 0) {
         grandparentContext = CreateContextForProgram(dwGrandParentPid, L"GrandParent");
+    }
 
     std::wstring combinedContext = childContext + L" " + parentContext +L" " + grandparentContext;
 
@@ -92,12 +92,11 @@ bool EvaluateYaraRules(const RaccineConfig& raccine_config,
     return fRetVal;
 }
 
-std::wstring CreateContextForProgram(DWORD pid, std::wstring szDefinePrefix)
+std::wstring CreateContextForProgram(DWORD pid, const std::wstring& szDefinePrefix)
 {
     const utils::ProcessDetail details(pid);
 
-    std::wstring strDetails;
-    strDetails = details.ToString(szDefinePrefix);
+    std::wstring strDetails = details.ToString(szDefinePrefix);
 
     return strDetails;
 }
