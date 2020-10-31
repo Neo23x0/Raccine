@@ -71,7 +71,6 @@ namespace RaccineSettings
 
             this.FormClosing += frmBootstrap_FormClosing;
             SetUacShield(mnuSettings);
-            SetUacShield(mnuUpdateRules);
         }
 
         private void SetUacShield(ToolStripMenuItem menuItem)
@@ -123,7 +122,7 @@ namespace RaccineSettings
         private void ReleaseResources()
         {
             this.singleInstanceMutex.Close();
-            this.envMonitor.Stop();
+            //this.envMonitor.Stop();
             WatcherThread.exit = true;
         }
 
