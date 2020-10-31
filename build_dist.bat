@@ -17,7 +17,9 @@ XCOPY reg-patches\*.reg Raccine\reg-patches\
 
 :: YARA Feature
 MKDIR Raccine\yara\
+MKDIR Raccine\yara\in-memory\
 XCOPY yara\*.* Raccine\yara\
+XCOPY yara\in-memory\*.* Raccine\yara\in-memory
 XCOPY tools\yara64.exe Raccine\yara\
 
 :: GUI

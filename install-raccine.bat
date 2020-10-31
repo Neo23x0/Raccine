@@ -109,12 +109,12 @@ COPY RaccineSettings.exe "%ProgramFiles%\Raccine\"
 COPY RaccineRulesSync.exe "%ProgramFiles%\Raccine\"
 :: Raccine Program Files
 COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
-COPY yara\runyara.bat "%ProgramFiles%\Raccine\"
 COPY yara\yara64.exe "%ProgramFiles%\Raccine\"
 :: YARA Rules
 MKDIR "%ProgramFiles%\Raccine\yara"
 ECHO Copying YARA rules to the directory ...
 COPY yara\*.yar "%ProgramFiles%\Raccine\yara"
+COPY yara\in-memory\*.yar "%ProgramFiles%\Raccine\yara\in-memory"
 :: Setting the Path
 SETX /M Path "%PATH%;%ProgramFiles%\Raccine"
 :: Raccine Data
@@ -143,6 +143,7 @@ eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine Setu
 :: Registry Settings
 REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 0 /F
 REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 2 /F
+REG.EXE ADD HKLM\Software\Raccine /v ScanMemory /t REG_DWORD /d 2 /F
 REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d "%ProgramFiles%\Raccine\yara" /F
 :: Registering and starting the GUI elements
 REG ADD "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /t REG_SZ /F /D "%ProgramFiles%\Raccine\RaccineSettings.exe"
@@ -171,12 +172,12 @@ COPY RaccineSettings.exe "%ProgramFiles%\Raccine\"
 COPY RaccineRulesSync.exe "%ProgramFiles%\Raccine\"
 :: Raccine Program Files
 COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
-COPY yara\runyara.bat "%ProgramFiles%\Raccine\"
 COPY yara\yara64.exe "%ProgramFiles%\Raccine\"
 :: YARA Rules
 MKDIR "%ProgramFiles%\Raccine\yara"
 ECHO Copying YARA rules to the directory ...
 COPY yara\*.yar "%ProgramFiles%\Raccine\yara"
+COPY yara\in-memory\*.yar "%ProgramFiles%\Raccine\yara\in-memory"
 :: Setting the Path
 SETX /M Path "%PATH%;%ProgramFiles%\Raccine"
 :: Raccine Data
@@ -204,6 +205,7 @@ eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine Setu
 eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine Setup: Registration of Event ID 2" 2> nul
 REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 2 /F
 REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 2 /F
+REG.EXE ADD HKLM\Software\Raccine /v ScanMemory /t REG_DWORD /d 2 /F
 REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d "%ProgramFiles%\Raccine\yara" /F
 :: Registering and starting the GUI elements
 REG ADD "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /t REG_SZ /F /D "%ProgramFiles%\Raccine\RaccineSettings.exe"
@@ -232,12 +234,12 @@ COPY RaccineSettings.exe "%ProgramFiles%\Raccine\"
 COPY RaccineRulesSync.exe "%ProgramFiles%\Raccine\"
 :: Raccine Program Files
 COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
-COPY yara\runyara.bat "%ProgramFiles%\Raccine\"
 COPY yara\yara64.exe "%ProgramFiles%\Raccine\"
 :: YARA Rules
 MKDIR "%ProgramFiles%\Raccine\yara"
 ECHO Copying YARA rules to the directory ...
 COPY yara\*.yar "%ProgramFiles%\Raccine\yara"
+COPY yara\in-memory\*.yar "%ProgramFiles%\Raccine\yara\in-memory"
 :: Setting the Path
 SETX /M Path "%PATH%;%ProgramFiles%\Raccine"
 :: Raccine Data
