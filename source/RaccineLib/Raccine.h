@@ -18,7 +18,7 @@
 
 
 // Version
-#define VERSION "1.2.1 BETA"
+#define VERSION "1.3.0 BETA"
 
 // Log Config and Flags
 #define RACCINE_DEFAULT_EVENTID  1
