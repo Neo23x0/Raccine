@@ -82,7 +82,7 @@ bool EvaluateYaraRules(const RaccineConfig& raccine_config,
         {
             YaraRuleRunner rule_runner_process(raccine_config.yara_in_memory_rules_directory(),
                 utils::expand_environment_strings(RACCINE_PROGRAM_DIRECTORY));
-            BOOL fProcessRetVal = rule_runner_process.run_yara_rules_on_process(dwChildPid, lpCommandLine, outYaraOutput, combinedContext);
+            BOOL fProcessRetVal = rule_runner_process.run_yara_rules_on_process(dwParentPid, lpCommandLine, outYaraOutput, combinedContext);
             if (!fRetVal)
                 fRetVal = fProcessRetVal;
         }
