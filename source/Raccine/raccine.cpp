@@ -5,14 +5,12 @@
 // Florian Roth, Ollie Whitehouse, Branislav Djalic, John Lambert
 // with help of Hilko Bengen
 
-#include "source/RaccineLib/Raccine.h"
+#include "RaccineLib/Raccine.h"
 
 #include <Shlwapi.h>
 
-
-#include "source/RaccineLib/HandleWrapper.h"
-#include "source/RaccineLib/RaccineConfig.h"
-#include "source/RaccineLib/Utils.h"
+#include "RaccineLib/RaccineConfig.h"
+#include "RaccineLib/Utils.h"
 
 int wmain(int argc, WCHAR* argv[])
 {
@@ -36,11 +34,11 @@ int wmain(int argc, WCHAR* argv[])
     //skip argv[0] and create a new command line string from our argv,
     //if we get a quoted path for the exe back, adjust the command line to skip past that.
     LPWSTR lpzchildCommandLine = GetCommandLine() + (wcslen(argv[0]) + 1);
-    std::wstring originalCommandLine(GetCommandLine());
+    const std::wstring originalCommandLine(GetCommandLine());
     if (originalCommandLine.starts_with(L"\"") && (wcslen(argv[0]) + 3) < originalCommandLine.length())
         lpzchildCommandLine = GetCommandLine() + (wcslen(argv[0]) + 3);
     if (needs_powershell_workaround(sCommandLine)) {
-        lpzchildCommandLine = (LPWSTR)std::wstring(L"powershell.exe ").append(sCommandLine).c_str();
+        lpzchildCommandLine = static_cast<LPWSTR>(std::wstring(L"powershell.exe ").append(sCommandLine).data());
     }
 
     auto [dwChildPid, hProcess, hThread] = createChildProcessWithDebugger(lpzchildCommandLine, CREATE_SUSPENDED);
