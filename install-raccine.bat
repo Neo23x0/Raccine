@@ -98,7 +98,7 @@ GOTO MENU
 :INSTALL
 ECHO.
 :: Visual C++ Runtime
-IF NOT EXIST C:\Windows\System32\vcruntime140.dll vcredist_x64.exe /q /norestart
+IF NOT EXIST C:\Windows\System32\vcruntime140.dll start vc_redist.x64.exe /q /norestart
 :: Cleanup existing elements
 TASKKILL /F /IM Raccine.exe
 TASKKILL /F /IM RaccineSettings.exe

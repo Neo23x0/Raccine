@@ -1,7 +1,7 @@
 @ECHO OFF
 
 :: Download Components
-ECHO Create Temp directory for temporary downloads
+ECHO Create Temp directory for some downloads
 MKDIR temp
 :: Get YARA
 ECHO Downloading YARA ...
