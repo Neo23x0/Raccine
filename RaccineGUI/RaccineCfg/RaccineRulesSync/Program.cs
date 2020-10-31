@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -15,13 +15,14 @@ namespace RaccineSettings
     {
         static public void Main(String[] args)
         {
-            SyncContent();
+            var contentsUrl = $"https://api.github.com/repos/Neo23x0/Raccine/contents/yara?ref=main";
+            //var contentsUrl = $"https://api.github.com/repos/Neo23x0/Raccine/contents/yara?ref=yara-mem-matching";
+            SyncContentFromUrl(contentsUrl, "");
         }
 
-        public static bool SyncContent()
+        public static bool SyncContentFromUrl(string contentsUrl, string subdir)
         {
             var httpClient = new HttpClient();
-            var contentsUrl = $"https://api.github.com/repos/Neo23x0/Raccine/contents/yara?ref=main";
 
             Console.WriteLine("Downloading rules from " + contentsUrl);
             var jsonData = string.Empty;
@@ -41,6 +42,7 @@ namespace RaccineSettings
                 uint iRuleCount = 0;
                 foreach (Rule rule in rules)
                 {
+                    string type = rule.type;
                     if (rule.name.EndsWith(".yar"))
                     {
                         using (var webClient = new System.Net.WebClient())
@@ -48,7 +50,10 @@ namespace RaccineSettings
                             webClient.Headers.Add("user-agent", "Mozilla/4.0");
                             string yararule = webClient.DownloadString(rule.download_url);
 
-                            string szRulePath = szRulesDir + "\\" + rule.name;
+                            string szDir = szRulesDir + "\\" + subdir;
+                            System.IO.Directory.CreateDirectory(szDir);
+
+                            string szRulePath = szDir + rule.name;
                             Console.WriteLine("Updating rule " + szRulePath);
 
                             using (System.IO.StreamWriter file =
@@ -58,6 +63,11 @@ namespace RaccineSettings
                                 iRuleCount++;
                             }
                         }
+                    } 
+                    else if (rule.type == "dir")
+                    {
+                        SyncContentFromUrl(rule.url, rule.name + "\\");
+
                     }
                 }
                 Console.WriteLine("Updated {0} rules.", iRuleCount);
