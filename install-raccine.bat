@@ -112,6 +112,7 @@ COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
 COPY yara\yara64.exe "%ProgramFiles%\Raccine\"
 :: YARA Rules
 MKDIR "%ProgramFiles%\Raccine\yara"
+MKDIR "%ProgramFiles%\Raccine\yara\in-memory"
 ECHO Copying YARA rules to the directory ...
 COPY yara\*.yar "%ProgramFiles%\Raccine\yara"
 COPY yara\in-memory\*.yar "%ProgramFiles%\Raccine\yara\in-memory"
@@ -175,6 +176,7 @@ COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
 COPY yara\yara64.exe "%ProgramFiles%\Raccine\"
 :: YARA Rules
 MKDIR "%ProgramFiles%\Raccine\yara"
+MKDIR "%ProgramFiles%\Raccine\yara\in-memory"
 ECHO Copying YARA rules to the directory ...
 COPY yara\*.yar "%ProgramFiles%\Raccine\yara"
 COPY yara\in-memory\*.yar "%ProgramFiles%\Raccine\yara\in-memory"
@@ -237,6 +239,7 @@ COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
 COPY yara\yara64.exe "%ProgramFiles%\Raccine\"
 :: YARA Rules
 MKDIR "%ProgramFiles%\Raccine\yara"
+MKDIR "%ProgramFiles%\Raccine\yara\in-memory"
 ECHO Copying YARA rules to the directory ...
 COPY yara\*.yar "%ProgramFiles%\Raccine\yara"
 COPY yara\in-memory\*.yar "%ProgramFiles%\Raccine\yara\in-memory"
