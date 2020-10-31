@@ -7,7 +7,7 @@ MKDIR temp
 ECHO Downloading YARA ...
 powershell -executionpolicy bypass -Command "(New-Object System.Net.WebClient).DownloadFile('https://github.com/VirusTotal/yara/releases/download/v4.0.2/yara-v4.0.2-1347-win64.zip', '.\temp\yara.zip')"
 powershell -executionpolicy bypass -Command "Expand-Archive -Path .\temp\yara.zip -DestinationPath .\tools -Force"
-DEL /F .\tools\yara64c.exe
+DEL /F .\tools\yarac64.exe
 :: Get Visual C++ Runtime
 ECHO Downloading Visual C++ Runtime ...
 powershell -executionpolicy bypass -Command "(New-Object System.Net.WebClient).DownloadFile('https://aka.ms/vs/16/release/vc_redist.x64.exe', '.\tools\vc_redist.x64.exe')"
