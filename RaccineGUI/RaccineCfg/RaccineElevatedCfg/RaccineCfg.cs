@@ -183,31 +183,24 @@ namespace RaccineElevatedCfg
             Close();
         }
 
-
-
         private void btnRulesFolder_Click(object sender, EventArgs e)
-
         {
-
-            if (Directory.Exists(settings.RulesDir))
+            string folder_name = settings.RulesDir;
+            folder_name = Environment.ExpandEnvironmentVariables(folder_name);
+            if (Directory.Exists(folder_name))
             {
-                ProcessStartInfo psi = new ProcessStartInfo(settings.RulesDir);
+                if (!folder_name.EndsWith("\\"))
+                    folder_name += "\\";
+                ProcessStartInfo psi = new ProcessStartInfo(folder_name);
                 psi.UseShellExecute = true;
-
                 psi.Verb = "open";
                 Process.Start(psi);
             }
-
         }
 
-
-
         private void chkScanMemory_CheckedChanged(object sender, EventArgs e)
-
         {
-
             fDirty = true;
-
         }
 
     }
