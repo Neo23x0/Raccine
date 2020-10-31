@@ -8,10 +8,12 @@
 #include "Utils.h"
 
 RaccineConfig::RaccineConfig() :
-    m_log_only(read_flag_from_registry(L"LogOnly")),
-    m_show_gui(read_flag_from_registry(L"ShowGui")),
-    m_is_debug_mode(read_flag_from_registry(L"Debug")),
-    m_yara_rules_directory(get_yara_rules_directory())
+    m_log_only(read_flag_from_registry(RACCINE_CONFIG_LOG_ONLY)),
+    m_show_gui(read_flag_from_registry(RACCINE_CONFIG_SHOW_GUI)),
+    m_is_debug_mode(read_flag_from_registry(RACCINE_CONFIG_DEBUG)),
+    m_scan_memory(read_flag_from_registry(RACCINE_YARA_SCAN_MEMORY)),
+    m_yara_rules_directory(get_yara_rules_directory()),
+    m_yara_in_memory_rules_directory(get_yara_in_memory_rules_directory())
 {
 }
 
@@ -30,10 +32,23 @@ bool RaccineConfig::is_debug_mode() const
     return m_is_debug_mode;
 }
 
+
+bool RaccineConfig::scan_memory() const
+{
+    return m_scan_memory;
+}
+
+
 std::wstring RaccineConfig::yara_rules_directory() const
 {
     return m_yara_rules_directory;
 }
+
+std::wstring RaccineConfig::yara_in_memory_rules_directory() const
+{
+    return m_yara_in_memory_rules_directory;
+}
+
 
 std::vector<std::filesystem::path> RaccineConfig::get_raccine_registry_paths()
 {
@@ -48,6 +63,16 @@ std::wstring RaccineConfig::get_yara_rules_directory()
     }
 
     return utils::expand_environment_strings(RACCINE_YARA_DIRECTORY);
+}
+
+std::wstring RaccineConfig::get_yara_in_memory_rules_directory()
+{
+    std::wstring yara_directory = read_string_from_registry(RACCINE_YARA_RULES_PATH);
+    if (!yara_directory.empty()) {
+        return yara_directory + L"\\" + RACCINE_YARA_RULES_PATH_INMEMORY_PATH;
+    }
+
+    return utils::expand_environment_strings(RACCINE_YARA_DIRECTORY) + +L"\\" + RACCINE_YARA_RULES_PATH_INMEMORY_PATH;
 }
 
 bool RaccineConfig::read_flag_from_registry(const std::wstring& flag_name)

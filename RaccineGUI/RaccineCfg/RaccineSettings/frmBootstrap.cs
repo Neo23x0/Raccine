@@ -59,7 +59,9 @@ namespace RaccineSettings
             try
             {
                 Directory.CreateDirectory(szRaccineUserContextDirectory);
-                this.envMonitor = new EnvMonitor(szRaccineUserContextDirectory);
+
+                // currently raccine is creating these files, so don't do this for now
+                //this.envMonitor = new EnvMonitor(szRaccineUserContextDirectory);
             }
             catch (Exception ex)
             {

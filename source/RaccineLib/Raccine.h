@@ -84,4 +84,4 @@ void find_and_kill_processes(bool log_only,
                              const std::wstring& sCommandLine,
                              std::wstring& sListLogs);
 
-void CreateContextFileForProgram(DWORD pid, DWORD session_id, DWORD parentPid, bool fParent);
+std::wstring CreateContextForProgram(DWORD pid, std::wstring szDefinePrefix);
