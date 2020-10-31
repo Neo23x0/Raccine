@@ -123,7 +123,7 @@ namespace RaccineSettings
         private void ReleaseResources()
         {
             this.singleInstanceMutex.Close();
-            this.envMonitor.Stop();
+            //this.envMonitor.Stop();
             WatcherThread.exit = true;
         }
 
