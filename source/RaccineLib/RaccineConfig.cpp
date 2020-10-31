@@ -57,9 +57,9 @@ std::vector<std::filesystem::path> RaccineConfig::get_raccine_registry_paths()
 
 std::wstring RaccineConfig::get_yara_rules_directory()
 {
-    std::wstring yara_directory = read_string_from_registry(RACCINE_YARA_RULES_PATH);
+    const std::wstring yara_directory = read_string_from_registry(RACCINE_YARA_RULES_PATH);
     if (!yara_directory.empty()) {
-        return yara_directory;
+        return utils::expand_environment_strings(yara_directory);
     }
 
     return utils::expand_environment_strings(RACCINE_YARA_DIRECTORY);
@@ -67,9 +67,9 @@ std::wstring RaccineConfig::get_yara_rules_directory()
 
 std::wstring RaccineConfig::get_yara_in_memory_rules_directory()
 {
-    std::wstring yara_directory = read_string_from_registry(RACCINE_YARA_RULES_PATH);
+    const std::wstring yara_directory = read_string_from_registry(RACCINE_YARA_RULES_PATH);
     if (!yara_directory.empty()) {
-        return yara_directory + L"\\" + RACCINE_YARA_RULES_PATH_INMEMORY_PATH;
+        return utils::expand_environment_strings(yara_directory + L"\\" + RACCINE_YARA_RULES_PATH_INMEMORY_PATH);
     }
 
     return utils::expand_environment_strings(RACCINE_YARA_DIRECTORY) + +L"\\" + RACCINE_YARA_RULES_PATH_INMEMORY_PATH;
