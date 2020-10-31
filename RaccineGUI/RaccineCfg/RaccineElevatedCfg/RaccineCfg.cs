@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -39,6 +39,15 @@ namespace RaccineElevatedCfg
             {
                 chkSimulationMode.Checked = false;
             }
+            if (settings.ScanMemory == 0x1)
+            {
+                chkScanMemory.Checked = true;
+            }
+            else
+            {
+                chkScanMemory.Checked = false;
+            }
+
         }
 
         private void btnRuleBrowse_Click(object sender, EventArgs e)
@@ -75,6 +84,14 @@ namespace RaccineElevatedCfg
                     settings.LogOnly = 0;
                 }
 
+                if (chkScanMemory.Checked)
+                {
+                    settings.ScanMemory= 0x1;
+                }
+                else
+                {
+                    settings.ScanMemory = 0;
+                }
                 string szFolder = txtRulesDir.Text;
                 settings.RulesDir = szFolder;
             }
@@ -166,6 +183,26 @@ namespace RaccineElevatedCfg
             Close();
         }
 
+        private void btnRulesFolder_Click(object sender, EventArgs e)
+        {
+            string folder_name = settings.RulesDir;
+            folder_name = Environment.ExpandEnvironmentVariables(folder_name);
+            if (Directory.Exists(folder_name))
+            {
+                if (!folder_name.EndsWith("\\"))
+                    folder_name += "\\";
+                ProcessStartInfo psi = new ProcessStartInfo(folder_name);
+                psi.UseShellExecute = true;
+                psi.Verb = "open";
+                Process.Start(psi);
+            }
+        }
+
+        private void chkScanMemory_CheckedChanged(object sender, EventArgs e)
+        {
+            fDirty = true;
+        }
+
     }
 
 
@@ -188,6 +225,20 @@ namespace RaccineElevatedCfg
                 Registry.SetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Raccine", "LogOnly", value ,RegistryValueKind.DWord);
             }
         }
+        public uint ScanMemory
+        {
+            get
+            {
+                uint setting = Convert.ToUInt32(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Raccine", "ScanMemory", 0));
+                return setting;
+            }
+            set
+            {
+                Registry.SetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Raccine", "ScanMemory", value, RegistryValueKind.DWord);
+            }
+        }
+
+
         public string RulesDir
         {
             get

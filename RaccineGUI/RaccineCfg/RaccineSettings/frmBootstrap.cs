@@ -71,7 +71,6 @@ namespace RaccineSettings
 
             this.FormClosing += frmBootstrap_FormClosing;
             SetUacShield(mnuSettings);
-            SetUacShield(mnuUpdateRules);
         }
 
         private void SetUacShield(ToolStripMenuItem menuItem)
@@ -123,7 +122,7 @@ namespace RaccineSettings
         private void ReleaseResources()
         {
             this.singleInstanceMutex.Close();
-            this.envMonitor.Stop();
+            //this.envMonitor.Stop();
             WatcherThread.exit = true;
         }
 
@@ -185,9 +184,8 @@ namespace RaccineSettings
         private void updateRulesToolStripMenuItem_Click(object sender, EventArgs e)
         {
             string dir = AppDomain.CurrentDomain.BaseDirectory;
-
-            ProcessStartInfo psi = new ProcessStartInfo(dir + "\\RaccineRulesSync.exe");
-
+            ProcessStartInfo psi = new ProcessStartInfo(Environment.SystemDirectory + "\\SCHTASKS.EXE");
+            psi.Arguments = "/Run /TN \"Raccine Rules Updater\"";
             Process.Start(psi);
         }
     }
