@@ -30,7 +30,7 @@ function Is-Running($ProcessName) {
 $MalCmds = @(
     "vssadmin.exe delete shadows", 
     "powershell.exe -e JABbaTheHutt", 
-    # "WMIC.exe delete justatest"  # doesn't create a YARA match in Github workflow
+    "WMIC.exe delete justatest"  # doesn't create a YARA match in Github workflow
     "bcdedit.exe recoveryenabled"
 )
 
