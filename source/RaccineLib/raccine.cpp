@@ -160,11 +160,11 @@ bool is_malicious_command_line(const std::vector<std::wstring>& command_line)
     bool bVersion = false;
 
     const std::wstring program = utils::getFileName(utils::to_lower(command_line[0]));
-    wprintf(L"Program is: '%s'\n", program.c_str());
+    //wprintf(L"Program is: '%s'\n", program.c_str());
+    
     // Check for invoked program
     if (program == L"vssadmin.exe" || program == L"vssadmin") {
         bVssadmin = true;
-        wprintf(L"is true!");
     }
 
     if (program == L"wmic.exe" || program == L"wmic") {
