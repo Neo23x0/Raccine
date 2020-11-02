@@ -130,8 +130,8 @@ ECHO Registering Eventlog Events
 eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine Setup: Registration of Event ID 1" 2> nul
 eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine Setup: Registration of Event ID 2" 2> nul
 :: Registry Settings
-REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 2 /F
-REG.EXE ADD HKLM\Software\Raccine /v ScanMemory /t REG_DWORD /d 2 /F
+REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 1 /F
+REG.EXE ADD HKLM\Software\Raccine /v ScanMemory /t REG_DWORD /d 1 /F
 REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d "%ProgramFiles%\Raccine\yara" /F
 :: Registering and starting the GUI elements
 REG ADD "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /t REG_SZ /F /D "%ProgramFiles%\Raccine\RaccineSettings.exe"
@@ -182,7 +182,7 @@ REGEDIT.EXE /S reg-patches\raccine-reg-patch-powershell.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-diskshadow.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-net.reg
 :: Simulation only
-REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 2 /F
+REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 1 /F
 GOTO INSTALL
 
 :: Soft
@@ -207,7 +207,7 @@ GOTO INSTALL
 ECHO.
 ECHO Disabling the GUI elements ...
 ECHO.
-REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 2 /F
+REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 1 /F
 TASKKILL /F /IM RaccineSettings.exe
 REG DELETE "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /F
 IF '%errorlevel%' NEQ '0' (
