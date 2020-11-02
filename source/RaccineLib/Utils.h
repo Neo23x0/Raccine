@@ -65,4 +65,6 @@ std::optional<std::string> convert_wstring_to_string(const std::wstring& input);
 
 ULONG getLastWriteTime(const std::wstring& szFilePath);
 
+std::wstring getFileName(const std::wstring& s);
+
 }

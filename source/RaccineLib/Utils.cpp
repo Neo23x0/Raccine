@@ -435,4 +435,21 @@ std::optional<std::string> convert_wstring_to_string(const std::wstring& input)
     return std::string(ansi_command_line.data());
 }
 
+std::wstring getFileName(const std::wstring& s)
+{
+    wchar_t sep = '/';
+
+#ifdef _WIN32
+    sep = '\\';
+#endif
+
+    size_t i = s.rfind(sep, s.length());
+    if (i != std::wstring::npos)
+    {
+        return(s.substr(i + 1, s.length() - i));
+    }
+
+    return(s);
+}
+
 }

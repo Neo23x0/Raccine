@@ -48,48 +48,6 @@ Malicious combinations:
 
 Powershell list of encoded commands: `JAB`, `SQBFAF`, `SQBuAH`, `SUVYI`, `cwBhA`, `aWV4I`, `aQBlAHgA` and many more
 
-## YARA Matching
-
-Since version 1.0, Raccine additionally uses YARA rules to determine if a process command line is malicious or not. The current YARA rules are in the `./yara` sub folder. 
-
-### YARA External Variables
-
-Since version 1.1 we pass a list of external variables into the YARA matching process to allow for much more complex and clever YARA rules that take attributes of the process and its parent into account. 
-
-
-| Variable             | Description                              | Example Value                     |
-|----------------------|------------------------------------------|-----------------------------------|
-| FromRaccine          |                                          | true                              |
-| Name                 | Image file name                          | WMIC.exe                          |
-| ExecutablePath       | Full path to binary                      | C:\Windows\System32\wbem\WMIC.exe |
-| CommandLine          | Full command line with parameters        | WMIC.exe delete justatest         |
-| Priority             | Process priority                         | 32                                |
-| ParentName           | Parent image file name                   | cmd.exe                           |
-| ParentExecutablePath | Full path to parent executable           | C:\Windows\System32\cmd.exe       | 
-| ParentCommandLine    | Full parent command line with parameters | C:\WINDOWS\system32\cmd.exe       |
-| ParentPriority       | Parent process priority                  | 32                                |
-
-The matching process looks like this on the command line:
-
-```batch
-"C:\Program Files\Raccine\yara64.exe" -d FromRaccine="true" -d Name="WMIC.exe" -d ExecutablePath="C:\Windows\System32\wbem\WMIC.exe" -d CommandLine="WMIC.exe delete justatest" -d  Priority=32 -d FromRaccine="true" -d ParentName="cmd.exe" -d ParentExecutablePath="C:\Windows\System32\cmd.exe" -d ParentCommandLine="'C:\WINDOWS\system32\cmd.exe' " -d ParentPriority=32 C:\ProgramData\Raccine\yarayara\mal_emotet.yar C:\ProgramData\Raccine\yara\Rac1C6A.tmp
-```
-
-The following listing shows an example YARA rule that makes use of the external variables in its coindition. 
-
-```javascript 
-rule env_vars_test {
-    condition:
-        Name contains "WMIC.exe"
-        and CommandLine contains "delete justatest"
-        and ParentPriority >= 8
-        and (
-            ParentCommandLine contains "cmd"
-            or ParentCommandLine contains "powershell"
-        )
-}
-```
-
 ## Example
 
 Emotet without Raccine - [Link](https://app.any.run/tasks/b12f8ee2-f6cc-4571-bcc2-51e34c19941f/)
@@ -136,8 +94,16 @@ If you have a solid security monitoring that logs all process executions, you co
 - 1.0 BETA - GUI elements and YARA rule scanning of command line params
 - 1.1 BETA - YARA rule matching with external variables, troubleshooting functions
 - 1.2 BETA - Signature Updater
+- 1.3 BETA - In-Memory YARA Scanning of invoking parent process
 
 ## Installation
+
+### Requirements
+
+- A x64 archiutecture is required to allow the features: GUI and YARA scanning (only the basic Raccine with static filters is available as x86 executable)
+- VC++ Runtime for YARA scanning (Installer contains the setup package from [https://aka.ms/vs/16/release/VC_redist.x64.exe](https://aka.ms/vs/16/release/VC_redist.x64.exe))
+- Internet access for the YARA rule updates
+- Windows 7 / Windows 2008 R2 and higher (unconfirmed)
 
 ### Automatic Installation
 
@@ -160,6 +126,8 @@ As Administrator do:
 5. Run `reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /F`
 6. Run `schtasks /DELETE /TN "Raccine Rules Updater" /F`
 
+## Updates
+
 ### Program Upgrade
 
 We recommend an uninstall and reinstall to upgrade. An uninstall removes all registry keys with configurations. 
@@ -167,6 +135,51 @@ We recommend an uninstall and reinstall to upgrade. An uninstall removes all reg
 ### Signature Update
 
 Raccine has an integrated signature-updater since version 1.2. This program named `RaccineRulesSync.exe` is configured to run once a day via scheduled task. You can run a signature update manually using the option in the tray icon menu. 
+
+## YARA Matching
+
+Since version 1.0, Raccine additionally uses YARA rules to determine if a process command line or parent process is malicious or not. Raccine uses 2 sets of rules for two different purposes. 
+
+1. `./yara` - rules that get applied to the command line with all parameters, e.g. `WMIC.exe delete justatest`
+2. `./yara/in-memory` - rules that get applied to process memory of the parent process of our intercepted process, e.g. ransomware.exe running our intercepted process vssadmin.exe  
+
+### YARA External Variables
+
+Since version 1.1 we pass a list of external variables into the YARA matching process to allow for much more complex and clever YARA rules that take attributes of the process and its parent into account. 
+
+
+| Variable             | Description                              | Example Value                     |
+|----------------------|------------------------------------------|-----------------------------------|
+| FromRaccine          |                                          | true                              |
+| Name                 | Image file name                          | WMIC.exe                          |
+| ExecutablePath       | Full path to binary                      | C:\Windows\System32\wbem\WMIC.exe |
+| CommandLine          | Full command line with parameters        | WMIC.exe delete justatest         |
+| Priority             | Process priority                         | 32                                |
+| ParentName           | Parent image file name                   | cmd.exe                           |
+| ParentExecutablePath | Full path to parent executable           | C:\Windows\System32\cmd.exe       | 
+| ParentCommandLine    | Full parent command line with parameters | C:\WINDOWS\system32\cmd.exe       |
+| ParentPriority       | Parent process priority                  | 32                                |
+
+The matching process looks like this on the command line:
+
+```batch
+"C:\Program Files\Raccine\yara64.exe" -d FromRaccine="true" -d Name="WMIC.exe" -d ExecutablePath="C:\Windows\System32\wbem\WMIC.exe" -d CommandLine="WMIC.exe delete justatest" -d  Priority=32 -d FromRaccine="true" -d ParentName="cmd.exe" -d ParentExecutablePath="C:\Windows\System32\cmd.exe" -d ParentCommandLine="'C:\WINDOWS\system32\cmd.exe' " -d ParentPriority=32 C:\ProgramData\Raccine\yarayara\mal_emotet.yar C:\ProgramData\Raccine\yara\Rac1C6A.tmp
+```
+
+The following listing shows an example YARA rule that makes use of the external variables in its coindition. 
+
+```javascript 
+rule env_vars_test {
+    condition:
+        Name contains "WMIC.exe"
+        and CommandLine contains "delete justatest"
+        and ParentPriority >= 8
+        and (
+            ParentCommandLine contains "cmd"
+            or ParentCommandLine contains "powershell"
+        )
+}
+```
 
 ## Deploy Configuration via GPO
 
