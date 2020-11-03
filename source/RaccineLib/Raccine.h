@@ -41,7 +41,8 @@ bool EvaluateYaraRules(const RaccineConfig& raccine_config,
                        const std::wstring& lpCommandLine,
                        std::wstring& outYaraOutput,
                        DWORD dwChildPid,
-                       DWORD dwParentPid);
+                       DWORD dwParentPid,
+                       DWORD dwGrandParentPid);
 
 /// This function will optionally log messages to the eventlog
 void WriteEventLogEntryWithId(const std::wstring& pszMessage, DWORD dwEventId);
