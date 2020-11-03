@@ -89,7 +89,7 @@ int wmain(int argc, WCHAR* argv[])
         }
 
         const utils::ProcessDetail details(dwChildPid);
-        std::wstring context = L"\r\nRaccine Context:\r\n" + details.ToPrintedString(L"Child");
+        std::wstring context = L"\r\n\r\nRaccine Context:\r\n" + details.ToPrintedString(L"Child");
         const utils::ProcessDetail detailsParent(dwParentPid);
         context += detailsParent.ToPrintedString(L"Parent");
         const utils::ProcessDetail detailsGrandParent(dwGrandParentPid);
