@@ -313,11 +313,21 @@ std::wstring ProcessDetail::ToString(const std::wstring& szPrefix) const
 {
     const std::wstring YaraDef = L" -d ";
 
-    // we only need to pass FromRaccine="true" in once, so do it for the child process
     std::wstring full_string = YaraDef + L" " + szPrefix + L"Name=\"" + ProcessDetailStruct.ExeName + L"\""
         + YaraDef + L" " + szPrefix + L"ExecutablePath=\"" + ProcessDetailStruct.ExePath + L"\""
         + YaraDef + L" " + szPrefix + L"CommandLine=\"" + ProcessDetailStruct.CommandLine + L"\""
         + YaraDef + L" " + szPrefix + L"TimeSinceExeCreation=" + std::to_wstring(ProcessDetailStruct.TimeSinceExeCreation);
+
+    return full_string;
+}
+
+std::wstring ProcessDetail::ToPrintedString(const std::wstring& szPrefix) const
+{
+    std::wstring full_string = szPrefix + L"Name=\"" + ProcessDetailStruct.ExeName + L"\"\r\n" +
+        szPrefix + L"ExecutablePath=\"" + ProcessDetailStruct.ExePath + L"\"\r\n" +
+        szPrefix + L"CommandLine=\"" + ProcessDetailStruct.CommandLine + L"\"\r\n" +
+        szPrefix + L"TimeSinceExeCreation=" + std::to_wstring(ProcessDetailStruct.TimeSinceExeCreation) + L"\r\n" +
+        szPrefix + L"Pid=" + std::to_wstring(ProcessDetailStruct.dwPid) + L"\r\n";
 
     return full_string;
 }

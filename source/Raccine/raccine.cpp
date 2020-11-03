@@ -46,6 +46,8 @@ int wmain(int argc, WCHAR* argv[])
 
     const DWORD dwParentPid = utils::getParentPid(GetCurrentProcessId());
 
+    const DWORD dwGrandParentPid = utils::getParentPid(dwParentPid); // parent of parent of raccine.exe
+
     bool bBlock = is_malicious_command_line(command_line);
 
     std::wstring szYaraOutput;
@@ -53,7 +55,8 @@ int wmain(int argc, WCHAR* argv[])
         sCommandLine,
         szYaraOutput,
         dwChildPid,
-        dwParentPid);
+        dwParentPid,
+        dwGrandParentPid);
 
     if (fYaraRuleMatched) {
         bBlock = true;
@@ -78,15 +81,22 @@ int wmain(int argc, WCHAR* argv[])
             sListLogs.append(logFormat(sCommandLine, L"Raccine detected malicious activity (simulation mode)"));
         }
 
-        WriteEventLogEntryWithId(message, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
-
 
         // YARA Matches Detected
         if (fYaraRuleMatched && !szYaraOutput.empty()) {
-            message += L"\r\n\r\nYara matches:\r\n" + szYaraOutput;
-            WriteEventLogEntryWithId(message, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
+              message += L"\r\n\r\nYara matches:\r\n" + szYaraOutput;
             sListLogs.append(logFormatLine(szYaraOutput));
         }
+
+        const utils::ProcessDetail details(dwChildPid);
+        std::wstring context = L"\r\n\r\nRaccine Context:\r\n" + details.ToPrintedString(L"Child");
+        const utils::ProcessDetail detailsParent(dwParentPid);
+        context += detailsParent.ToPrintedString(L"Parent");
+        const utils::ProcessDetail detailsGrandParent(dwGrandParentPid);
+        context += detailsGrandParent.ToPrintedString(L"GrandParent");
+        message += context;
+    
+        WriteEventLogEntryWithId(message, RACCINE_EVENTID_MALICIOUS_ACTIVITY);
 
         // signal Event for UI to know an alert happened.  If no UI is running, this has no effect.
         if (configuration.show_gui()) {
