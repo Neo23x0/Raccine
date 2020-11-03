@@ -17,6 +17,9 @@ public:
 
     [[nodiscard]] std::wstring ToString(const std::wstring& szPrefix) const;
 
+    [[nodiscard]] std::wstring ToPrintedString(const std::wstring& szPrefix) const;
+
+
 private:
     struct PROCESS_DETAIL
     {
