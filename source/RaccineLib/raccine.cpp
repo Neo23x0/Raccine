@@ -34,7 +34,8 @@ bool EvaluateYaraRules(const RaccineConfig& raccine_config,
     const std::wstring& lpCommandLine,
     std::wstring& outYaraOutput,
     DWORD dwChildPid,
-    DWORD dwParentPid)
+    DWORD dwParentPid,
+    DWORD dwGrandParentPid)
 {
     if (raccine_config.is_debug_mode()) {
         wprintf(L"Running YARA on: %s\n", lpCommandLine.c_str());
@@ -51,8 +52,6 @@ bool EvaluateYaraRules(const RaccineConfig& raccine_config,
     utils::write_string_to_file(wTestFilename, lpCommandLine);
 
     BOOL fSuccess = TRUE;
-
-    const DWORD dwGrandParentPid = utils::getParentPid(dwParentPid); // parent of parent of raccine.exe
 
     std::wstring childContext = CreateContextForProgram(dwChildPid, L"");
 
@@ -88,6 +87,9 @@ bool EvaluateYaraRules(const RaccineConfig& raccine_config,
         }
     }
     DeleteFileW(wTestFilename);
+
+    // szYaraOutput comes formated with \0s to the end of the buffer
+    outYaraOutput = outYaraOutput.substr(0, outYaraOutput.find(L'\0'));
 
     return fRetVal;
 }
