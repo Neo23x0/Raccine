@@ -18,8 +18,8 @@ namespace RaccineSettings
             Application.SetCompatibleTextRenderingDefault(false);
             frmBootstrap f = new frmBootstrap();
             f.Visible = false;
-            Application.Run(f);
-            
+            if (!f.IsDisposed) // our single instance check will exit the constructor early
+                Application.Run(f);
         }
     }
 }
