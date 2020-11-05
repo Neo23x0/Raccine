@@ -75,7 +75,7 @@ bool YaraRuleRunner::run_yara_rule_on_process(const std::filesystem::path& yara_
     std::wstring& out_yara_output,
     std::wstring& yara_cmd_optional_defines)
 {
-    std::wstring yara_compiled_rule_option = L"";
+    std::wstring yara_compiled_rule_option = L" ";
 
     if (yara_rule.filename().extension() == compiled_ext)
     {
@@ -118,7 +118,7 @@ bool YaraRuleRunner::run_yara_rule_on_file(const std::filesystem::path& yara_rul
                                            std::wstring& yara_cmd_optional_defines) 
 {
 
-    std::wstring yara_compiled_rule_option = L"";
+    std::wstring yara_compiled_rule_option = L" ";
 
     if (yara_rule.filename().extension() == compiled_ext)
     {
