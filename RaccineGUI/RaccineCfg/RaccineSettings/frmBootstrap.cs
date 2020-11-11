@@ -42,6 +42,7 @@ namespace RaccineSettings
                 MessageBox.Show(szMessage, "Raccine Startup Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 this.singleInstanceMutex.Close();
                 Close();
+                return;
             }
             this.alertEvent = NativeApi.CreateEvent(IntPtr.Zero, false, false, "RaccineAlertEvent");
             if (this.alertEvent == IntPtr.Zero)

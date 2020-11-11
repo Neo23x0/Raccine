@@ -8,8 +8,6 @@ YaraRuleRunner::YaraRuleRunner(const std::filesystem::path& yara_rules_dir, cons
     m_raccine_program_directory(raccine_program_directory),
     m_yara_rules(get_yara_rules(yara_rules_dir))
 {
-    m_std_output_read = FileHandleWrapper(INVALID_HANDLE_VALUE);
-    m_std_output_write = FileHandleWrapper(INVALID_HANDLE_VALUE);
 }
 
 bool YaraRuleRunner::run_yara_rules_on_process(const DWORD dwPid,
@@ -77,8 +75,15 @@ bool YaraRuleRunner::run_yara_rule_on_process(const std::filesystem::path& yara_
     std::wstring& out_yara_output,
     std::wstring& yara_cmd_optional_defines)
 {
+    std::wstring yara_compiled_rule_option = L" ";
+
+    if (yara_rule.filename().extension() == compiled_ext)
+    {
+        yara_compiled_rule_option = L" -C ";
+    }
+
     std::wstring yara_command_line = L"\"" + m_raccine_program_directory.wstring() + L"\\"
-        + YARA_INSTANCE + L"\" \"" + yara_rule.wstring() + L"\" " + std::to_wstring(dwPid) + L" -d MemoryScan=1 " + yara_cmd_optional_defines;
+        + YARA_INSTANCE + L"\"" + yara_compiled_rule_option + L"\"" + yara_rule.wstring() + L"\" " + std::to_wstring(dwPid) + L" -d MemoryScan=1 " + yara_cmd_optional_defines;
 
 
     HANDLE readpipe = INVALID_HANDLE_VALUE;
@@ -112,8 +117,16 @@ bool YaraRuleRunner::run_yara_rule_on_file(const std::filesystem::path& yara_rul
                                            std::wstring& out_yara_output,
                                            std::wstring& yara_cmd_optional_defines) 
 {
+
+    std::wstring yara_compiled_rule_option = L" ";
+
+    if (yara_rule.filename().extension() == compiled_ext)
+    {
+        yara_compiled_rule_option = L" -C ";
+    }
+
     std::wstring yara_command_line = L"\"" + m_raccine_program_directory.wstring() + L"\\"
-        + YARA_INSTANCE + L"\" \"" + yara_rule.wstring() + L"\" " + target_file.wstring() + L" " + yara_cmd_optional_defines;
+        + YARA_INSTANCE + L"\"" + yara_compiled_rule_option + L"\"" + yara_rule.wstring() + L"\" " + target_file.wstring() + L" " + yara_cmd_optional_defines;
 
 
     HANDLE readpipe = INVALID_HANDLE_VALUE;
@@ -210,11 +223,18 @@ std::vector<std::filesystem::path> YaraRuleRunner::get_yara_rules(const std::fil
 {
     std::vector<std::filesystem::path> yara_rules;
     //wprintf(L"Checking Rules Directory: %s\n", yara_rules_dir.c_str());
-    const std::wstring ext(L".yar");
+
     for (const auto& p : std::filesystem::directory_iterator(yara_rules_dir.c_str())) {
-        if (p.path().extension() == ext) {
-            //wprintf(L"Found: %s\n", p.path().c_str());
+        if (p.path().extension() == compiled_ext) {
             yara_rules.push_back(p.path());
+        }
+    }
+    if (yara_rules.size() == 0)
+    {
+        for (const auto& p : std::filesystem::directory_iterator(yara_rules_dir.c_str())) {
+            if (p.path().extension() == ext) {
+                yara_rules.push_back(p.path());
+            }
         }
     }
     return yara_rules;

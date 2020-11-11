@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -13,11 +15,18 @@ namespace RaccineSettings
 {
     class RulesSync
     {
+
+        public static bool fCompileRules = true;
         static public void Main(String[] args)
         {
             var contentsUrl = $"https://api.github.com/repos/Neo23x0/Raccine/contents/yara?ref=main";
             //var contentsUrl = $"https://api.github.com/repos/Neo23x0/Raccine/contents/yara?ref=yara-mem-matching";
             SyncContentFromUrl(contentsUrl, "");
+        }
+
+        public static string GetYaraDefines()
+        {
+            return " -d Name=\"\" -d ExecutablePath=\"\" -d CommandLine=\"\" -d TimeSinceExeCreation=0 -d ParentName=\"\" -d ParentExecutablePath=\"\" -d ParentCommandLine= -d ParentTimeSinceExeCreation=0 -d GrandParentName=\"\" -d GrandParentExecutablePath=\"\" -d GrandParentCommandLine=\"\" -d GrandParentTimeSinceExeCreation=0 ";
         }
 
         public static bool SyncContentFromUrl(string contentsUrl, string subdir)
@@ -60,7 +69,43 @@ namespace RaccineSettings
                                 new System.IO.StreamWriter(szRulePath, false))
                             {
                                 file.WriteLine(yararule);
+                                file.Flush();
+                                file.Close();
                                 iRuleCount++;
+
+                                if (fCompileRules)
+                                {
+                                    string szCompiledRulePath = szRulePath + "c";  // e.g. rule_file.yarc
+                                    string compilation_program = "";
+                                    if (Environment.Is64BitOperatingSystem)
+                                    {
+                                        compilation_program = "%ProgramFiles%\\Raccine\\yarac64.exe";
+                                    }
+                                    else
+                                    {
+                                        compilation_program = "%ProgramFiles%\\Raccine\\yarac86.exe";
+                                    }
+                                    compilation_program = Environment.ExpandEnvironmentVariables(compilation_program);
+
+                                    if (File.Exists(compilation_program))
+                                    {
+                                        string command_line = GetYaraDefines() + "\"" + szRulePath + "\" \"" + szCompiledRulePath + "\"";
+                                        compilation_program = "\"" + compilation_program + "\"";
+
+                                        ProcessStartInfo psi = new ProcessStartInfo(compilation_program);
+                                        psi.Arguments = command_line;
+                                        psi.UseShellExecute = false;
+                                        Process.Start(psi);
+                                        if (File.Exists(szCompiledRulePath))
+                                        {
+                                            Console.WriteLine("Compiled rule to {0}", szCompiledRulePath);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("Can't find yara rule compiler: " + compilation_program);
+                                    }
+                                }
                             }
                         }
                     } 

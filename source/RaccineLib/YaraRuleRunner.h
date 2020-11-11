@@ -5,8 +5,15 @@
 #include "HandleWrapper.h"
 
 #define YARA_RESULTS_SUFFIX L".out"
+#ifdef _WIN64
 #define YARA_INSTANCE  L"yara64.exe"
+#elif defined _WIN32 
+#define YARA_INSTANCE  L"yara86.exe"
+#endif
 constexpr UINT TIMEOUT = 5000;
+
+const std::wstring ext(L".yar");
+const std::wstring compiled_ext(L".yarc");
 
 class YaraRuleRunner final
 {
@@ -59,7 +66,4 @@ private:
     const std::filesystem::path m_raccine_program_directory;
 
     std::vector<std::filesystem::path> m_yara_rules;
-
-    FileHandleWrapper m_std_output_read;
-    FileHandleWrapper m_std_output_write;
 };
