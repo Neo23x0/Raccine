@@ -34,7 +34,7 @@ MKDIR Raccine\reg-patches\
 XCOPY reg-patches\*.reg Raccine\reg-patches\
 
 :: YARA Feature
-ECHO Crating .\Raccine\yara sub folder for YARA binaries and rules ...
+ECHO Creating .\Raccine\yara sub folder for YARA binaries and rules ...
 MKDIR Raccine\yara\
 MKDIR Raccine\yara\in-memory\
 ECHO Copying all yara rules to new folders ...
@@ -45,6 +45,7 @@ XCOPY tools\yara64.exe Raccine\yara\
 XCOPY tools\yarac64.exe Raccine\yara\
 XCOPY tools\yara32.exe Raccine\yara\
 XCOPY tools\yarac32.exe Raccine\yara\
+
 
 :: Visual C++ Runtime
 ECHO Copying VC++ runtime to dist folder
