@@ -5,8 +5,11 @@ ECHO Create Temp directory for some downloads
 MKDIR temp
 :: Get YARA
 ECHO Downloading YARA ...
-powershell -executionpolicy bypass -Command "(New-Object System.Net.WebClient).DownloadFile('https://github.com/VirusTotal/yara/releases/download/v4.0.2/yara-v4.0.2-1347-win64.zip', '.\temp\yara.zip')"
-powershell -executionpolicy bypass -Command "Expand-Archive -Path .\temp\yara.zip -DestinationPath .\tools -Force"
+powershell -executionpolicy bypass -Command "(New-Object System.Net.WebClient).DownloadFile('https://github.com/VirusTotal/yara/releases/download/v4.0.2/yara-v4.0.2-1347-win32.zip', '.\temp\yara32.zip')"
+powershell -executionpolicy bypass -Command "(New-Object System.Net.WebClient).DownloadFile('https://github.com/VirusTotal/yara/releases/download/v4.0.2/yara-v4.0.2-1347-win64.zip', '.\temp\yara64.zip')"
+powershell -executionpolicy bypass -Command "Expand-Archive -Path .\temp\yara32.zip -DestinationPath .\tools -Force"
+powershell -executionpolicy bypass -Command "Expand-Archive -Path .\temp\yara64.zip -DestinationPath .\tools -Force"
+DEL /F .\tools\yarac32.exe
 DEL /F .\tools\yarac64.exe
 :: Get Visual C++ Runtime
 ECHO Downloading Visual C++ Runtime ...
@@ -41,6 +44,7 @@ XCOPY yara\*.* Raccine\yara\
 XCOPY yara\in-memory\*.* Raccine\yara\in-memory
 ECHO Copying yara binaries to new folder ...
 XCOPY tools\yara64.exe Raccine\yara\
+XCOPY tools\yara32.exe Raccine\yara\
 
 :: Visual C++ Runtime
 ECHO Copying VC++ runtimt to dist folder

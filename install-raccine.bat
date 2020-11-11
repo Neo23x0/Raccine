@@ -111,6 +111,7 @@ COPY RaccineSettings.exe "%ProgramFiles%\Raccine\"
 COPY RaccineRulesSync.exe "%ProgramFiles%\Raccine\"
 :: Raccine Program Files
 COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
+COPY yara\yara32.exe "%ProgramFiles%\Raccine\"
 COPY yara\yara64.exe "%ProgramFiles%\Raccine\"
 :: YARA Rules
 MKDIR "%ProgramFiles%\Raccine\yara"
