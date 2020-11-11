@@ -102,7 +102,7 @@ IF NOT EXIST C:\Windows\System32\vcruntime140.dll start vc_redist.x64.exe /q /no
 :: Cleanup existing elements
 TASKKILL /F /IM Raccine.exe
 TASKKILL /F /IM RaccineSettings.exe
-TASKKILL /F /IM RaccineRulesSync.exe.exe
+TASKKILL /F /IM RaccineRulesSync.exe
 :: Raccine GUI Elements
 ECHO Creating data directory "%ProgramFiles%\Raccine" ...
 MKDIR "%ProgramFiles%\Raccine"
@@ -248,7 +248,7 @@ GOTO MENU
 ECHO.
 TASKKILL /F /IM Raccine.exe
 TASKKILL /F /IM RaccineSettings.exe
-TASKKILL /F /IM RaccineRulesSync.exe.exe
+TASKKILL /F /IM RaccineRulesSync.exe
 ECHO Removing Raccine folders ...
 @RD /S /Q "%ProgramData%\Raccine"
 @RD /S /Q "%ProgramFiles%\Raccine"
@@ -263,7 +263,7 @@ IF '%errorlevel%' NEQ '0' (
     ECHO Successfully uninstalled!
 )
 TASKKILL /F /IM RaccineSettings.exe
-TASKKILL /F /IM RaccineRulesSync.exe.exe
+TASKKILL /F /IM RaccineRulesSync.exe
 REG DELETE "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /F
 :: Uninstall update task
 SCHTASKS /DELETE /TN "Raccine Rules Updater" /F
