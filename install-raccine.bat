@@ -6,6 +6,15 @@ CLS
 :: Command Line Param
 SET SELECTED_OPTION=%1
 
+SET ARCHITECTURE_SUFFIX=64
+SET ARCHITECTURE_SUFFIX_X=64
+IF "%PROCESSOR_ARCHITECTURE%" EQU "AMD64" (
+SET ARCHITECTURE_SUFFIX=64
+) ELSE (
+SET ARCHITECTURE_SUFFIX=32
+SET ARCHITECTURE_SUFFIX_X=86
+)
+
 :: BatchGotAdmin
 :: Source: https://stackoverflow.com/a/10052222
 :-------------------------------------
@@ -98,11 +107,11 @@ GOTO MENU
 :INSTALL
 ECHO.
 :: Visual C++ Runtime
-IF NOT EXIST C:\Windows\System32\vcruntime140.dll start vc_redist.x64.exe /q /norestart
+IF NOT EXIST C:\Windows\System32\vcruntime140.dll start vc_redist.x%ARCHITECTURE_SUFFIX_X%.exe /q /norestart
 :: Cleanup existing elements
 TASKKILL /F /IM Raccine.exe
 TASKKILL /F /IM RaccineSettings.exe
-TASKKILL /F /IM RaccineRulesSync.exe.exe
+TASKKILL /F /IM RaccineRulesSync.exe
 :: Raccine GUI Elements
 ECHO Creating data directory "%ProgramFiles%\Raccine" ...
 MKDIR "%ProgramFiles%\Raccine"
@@ -111,7 +120,8 @@ COPY RaccineSettings.exe "%ProgramFiles%\Raccine\"
 COPY RaccineRulesSync.exe "%ProgramFiles%\Raccine\"
 :: Raccine Program Files
 COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
-COPY yara\yara64.exe "%ProgramFiles%\Raccine\"
+COPY yara\yara%ARCHITECTURE_SUFFIX%.exe "%ProgramFiles%\Raccine\"
+COPY yara\yarac%ARCHITECTURE_SUFFIX%.exe "%ProgramFiles%\Raccine\"
 :: YARA Rules
 MKDIR "%ProgramFiles%\Raccine\yara"
 MKDIR "%ProgramFiles%\Raccine\yara\in-memory"
@@ -248,7 +258,7 @@ GOTO MENU
 ECHO.
 TASKKILL /F /IM Raccine.exe
 TASKKILL /F /IM RaccineSettings.exe
-TASKKILL /F /IM RaccineRulesSync.exe.exe
+TASKKILL /F /IM RaccineRulesSync.exe
 ECHO Removing Raccine folders ...
 @RD /S /Q "%ProgramData%\Raccine"
 @RD /S /Q "%ProgramFiles%\Raccine"

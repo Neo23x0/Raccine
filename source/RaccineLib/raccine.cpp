@@ -24,11 +24,12 @@
 #include "HandleWrapper.h"
 #include "Utils.h"
 #include "YaraRuleRunner.h"
-
+#include "EventLogHelper.h"
 #pragma comment(lib,"advapi32.lib")
 #pragma comment(lib,"shlwapi.lib")
 #pragma comment(lib,"Wbemuuid.lib")
 
+//#define ENABLE_COMMANDLINE_CHECKS 0
 
 bool EvaluateYaraRules(const RaccineConfig& raccine_config,
     const std::wstring& lpCommandLine,
@@ -37,8 +38,16 @@ bool EvaluateYaraRules(const RaccineConfig& raccine_config,
     DWORD dwParentPid,
     DWORD dwGrandParentPid)
 {
+
+    std::wstring recent_event_details(L"\r\n\r\nRecentEvents:");
+
     if (raccine_config.is_debug_mode()) {
         wprintf(L"Running YARA on: %s\n", lpCommandLine.c_str());
+    }
+
+    if (raccine_config.use_eventlog_data_in_rules())
+    {
+        recent_event_details += eventloghelper::GetEvents();
     }
 
     WCHAR wTestFilename[MAX_PATH] = { 0 };
@@ -49,7 +58,7 @@ bool EvaluateYaraRules(const RaccineConfig& raccine_config,
     if (c == 0) {
         return false;
     }
-    utils::write_string_to_file(wTestFilename, lpCommandLine);
+    utils::write_string_to_file(wTestFilename, lpCommandLine + recent_event_details);
 
     BOOL fSuccess = TRUE;
 
@@ -86,7 +95,9 @@ bool EvaluateYaraRules(const RaccineConfig& raccine_config,
                 fRetVal = fProcessRetVal;
         }
     }
-    DeleteFileW(wTestFilename);
+    if (!raccine_config.is_debug_mode()) {
+        DeleteFileW(wTestFilename);
+    }
 
     // szYaraOutput comes formated with \0s to the end of the buffer
     outYaraOutput = outYaraOutput.substr(0, outYaraOutput.find(L'\0'));
@@ -138,7 +149,8 @@ bool is_malicious_command_line(const std::vector<std::wstring>& command_line)
     if (command_line.empty()) {
         return false;
     }
-
+ 
+#ifdef ENABLE_COMMANDLINE_CHECKS
     // Main programs to monitor
     bool bVssadmin = false;
     bool bWmic = false;
@@ -248,12 +260,16 @@ bool is_malicious_command_line(const std::vector<std::wstring>& command_line)
         // Activate blocking
         return true;
     }
+#endif
 
     return false;
 }
 
 bool does_command_line_contain_base64(const std::vector<std::wstring>& command_line)
 {
+#ifndef ENABLE_COMMANDLINE_CHECKS
+    UNREFERENCED_PARAMETER(command_line);
+#else
     // Encoded Command List (Base64)
     std::vector<std::wstring> encodedCommands = { L"JAB", L"SQBFAF", L"SQBuAH", L"SUVYI",
                                                   L"cwBhA", L"aWV4I", L"aQBlAHgA",
@@ -279,6 +295,7 @@ bool does_command_line_contain_base64(const std::vector<std::wstring>& command_l
             }
         }
     }
+#endif
 
     return false;
 }

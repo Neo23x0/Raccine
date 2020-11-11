@@ -1,4 +1,4 @@
-@ECHO OFF
+rem @ECHO OFF
 
 :: Download Components
 ECHO Create Temp directory for some downloads
@@ -6,12 +6,13 @@ MKDIR temp
 :: Get YARA
 ECHO Downloading YARA ...
 powershell -executionpolicy bypass -Command "(New-Object System.Net.WebClient).DownloadFile('https://github.com/VirusTotal/yara/releases/download/v4.0.2/yara-v4.0.2-1347-win64.zip', '.\temp\yara.zip')"
+powershell -executionpolicy bypass -Command "(New-Object System.Net.WebClient).DownloadFile('https://github.com/VirusTotal/yara/releases/download/v4.0.2/yara-v4.0.2-1347-win32.zip', '.\temp\yara_x86.zip')"
 powershell -executionpolicy bypass -Command "Expand-Archive -Path .\temp\yara.zip -DestinationPath .\tools -Force"
-DEL /F .\tools\yarac64.exe
+powershell -executionpolicy bypass -Command "Expand-Archive -Path .\temp\yara_x86.zip -DestinationPath .\tools -Force"
 :: Get Visual C++ Runtime
 ECHO Downloading Visual C++ Runtime ...
 powershell -executionpolicy bypass -Command "(New-Object System.Net.WebClient).DownloadFile('https://aka.ms/vs/16/release/vc_redist.x64.exe', '.\tools\vc_redist.x64.exe')"
-
+powershell -executionpolicy bypass -Command "(New-Object System.Net.WebClient).DownloadFile('https://download.microsoft.com/download/0/6/4/064F84EA-D1DB-4EAA-9A5C-CC2F0FF6A638/vc_redist.x86.exe', '.\tools\vc_redist.x86.exe')" 
 ECHO Create folder .\Raccine that will hold the installer package
 DEL /F Raccine.zip
 @RD /S /Q ".\Raccine"
@@ -41,10 +42,14 @@ XCOPY yara\*.* Raccine\yara\
 XCOPY yara\in-memory\*.* Raccine\yara\in-memory
 ECHO Copying yara binaries to new folder ...
 XCOPY tools\yara64.exe Raccine\yara\
+XCOPY tools\yarac64.exe Raccine\yara\
+XCOPY tools\yara32.exe Raccine\yara\
+XCOPY tools\yarac32.exe Raccine\yara\
 
 :: Visual C++ Runtime
-ECHO Copying VC++ runtimt to dist folder
-XCOPY tools\yara64.exe Raccine\vc_redist.x64.exe*
+ECHO Copying VC++ runtime to dist folder
+XCOPY tools\vc_redist.x64.exe Raccine\vc_redist.x64.exe*
+XCOPY tools\vc_redist.x86.exe Raccine\vc_redist.x86.exe*
 
 :: GUI
 ECHO Copying GUI components to dist folder

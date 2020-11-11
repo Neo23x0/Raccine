@@ -8,7 +8,7 @@
 #ifdef _WIN64
 #define YARA_INSTANCE  L"yara64.exe"
 #elif defined _WIN32 
-#define YARA_INSTANCE  L"yara86.exe"
+#define YARA_INSTANCE  L"yara32.exe"
 #endif
 constexpr UINT TIMEOUT = 5000;
 

@@ -10,6 +10,7 @@ constexpr wchar_t RACCINE_YARA_RULES_PATH[] = L"RulesDir";
 constexpr wchar_t RACCINE_YARA_SCAN_MEMORY[] = L"ScanMemory";
 constexpr wchar_t RACCINE_CONFIG_SHOW_GUI[] = L"ShowGui";
 constexpr wchar_t RACCINE_CONFIG_LOG_ONLY[] = L"LogOnly";
+constexpr wchar_t RACCINE_CONFIG_EVENTLOG_DATA_IN_RULES[] = L"EventlogRules";
 constexpr wchar_t RACCINE_CONFIG_DEBUG[] = L"Debug";
 constexpr wchar_t RACCINE_YARA_RULES_PATH_INMEMORY_PATH[] = L"in-memory";
 //
@@ -27,6 +28,7 @@ public:
     [[nodiscard]] bool log_only() const;
     [[nodiscard]] bool show_gui() const;
     [[nodiscard]] bool is_debug_mode() const;
+    [[nodiscard]] bool use_eventlog_data_in_rules() const;
     [[nodiscard]] std::wstring yara_rules_directory() const;
     [[nodiscard]] std::wstring yara_in_memory_rules_directory() const;
     [[nodiscard]] bool scan_memory() const;
@@ -55,6 +57,7 @@ private:
     const bool m_show_gui;
     const bool m_is_debug_mode;
     const bool m_scan_memory;
+    const bool m_use_eventlog_data_in_rules;
     std::wstring m_yara_rules_directory;
     std::wstring m_yara_in_memory_rules_directory;
 };

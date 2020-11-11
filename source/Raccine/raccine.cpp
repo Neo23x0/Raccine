@@ -103,6 +103,17 @@ int wmain(int argc, WCHAR* argv[])
             trigger_gui_event();
         }
     }
+    else
+    {
+        if (configuration.log_only())
+        {
+            std::wstring message;
+            // Eventlog
+            message = L"Raccine detected benign activity:\r\n" + sCommandLine + L"\r\n(simulation mode)";
+            // Log to the text log file
+            sListLogs.append(logFormat(sCommandLine, L"Raccine detected benign activity (simulation mode)"));
+        }
+    }
 
     // If block and not simulation mode
     if (bBlock && !configuration.log_only()) {
