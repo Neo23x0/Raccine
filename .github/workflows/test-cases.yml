@@ -37,10 +37,6 @@ jobs:
       run: msbuild -m /p:Configuration=Release
       working-directory: ./RaccineGUI/RaccineCfg
 
-    - name: Run msbuild of RaccineGUI for release
-      run: msbuild -m /p:Configuration=Release
-      working-directory: ./RaccineGUI/RaccineCfg
-
     - name: Run build_dist.bat
       run: ./build_dist.bat
       shell: cmd
