@@ -110,13 +110,13 @@ ECHO.
 :: Visual C++ Runtime
 IF NOT EXIST C:\Windows\System32\vcruntime140.dll (
     ECHO Installing Visual C++ Redistributable Package ...
-    start vc_redist.x%ARCHITECTURE_SUFFIX_X%.exe /q /norestart
+    start preqeq\vc_redist.x%ARCHITECTURE_SUFFIX_X%.exe /q /norestart
 )
 :: .NET Framework
 REG QUERY "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\.NETFramework\v4.0.30319\SKUs\.NETFramework,Version=v4.5" 2>nul
 IF ERRORLEVEL 1 (
     ECHO Installing .NET Framework ...
-    start NDP462-KB3151800-x86-x64-AllOS-ENU.exe /q /norestart
+    start preqeq\NDP462-KB3151800-x86-x64-AllOS-ENU.exe /q /norestart
 )
 :: Cleanup existing elements
 TASKKILL /F /IM Raccine.exe

@@ -49,14 +49,15 @@ XCOPY tools\yarac64.exe Raccine\yara\
 XCOPY tools\yara32.exe Raccine\yara\
 XCOPY tools\yarac32.exe Raccine\yara\
 
+:: Requirements
+MKDIR Raccine\preqeq\
 :: Visual C++ Runtime
 ECHO Copying VC++ runtime to dist folder
-XCOPY tools\vc_redist.x64.exe Raccine\vc_redist.x64.exe*
-XCOPY tools\vc_redist.x86.exe Raccine\vc_redist.x86.exe*
-
+XCOPY tools\vc_redist.x64.exe Raccine\preqeq\vc_redist.x64.exe*
+XCOPY tools\vc_redist.x86.exe Raccine\preqeq\vc_redist.x86.exe*
 :: .NET Framework
 ECHO Copying .NET setup file ...
-XCOPY tools\NDP462-KB3151800-x86-x64-AllOS-ENU.exe Raccine\NDP462-KB3151800-x86-x64-AllOS-ENU.exe*
+XCOPY tools\NDP462-KB3151800-x86-x64-AllOS-ENU.exe Raccine\preqeq\NDP462-KB3151800-x86-x64-AllOS-ENU.exe*
 
 :: GUI
 ECHO Copying GUI components to dist folder
