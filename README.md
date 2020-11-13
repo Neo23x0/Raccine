@@ -95,15 +95,18 @@ If you have a solid security monitoring that logs all process executions, you co
 - 1.1 BETA - YARA rule matching with external variables, troubleshooting functions
 - 1.2 BETA - Signature Updater
 - 1.3 BETA - In-Memory YARA Scanning of invoking parent process
+- 1.4 BETA - Full x86 support, moved static strings to YARA rules to avoid AV detections, Log of accepted executions, .NET Framework setup in installer
 
 ## Installation
 
 ### Requirements
 
-- A x64 archiutecture is required to allow the features: GUI and YARA scanning (only the basic Raccine with static filters is available as x86 executable)
 - VC++ Runtime for YARA scanning (Installer contains the setup package from [https://aka.ms/vs/16/release/VC_redist.x64.exe](https://aka.ms/vs/16/release/VC_redist.x64.exe))
+- .NET Framework 4.5
 - Internet access for the YARA rule updates
-- Windows 7 / Windows 2008 R2 and higher (unconfirmed)
+- Windows 7 / Windows 2008 R2 or higher
+
+Both the Visual C++ Redistributable package and the .NET Framework will be automatically installed running `install-raccine.bat`.
 
 ### Automatic Installation
 
