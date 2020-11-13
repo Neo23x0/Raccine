@@ -125,9 +125,9 @@ Foreach ($Cmd in $GoodCmds) {
     # Log File
     $LogContent = Get-Content $LogFile
     $cointainsKeywords = $LogContent | %{$_ -Match $Cmd -and $_ -Match 'benign'}
-    If ( $cointainsKeywords ) { 
+    If ( -Not $cointainsKeywords ) { 
         Write-Host $LogContent
-        Write-Host "Error: Log file entry of detection found"
+        Write-Host "Error: Log file entry of expected benign detection not found"
         exit 1 
     }
 
