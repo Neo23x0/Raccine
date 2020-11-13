@@ -9,7 +9,7 @@ on:
 
 
 jobs:
-  explore:
+  robot-tests:
     runs-on: 'windows-latest'
     steps:
 
