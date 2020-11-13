@@ -122,6 +122,7 @@ COPY RaccineRulesSync.exe "%ProgramFiles%\Raccine\"
 COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
 COPY yara\yara%ARCHITECTURE_SUFFIX%.exe "%ProgramFiles%\Raccine\"
 COPY yara\yarac%ARCHITECTURE_SUFFIX%.exe "%ProgramFiles%\Raccine\"
+
 :: YARA Rules
 MKDIR "%ProgramFiles%\Raccine\yara"
 MKDIR "%ProgramFiles%\Raccine\yara\in-memory"
@@ -273,7 +274,7 @@ IF '%errorlevel%' NEQ '0' (
     ECHO Successfully uninstalled!
 )
 TASKKILL /F /IM RaccineSettings.exe
-TASKKILL /F /IM RaccineRulesSync.exe.exe
+TASKKILL /F /IM RaccineRulesSync.exe
 REG DELETE "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /F
 :: Uninstall update task
 SCHTASKS /DELETE /TN "Raccine Rules Updater" /F
