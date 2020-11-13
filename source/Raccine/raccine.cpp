@@ -48,19 +48,13 @@ int wmain(int argc, WCHAR* argv[])
 
     const DWORD dwGrandParentPid = utils::getParentPid(dwParentPid); // parent of parent of raccine.exe
 
-    bool bBlock = is_malicious_command_line(command_line);
-
     std::wstring szYaraOutput;
-    const bool fYaraRuleMatched = EvaluateYaraRules(configuration,
+    const bool bBlock = EvaluateYaraRules(configuration,
         sCommandLine,
         szYaraOutput,
         dwChildPid,
         dwParentPid,
         dwGrandParentPid);
-
-    if (fYaraRuleMatched) {
-        bBlock = true;
-    }
 
     std::wstring sListLogs;
 
@@ -83,7 +77,7 @@ int wmain(int argc, WCHAR* argv[])
 
 
         // YARA Matches Detected
-        if (fYaraRuleMatched && !szYaraOutput.empty()) {
+        if (bBlock && !szYaraOutput.empty()) {
               message += L"\r\n\r\nYara matches:\r\n" + szYaraOutput;
             sListLogs.append(logFormatLine(szYaraOutput));
         }
@@ -101,6 +95,17 @@ int wmain(int argc, WCHAR* argv[])
         // signal Event for UI to know an alert happened.  If no UI is running, this has no effect.
         if (configuration.show_gui()) {
             trigger_gui_event();
+        }
+    }
+    else
+    {
+        if (configuration.log_only())
+        {
+            std::wstring message;
+            // Eventlog
+            message = L"Raccine detected benign activity:\r\n" + sCommandLine + L"\r\n(simulation mode)";
+            // Log to the text log file
+            sListLogs.append(logFormat(sCommandLine, L"Raccine detected benign activity (simulation mode)"));
         }
     }
 

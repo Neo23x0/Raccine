@@ -30,6 +30,9 @@
     <ClInclude Include="RaccineConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="EventLogHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="raccine.cpp">
@@ -42,6 +45,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RaccineConfig.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="EventLog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

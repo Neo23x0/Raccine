@@ -49,10 +49,6 @@ void WriteEventLogEntryWithId(const std::wstring& pszMessage, DWORD dwEventId);
 
 void WriteEventLogEntry(const std::wstring& pszMessage);
 
-bool is_malicious_command_line(const std::vector<std::wstring>& command_line);
-
-bool does_command_line_contain_base64(const std::vector<std::wstring>& command_line);
-
 bool needs_powershell_workaround(const std::wstring& command_line);
 
 void trigger_gui_event();

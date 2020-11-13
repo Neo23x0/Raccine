@@ -13,6 +13,74 @@
 
 namespace utils
 {
+    std::wstring getUserSid()
+    {
+
+        HANDLE hToken = NULL;
+        DWORD dwBufferSize = 0;
+        PTOKEN_USER pTokenUser = NULL;
+        LPWSTR pszSid = NULL;
+        std::wstring sid;
+
+        if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken)) 
+        {
+            goto ErrorReturn;
+        }
+
+        (void)GetTokenInformation(hToken, TokenUser, NULL, 0, &dwBufferSize);
+
+        if (dwBufferSize == 0)
+        {
+            goto ErrorReturn;
+        }
+
+        pTokenUser = (PTOKEN_USER)LocalAlloc(LPTR, dwBufferSize);
+        if (!pTokenUser)
+        {
+            goto ErrorReturn;
+        }
+
+        if (!GetTokenInformation(hToken, TokenUser, pTokenUser, dwBufferSize,
+            &dwBufferSize)) 
+        {
+            goto ErrorReturn;
+        }
+
+        if (!IsValidSid(pTokenUser->User.Sid)) 
+        {
+            goto ErrorReturn;
+        }
+
+        if (!ConvertSidToStringSid(pTokenUser->User.Sid, &pszSid))
+        {
+            goto ErrorReturn;
+        }
+
+        sid = std::wstring(pszSid);
+        LocalFree(pszSid);
+        LocalFree(pTokenUser);
+        CloseHandle(hToken);
+        return sid;
+
+    ErrorReturn:
+        if (hToken != NULL)
+            CloseHandle(hToken);
+
+        if (pTokenUser)
+            LocalFree(pTokenUser);
+
+        return std::wstring(L"(unavailable)");
+    }
+
+    DWORD getCurrentSessionId()
+    {
+        DWORD sess_id = 999;
+        ProcessIdToSessionId(
+            GetCurrentProcessId(),
+            &sess_id
+        );
+        return sess_id;
+    }
 
 std::wstring to_lower(const std::wstring& input)
 {
@@ -182,7 +250,7 @@ bool isProcessAllowed(const PROCESSENTRY32W& pe32)
             const std::wstring explorer_path = L"c:\\windows\\explorer.exe";
             if (file_path == explorer_path) {
                 // Is the process running as MEDIUM (which Explorer does)
-                return getIntegrityLevel(hProcess) == Integrity::Medium;
+                return (getIntegrityLevel(hProcess) == Integrity::Medium || getIntegrityLevel(hProcess) == Integrity::High);
             }
         }
     }

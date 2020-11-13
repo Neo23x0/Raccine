@@ -243,7 +243,23 @@ namespace RaccineElevatedCfg
         {
             get
             {
-                string dir_name = Environment.ExpandEnvironmentVariables(@"%ProgramFiles%\Raccine\yara"); 
+
+                // Windows  App       ProgramFiles          PROGRAMFILES(X86)       ProgramW6432
+                //  ------ ----- -----------------------------------------------------------------
+                // 32 - bit  32 - bit  C:\Program Files      [empty string]         [empty string]
+                // 64 - bit  32 - bit  C:\Program Files(x86) C:\Program Files(x86)  C:\Program Files
+                // 64 - bit  64 - bit  C:\Program Files      C:\Program Files(x86)  C:\Program Files
+                string dir_name = "";
+                if (Environment.Is64BitOperatingSystem)
+                {
+                    dir_name = "%ProgramW6432%\\Raccine\\yarac64.exe";
+                }
+                else
+                {
+                    dir_name = "%ProgramFiles%\\Raccine\\yarac32.exe";
+                }
+                dir_name = Environment.ExpandEnvironmentVariables(dir_name);
+
                 string setting = Convert.ToString(Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Raccine", "RulesDir", dir_name));
                 return setting;
             }

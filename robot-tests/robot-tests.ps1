@@ -65,14 +65,14 @@ Foreach ($Cmd in $MalCmds) {
     # Check correct handling
     # Log File
     $LogContent = Get-Content $LogFile
-    $cointainsKeywords = $LogContent | %{$_ -match $Cmd}
+    $cointainsKeywords = $LogContent | %{$_ -match $Cmd -and $_ -Match 'malicious'}
     If ( -Not $cointainsKeywords ) { 
         Write-Host "Log file content: $($LogContent)"
         Write-Host "Error: Log file entry of detection not found (Command: $($Cmd)"
         exit 1 
     }
 
-    # Evenlog
+    # Eventlog
     $Result = Get-EventLog -LogName Application -Message *Raccine* -Newest 1
     If ( $Result.Message -NotMatch $Cmd ) { 
         Write-Host $Result.Message
@@ -124,14 +124,14 @@ Foreach ($Cmd in $GoodCmds) {
     # Check correct handling
     # Log File
     $LogContent = Get-Content $LogFile
-    $cointainsKeywords = $LogContent | %{$_ -Match $Cmd}
-    If ( $cointainsKeywords ) { 
+    $cointainsKeywords = $LogContent | %{$_ -Match $Cmd -and $_ -Match 'benign'}
+    If ( -Not $cointainsKeywords ) { 
         Write-Host $LogContent
-        Write-Host "Error: Log file entry of detection found"
+        Write-Host "Error: Log file entry of expected benign detection not found"
         exit 1 
     }
 
-    # Evenlog
+    # Eventlog
     $Result = Get-EventLog -LogName Application -Message *Raccine* -Newest 1
     If ( $Result.Message -Match $Cmd ) { 
         Write-Host $Result.Message
