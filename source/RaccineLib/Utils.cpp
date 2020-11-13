@@ -250,7 +250,7 @@ bool isProcessAllowed(const PROCESSENTRY32W& pe32)
             const std::wstring explorer_path = L"c:\\windows\\explorer.exe";
             if (file_path == explorer_path) {
                 // Is the process running as MEDIUM (which Explorer does)
-                return getIntegrityLevel(hProcess) == Integrity::Medium;
+                return (getIntegrityLevel(hProcess) == Integrity::Medium || getIntegrityLevel(hProcess) == Integrity::High);
             }
         }
     }
