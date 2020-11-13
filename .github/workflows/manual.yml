@@ -1,0 +1,18 @@
+# This is a basic workflow that is manually triggered
+
+name: Explore test workflow
+
+# Controls when the action will run. Workflow runs when manually triggered using the UI
+# or API.
+on:
+  workflow_dispatch:
+
+
+jobs:
+  explore:
+    runs-on: 'windows-latest'
+    steps:
+
+    - name: Run explore
+      run: ./explore.bat
+      shell: cmd
