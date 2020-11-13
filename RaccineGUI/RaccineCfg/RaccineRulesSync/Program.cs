@@ -16,7 +16,7 @@ namespace RaccineSettings
     class RulesSync
     {
 
-        public static bool fCompileRules = true;
+        public static bool fCompileRules = false;
         static public void Main(String[] args)
         {
             var contentsUrl = $"https://api.github.com/repos/Neo23x0/Raccine/contents/yara?ref=main";
@@ -83,7 +83,7 @@ namespace RaccineSettings
                                     }
                                     else
                                     {
-                                        compilation_program = "%ProgramFiles%\\Raccine\\yarac86.exe";
+                                        compilation_program = "%ProgramFiles%\\Raccine\\yarac32.exe";
                                     }
                                     compilation_program = Environment.ExpandEnvironmentVariables(compilation_program);
 
