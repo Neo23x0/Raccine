@@ -237,7 +237,11 @@ bool isProcessAllowed(const PROCESSENTRY32W& pe32)
         }
 
         wchar_t filePath[MAX_PATH] = { 0 };
-        if (GetModuleFileNameEx(hProcess, NULL, filePath, MAX_PATH)) {
+        DWORD cchFilePath = ARRAYSIZE(filePath) - 1;
+       
+        // This API is needed when explorer is running at a higher integrity level than raccine.exe. 
+        // It can get the imagepath with PROCESS_QUERY_LIMITED_INFORMATION
+        if (QueryFullProcessImageName(hProcess, 0, filePath, &cchFilePath)) {
             const std::wstring file_path(utils::to_lower(filePath));
 
             // Are they in the Windows directory?

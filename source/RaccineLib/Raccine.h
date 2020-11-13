@@ -15,10 +15,7 @@
 #include "HandleWrapper.h"
 #include "RaccineConfig.h"
 #include "YaraRuleRunner.h"
-
-
-// Version
-#define VERSION "1.3.1 BETA"
+#include "..\Raccine\Version.h"
 
 // Log Config and Flags
 #define RACCINE_DEFAULT_EVENTID  1
