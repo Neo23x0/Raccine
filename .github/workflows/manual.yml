@@ -14,5 +14,5 @@ jobs:
     steps:
 
     - name: Run explore
-      run: ./explore.bat
+      run: explore.bat
       shell: cmd
