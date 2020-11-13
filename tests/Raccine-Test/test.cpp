@@ -100,9 +100,3 @@ TEST(TestFindProcessesToKill, NonExistant)
 
     EXPECT_FALSE(pids.contains(3));
 }
-
-TEST(TestIsMaliciousCommandLine, Empty)
-{
-    const std::vector<std::wstring> command_line;
-    EXPECT_FALSE(is_malicious_command_line(command_line));
-}
