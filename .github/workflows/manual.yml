@@ -13,6 +13,9 @@ jobs:
     runs-on: 'windows-latest'
     steps:
 
+    - name: Checkout Raccine
+      uses: actions/checkout@v2
+
     - name: Run explore
-      run: explore.bat
+      run: .\explore.bat
       shell: cmd
