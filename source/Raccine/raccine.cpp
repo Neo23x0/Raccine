@@ -104,6 +104,7 @@ int wmain(int argc, WCHAR* argv[])
             std::wstring message;
             // Eventlog
             message = L"Raccine detected benign activity:\r\n" + sCommandLine + L"\r\n(simulation mode)";
+            WriteEventLogEntryWithId(message, RACCINE_EVENTID_BENIGN_ACTIVITY);
             // Log to the text log file
             sListLogs.append(logFormat(sCommandLine, L"Raccine detected benign activity (simulation mode)"));
         }

@@ -123,10 +123,16 @@ void WriteEventLogEntryWithId(const std::wstring& pszMessage, DWORD dwEventId)
 
     LPCWSTR lpszStrings[2] = { pszMessage.c_str() , nullptr };
 
+    // Select an eventlog message type
+    WORD eventType = EVENTLOG_INFORMATION_TYPE;
+    if (dwEventId == RACCINE_EVENTID_MALICIOUS_ACTIVITY) {
+        eventType = EVENTLOG_WARNING_TYPE;
+    }
+
     constexpr PSID NO_USER_SID = nullptr;
     constexpr LPVOID NO_BINARY_DATA = nullptr;
-    ReportEventW(hEventSource,               // Event log handle
-        EVENTLOG_INFORMATION_TYPE,  // Event type
+    ReportEventW(hEventSource,      // Event log handle
+        eventType,                  // Event type
         0,                          // Event category
         dwEventId,                  // Event identifier
         NO_USER_SID,                // No security identifier
@@ -205,7 +211,7 @@ std::wstring logFormat(const std::wstring& cmdLine, const std::wstring& comment)
 {
     const std::string timeString = getTimeStamp();
     const std::wstring timeStringW(timeString.cbegin(), timeString.cend());
-    std::wstring logLine = timeStringW + L" DETECTED_CMD: '" + cmdLine + L" COMMENT: " + comment + L"\n";
+    std::wstring logLine = timeStringW + L" DETECTED_CMD: '" + cmdLine + L"' COMMENT: " + comment + L"\n";
     return logLine;
 }
 
@@ -242,9 +248,12 @@ void logSend(const std::wstring& logStr)
             return;   // bail out if we can't log
         }
     }
+    // Replace new line characters
+    std::wstring logString = logStr;
+    utils::removeNewLines(logString);
 
     if (logFile != nullptr) {
-        fwprintf(logFile, L"%s", logStr.c_str());
+        fwprintf(logFile, L"%s\n", logString.c_str());
         fflush(logFile);
         fclose(logFile);
         logFile = nullptr;

@@ -74,4 +74,6 @@ DWORD getCurrentSessionId();
 
 std::wstring getUserSid();
 
+int removeNewLines(std::wstring& str);
+
 }

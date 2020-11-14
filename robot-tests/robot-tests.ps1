@@ -133,7 +133,7 @@ Foreach ($Cmd in $GoodCmds) {
 
     # Eventlog
     $Result = Get-EventLog -LogName Application -Message *Raccine* -Newest 1
-    If ( $Result.Message -Match $Cmd ) { 
+    If ( $Result.Message -Match $Cmd -and $Result.Message -Match 'malicious') { 
         Write-Host $Result.Message
         Write-Host "Error: Eventlog entry of detection found"
         exit 1 
