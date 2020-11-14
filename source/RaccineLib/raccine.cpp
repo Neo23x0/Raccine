@@ -123,10 +123,16 @@ void WriteEventLogEntryWithId(const std::wstring& pszMessage, DWORD dwEventId)
 
     LPCWSTR lpszStrings[2] = { pszMessage.c_str() , nullptr };
 
+    // Select an eventlog message type
+    WORD eventType = EVENTLOG_INFORMATION_TYPE;
+    if (dwEventId == RACCINE_EVENTID_MALICIOUS_ACTIVITY) {
+        eventType = EVENTLOG_WARNING_TYPE;
+    }
+
     constexpr PSID NO_USER_SID = nullptr;
     constexpr LPVOID NO_BINARY_DATA = nullptr;
-    ReportEventW(hEventSource,               // Event log handle
-        EVENTLOG_INFORMATION_TYPE,  // Event type
+    ReportEventW(hEventSource,      // Event log handle
+        eventType,                  // Event type
         0,                          // Event category
         dwEventId,                  // Event identifier
         NO_USER_SID,                // No security identifier
