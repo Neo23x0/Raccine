@@ -534,4 +534,13 @@ std::wstring getFileName(const std::wstring& s)
     return(s);
 }
 
+int removeNewLines(std::wstring& str)
+{
+    const wchar_t* chars = L"\r\n";
+    for (int i = 0; i < sizeof(chars); i++)
+        str.erase(std::remove(str.begin(), str.end(), chars[i]), str.end());
+
+    return 0;
+}
+
 }

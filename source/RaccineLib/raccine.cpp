@@ -242,9 +242,12 @@ void logSend(const std::wstring& logStr)
             return;   // bail out if we can't log
         }
     }
+    // Replace new line characters
+    std::wstring logString = logStr;
+    utils::removeNewLines(logString);
 
     if (logFile != nullptr) {
-        fwprintf(logFile, L"%s", logStr.c_str());
+        fwprintf(logFile, L"%s\n", logString.c_str());
         fflush(logFile);
         fclose(logFile);
         logFile = nullptr;
