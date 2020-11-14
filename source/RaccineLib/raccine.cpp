@@ -330,6 +330,6 @@ void find_and_kill_processes(bool log_only, const std::wstring& sCommandLine, st
         }
     }
 
-    printf("\nRaccine v%s finished\n", VERSION);
+    printf("\nRaccine v%s finished\n", VER_FILEVERSION_STR);
     //std::this_thread::sleep_for(std::chrono::seconds(5));
 }
