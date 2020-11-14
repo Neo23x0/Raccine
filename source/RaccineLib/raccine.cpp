@@ -211,7 +211,7 @@ std::wstring logFormat(const std::wstring& cmdLine, const std::wstring& comment)
 {
     const std::string timeString = getTimeStamp();
     const std::wstring timeStringW(timeString.cbegin(), timeString.cend());
-    std::wstring logLine = timeStringW + L" DETECTED_CMD: '" + cmdLine + L" COMMENT: " + comment + L"\n";
+    std::wstring logLine = timeStringW + L" DETECTED_CMD: '" + cmdLine + L"' COMMENT: " + comment + L"\n";
     return logLine;
 }
 
