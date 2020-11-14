@@ -132,7 +132,6 @@ COPY RaccineRulesSync.exe "%ProgramFiles%\Raccine\"
 COPY Raccine%ARCH%.exe "%ProgramFiles%\Raccine\Raccine.exe"
 COPY yara\yara%ARCHITECTURE_SUFFIX%.exe "%ProgramFiles%\Raccine\"
 COPY yara\yarac%ARCHITECTURE_SUFFIX%.exe "%ProgramFiles%\Raccine\"
-
 :: YARA Rules
 MKDIR "%ProgramFiles%\Raccine\yara"
 MKDIR "%ProgramFiles%\Raccine\yara\in-memory"
@@ -148,8 +147,9 @@ ECHO Creating empty log file ...
 echo. 2>"%ProgramData%\Raccine\Raccine_log.txt"
 icacls "%ProgramData%\Raccine\Raccine_log.txt" /grant Users:F
 ECHO Registering Eventlog Events
-eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine Setup: Registration of Event ID 1" 2> nul
-eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine Setup: Registration of Event ID 2" 2> nul
+eventcreate.exe /L Application /T Information /id 1 /so Raccine /d "Raccine Setup: Registration of Event ID 1 - Used for Informational Messages" 2> nul
+eventcreate.exe /L Application /T Information /id 2 /so Raccine /d "Raccine Setup: Registration of Event ID 2 - Used for Malicious Actitivty" 2> nul
+eventcreate.exe /L Application /T Information /id 3 /so Raccine /d "Raccine Setup: Registration of Event ID 3 - Used for Benign Activity" 2> nul
 :: Registry Settings
 REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 1 /F
 REG.EXE ADD HKLM\Software\Raccine /v ScanMemory /t REG_DWORD /d 1 /F
