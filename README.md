@@ -18,8 +18,9 @@ Avantages:
 
 - The method is rather generic
 - We don't have to replace a system file (`vssadmin.exe` or `wmic.exe`), which could lead to integrity problems and could break our raccination on each patch day 
+- Flexible YARA rule scanning of command line params for malicious activity
 - The changes are easy to undo
-- Should work on all Windows versions from Windows 2000 onwards
+- Runs on Windows 7 / Windows 2008 R2 or higher
 - No running executable or additional service required (agent-less)
 
 Disadvantages / Blind Spots:
@@ -31,9 +32,9 @@ Disadvantages / Blind Spots:
 ### The Process
 
 1. Invocation of `vssadmin.exe` (and `wmic.exe`) gets intercepted and passed to `raccine.exe` as debugger (`vssadmin.exe delete shadows` becomes `raccine.xe vssadmin.exe delete shadows`)
-2. We then process the command line arguments and look for malicious combinations. 
+2. We then process the command line arguments and look for malicious combinations using Yara rules.
 3. If no malicious combination could be found, we create a new process with the original command line parameters. 
-4. If a malicious combination could be found, we collect all PIDs of parent processes and the start killing them (this should be the malware processes as shown in the screenshots above). Raccine shows a command line window with the killed PIDs for 5 seconds and then exits itself. 
+4. If a malicious combination could be found, we collect all PIDs of parent processes and the start killing them (this should be the malware processes as shown in the screenshots above). Raccine shows a command line window with the killed PIDs for 5 seconds, logs it to the Windows Eventlog and then exits itself. 
 
 Malicious combinations:
 
