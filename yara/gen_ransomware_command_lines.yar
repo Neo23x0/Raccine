@@ -16,6 +16,8 @@ rule ransomware_command_lines
         $p_catalog      = "catalog" fullword nocase
         $p_quiet        = "-quiet" nocase
         $p_quiet2       = "/quiet" nocase
+        $p_backup1      = "backup" nocase fullword
+        $p_backup2      = "systemstatebackup" nocase fullword
         $p_recoveryenabled   = "recoveryenabled" fullword nocase
         $p_ignoreallfailures = "ignoreallfailures" fullword nocase
         $p_win32_shadowcopy = "win32_shadowcopy" fullword nocase
@@ -41,6 +43,7 @@ rule ransomware_command_lines
                 or ( $e_vssadmin and $p_resize and $p_shadowstorage)
                 or ( $e_wmic and $p_delete and $p_shadowcopy)
                 or ( $e_wbadmin and $p_delete and $p_catalog and 1 of ($p_quiet*))
+                or ( $e_wbadmin and $p_delete and ($p_backup*))
                 or ( $e_bcdedit and $p_ignoreallfailures)
                 or ( $e_bcdedit and $p_recoveryenabled)
                 or ( $e_diskshadow and $p_delete and $p_shadows)
