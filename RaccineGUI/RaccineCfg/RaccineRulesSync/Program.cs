@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Web.Script.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,6 +32,7 @@ namespace RaccineSettings
 
         public static bool SyncContentFromUrl(string contentsUrl, string subdir)
         {
+            String newLinePattern = "([^\r]\n)";
             var httpClient = new HttpClient();
 
             Console.WriteLine("Downloading rules from " + contentsUrl);
@@ -68,7 +70,7 @@ namespace RaccineSettings
                             using (System.IO.StreamWriter file =
                                 new System.IO.StreamWriter(szRulePath, false))
                             {
-                                file.WriteLine(yararule);
+                                file.WriteLine(Regex.Replace(yararule, newLinePattern, "\r\n"));
                                 file.Flush();
                                 file.Close();
                                 iRuleCount++;
