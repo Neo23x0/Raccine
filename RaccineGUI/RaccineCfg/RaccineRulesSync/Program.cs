@@ -32,7 +32,7 @@ namespace RaccineSettings
 
         public static bool SyncContentFromUrl(string contentsUrl, string subdir)
         {
-            String newLinePattern = "([^\r]\n)";
+            String newLinePattern = "([\r]?\n)";
             var httpClient = new HttpClient();
 
             Console.WriteLine("Downloading rules from " + contentsUrl);
