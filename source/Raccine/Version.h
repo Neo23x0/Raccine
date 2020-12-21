@@ -1,14 +1,14 @@
 #ifndef VERSIONINFO_H
 #define VERSIONINFO_H
 
-#define VER_FILEVERSION             1,4,0,0
-#define VER_FILEVERSION_STR         "1.4.0.0 BETA\0"
+#define VER_FILEVERSION             1,4,1,0
+#define VER_FILEVERSION_STR         "1.4.1.0 BETA\0"
 
-#define VER_PRODUCTVERSION          1,4,0,0
-#define VER_PRODUCTVERSION_STR      "1.4.0.0\0"
+#define VER_PRODUCTVERSION          1,4,1,0
+#define VER_PRODUCTVERSION_STR      "1.4.1.0\0"
 
 #define VER_COMPANYNAME_STR         "Raccine"
-#define VER_FILEDESCRIPTION_STR     "A Simple Ransomware Vaccine by Florian Roth. See https://github.com/Neo23x0/Raccine"
+#define VER_FILEDESCRIPTION_STR     "A Simple Ransomware Vaccine - see https://github.com/Neo23x0/Raccine"
 #define VER_INTERNALNAME_STR        "Raccine"
 #define VER_LEGALCOPYRIGHT_STR      "Copyright 2020"
 #define VER_LEGALTRADEMARKS1_STR    "All Rights Reserved"
