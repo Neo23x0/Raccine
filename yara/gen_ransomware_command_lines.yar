@@ -43,7 +43,7 @@ rule ransomware_command_lines
                 or ( $e_vssadmin and $p_resize and $p_shadowstorage)
                 or ( $e_wmic and $p_delete and $p_shadowcopy)
                 or ( $e_wbadmin and $p_delete and $p_catalog and 1 of ($p_quiet*))
-                or ( $e_wbadmin and $p_delete and ($p_backup*))
+                or ( $e_wbadmin and $p_delete and 1 of ($p_backup*))
                 or ( $e_bcdedit and $p_ignoreallfailures)
                 or ( $e_bcdedit and $p_recoveryenabled)
                 or ( $e_diskshadow and $p_delete and $p_shadows)
