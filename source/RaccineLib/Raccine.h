@@ -25,7 +25,7 @@
 #define RACCINE_DATA_DIRECTORY  L"%PROGRAMDATA%\\Raccine"
 #define RACCINE_YARA_DIRECTORY  L"%PROGRAMFILES%\\Raccine\\yara"
 #define RACCINE_PROGRAM_DIRECTORY  L"%PROGRAMFILES%\\Raccine"
-#define RACCINE_USER_CONTEXT_DIRECTORY  L"%TEMP%\\RaccineUserContext"
+#define RACCINE_USER_CONTEXT_DIRECTORY  L"%PROGRAMDATA%\\Raccine\\RaccineUserContext\\%USERNAME%"
 
 
 /// <summary>

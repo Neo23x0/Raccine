@@ -52,6 +52,12 @@ bool EvaluateYaraRules(const RaccineConfig& raccine_config,
 
     ExpandEnvironmentStringsW(RACCINE_USER_CONTEXT_DIRECTORY, wTestFilename, ARRAYSIZE(wTestFilename) - 1);
 
+    if (std::filesystem::create_directories(wTestFilename) == false) {
+        if (raccine_config.is_debug_mode()) {
+            wprintf(L"Unable to create temporary user folder: %s\n", wTestFilename);
+        }
+    }
+
     const int c = GetTempFileNameW(wTestFilename, L"Raccine", 0, wTestFilename);
     if (c == 0) {
         return false;
