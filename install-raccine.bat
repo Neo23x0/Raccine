@@ -155,7 +155,7 @@ REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 1 /F
 REG.EXE ADD HKLM\Software\Raccine /v ScanMemory /t REG_DWORD /d 1 /F
 REG.EXE ADD HKLM\Software\Raccine /v RulesDir /t REG_SZ /d "%ProgramFiles%\Raccine\yara" /F
 :: Registering and starting the GUI elements
-REG ADD "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /t REG_SZ /F /D "%ProgramFiles%\Raccine\RaccineSettings.exe"
+REG ADD "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /t REG_SZ /F /D "%ProgramFiles%\Raccine\RaccineSettings.exe"
 START "" "%ProgramFiles%\Raccine\RaccineSettings.exe"
 :: Scheduled Task
 ECHO Adding scheduled task for rule updates
@@ -230,7 +230,7 @@ ECHO Disabling the GUI elements ...
 ECHO.
 REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 1 /F
 TASKKILL /F /IM RaccineSettings.exe
-REG DELETE "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /F
+REG DELETE "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /F
 IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry.
     GOTO MENU
@@ -285,7 +285,7 @@ IF '%errorlevel%' NEQ '0' (
 )
 TASKKILL /F /IM RaccineSettings.exe
 TASKKILL /F /IM RaccineRulesSync.exe
-REG DELETE "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /F
+REG DELETE "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /F
 :: Uninstall update task
 SCHTASKS /DELETE /TN "Raccine Rules Updater" /F
 :: in case of automation, directly got to EOF
