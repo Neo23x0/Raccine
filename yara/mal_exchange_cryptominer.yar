@@ -7,7 +7,7 @@ rule MAL_Exchange_CryptoMiner_Mar21_1 {
       score = 60
    strings:
       $s1 = "wmic.exe product where"
-      $s2 = "%Antivirus%"
+      $s2 = "%AntiVirus%"
       $s3 = "call uninstall /noninteractive"
    condition:
       all of them
