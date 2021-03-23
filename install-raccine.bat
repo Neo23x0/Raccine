@@ -105,6 +105,8 @@ GOTO MENU
 :UNINSTALL
 CALL :UNINSTALL_TASKS
 TIMEOUT /t 30
+:: in case of automation, directly got to EOF
+IF NOT "%SELECTED_OPTION%"=="" GOTO EOF
 GOTO MENU
 
 :: Actions to run in all modes
