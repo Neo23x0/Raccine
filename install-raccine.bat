@@ -104,9 +104,9 @@ GOTO MENU
 
 :UNINSTALL
 CALL :UNINSTALL_TASKS
-TIMEOUT /t 30
 :: in case of automation, directly got to EOF
 IF NOT "%SELECTED_OPTION%"=="" GOTO EOF
+TIMEOUT /t 30
 GOTO MENU
 
 :: Actions to run in all modes
@@ -280,9 +280,7 @@ TASKKILL /F /IM RaccineRulesSync.exe
 REG DELETE "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /F
 :: Uninstall update task
 SCHTASKS /DELETE /TN "Raccine Rules Updater" /F
-:: in case of automation, directly got to EOF
-IF NOT "%SELECTED_OPTION%"=="" GOTO EOF
-EXIT /B
+EXIT /B %ERRORLEVEL%
 
 :EOF
 EXIT /B %ERRORLEVEL%
