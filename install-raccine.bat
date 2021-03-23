@@ -182,7 +182,8 @@ REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-powershell.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-diskshadow.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-net.reg
-:: Simulation only
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-taskkill.reg
+:: Not Simulation only
 REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 0 /F
 GOTO INSTALL
 
@@ -202,6 +203,7 @@ REGEDIT.EXE /S reg-patches\raccine-reg-patch-bcdedit.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-powershell.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-diskshadow.reg
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-net.reg
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-taskkill.reg
 :: Simulation only
 REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 1 /F
 GOTO INSTALL
@@ -267,6 +269,8 @@ GOTO MENU
 :: Uninstall
 :UNINSTALL
 ECHO.
+ECHO Uninstalling Registry patches ...
+REGEDIT.EXE /S reg-patches\raccine-reg-patch-uninstall.reg
 TASKKILL /F /IM Raccine.exe
 TASKKILL /F /IM RaccineSettings.exe
 TASKKILL /F /IM RaccineRulesSync.exe
@@ -275,8 +279,6 @@ ECHO Removing Raccine folders ...
 @RD /S /Q "%ProgramFiles%\Raccine"
 ECHO LEGACY: Removing Raccine.exe from the Windows folder (succeeds only if previously installed) ...
 DEL /Q C:\Windows\Raccine.exe
-ECHO Uninstalling Registry patches ...
-REGEDIT.EXE /S reg-patches\raccine-reg-patch-uninstall.reg
 IF '%errorlevel%' NEQ '0' (
     ECHO Something went wrong. Sorry.
 ) ELSE (
