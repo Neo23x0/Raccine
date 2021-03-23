@@ -97,6 +97,7 @@ If you have a solid security monitoring that logs all process executions, you co
 - 1.2 BETA - Signature Updater
 - 1.3 BETA - In-Memory YARA Scanning of invoking parent process
 - 1.4 BETA - Full x86 support, moved static strings to YARA rules to avoid AV detections, Log of accepted executions, .NET Framework setup in installer
+- 1.4.2 BETA - Exit code fix (pass through of exit code returned by the intercepted program), intercept taskkill.exe
 
 ## Installation
 
@@ -225,7 +226,7 @@ Run `raccine.exe` and watch the parent process tree die (screenshot of v0.1)
 
 ## GUI
 
-Available with version 1. Can be disabled by an installer option or manually via Registry patches.
+Available and required since version 1.
 
 ![GUI](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/raccine-gui1.png)
 

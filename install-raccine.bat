@@ -65,7 +65,7 @@ ECHO ...........................................................................
 :::
 for /f "delims=: tokens=*" %%A in ('findstr /b ::: "%~f0"') do @echo(%%A
 ECHO   A Simple Ransomware and Emotet Vaccine
-ECHO   Installer by Florian Roth, October 2020  
+ECHO   Installer by Florian Roth, March 2021  
 ECHO.                       
 ECHO ------------------------------------------------------------------------------
 ECHO   WARNING! Raccine could break your backup solution 
@@ -74,7 +74,7 @@ ECHO.
 ECHO   1 - Install Raccine for all possible methods
 ECHO   2 - Install Raccine for all possible methods (simulation mode, logging only)
 ECHO   3 - Install Raccine interception for less often used executables only (soft)
-ECHO   4 - Disable GUI elements (alert window, settings tray icon)
+ECHO.
 ECHO   5 - Disable automatic rule updates
 ECHo   6 - Run Windows Hardening Script
 ECHO   U - Uninstall Raccine
@@ -92,7 +92,6 @@ SET /P M=" Select an option and then press ENTER: "
 IF %M%==1 GOTO FULL
 IF %M%==2 GOTO FULL_SIMU
 IF %M%==3 GOTO SOFT
-IF %M%==4 GOTO DISABLEGUI
 IF %M%==5 GOTO DISABLEUPDATES
 IF %M%==6 GOTO HARDENING
 IF %M%==U GOTO UNINSTALL
@@ -102,6 +101,11 @@ IF %M%==e GOTO EOF
 GOTO MENU
 
 :: Installer actions
+
+:UNINSTALL
+CALL :UNINSTALL_TASKS
+TIMEOUT /t 30
+GOTO MENU
 
 :: Actions to run in all modes
 :INSTALL
@@ -118,10 +122,6 @@ IF ERRORLEVEL 1 (
     ECHO Installing .NET Framework ...
     start /wait preqeq\NDP462-KB3151800-x86-x64-AllOS-ENU.exe /q /norestart
 )
-:: Cleanup existing elements
-TASKKILL /F /IM Raccine.exe
-TASKKILL /F /IM RaccineSettings.exe
-TASKKILL /F /IM RaccineRulesSync.exe
 :: Raccine GUI Elements
 ECHO Creating data directory "%ProgramFiles%\Raccine" ...
 MKDIR "%ProgramFiles%\Raccine"
@@ -168,6 +168,7 @@ GOTO MENU
 
 :: Full
 :FULL
+CALL :UNINSTALL_TASKS
 ECHO.
 :: Registry Patches
 ECHO Installing Registry patches ...
@@ -189,6 +190,7 @@ GOTO INSTALL
 
 :: Simulation Mode
 :FULL_SIMU
+CALL :UNINSTALL_TASKS
 ECHO.
 :: Registry Patches
 ECHO Installing Registry patches ...
@@ -209,7 +211,8 @@ REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 1 /F
 GOTO INSTALL
 
 :: Soft
-:SOFT 
+:SOFT
+CALL :UNINSTALL_TASKS
 ECHO.
 :: Registry Patches
 ECHO Installing Registry patches ...
@@ -224,21 +227,6 @@ REGEDIT.EXE /S reg-patches\raccine-reg-patch-diskshadow.reg
 :: Simulation only
 REG.EXE ADD HKLM\Software\Raccine /v LogOnly /t REG_DWORD /d 0 /F
 GOTO INSTALL
-
-:: Disable GUI Elements
-:DISABLEGUI 
-ECHO.
-ECHO Disabling the GUI elements ...
-ECHO.
-REG.EXE ADD HKLM\Software\Raccine /v ShowGui /t REG_DWORD /d 1 /F
-TASKKILL /F /IM RaccineSettings.exe
-REG DELETE "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /F
-IF '%errorlevel%' NEQ '0' (
-    ECHO Something went wrong. Sorry.
-    GOTO MENU
-)
-TIMEOUT /t 30
-GOTO MENU
 
 :: Disable Updates
 :DISABLEUPDATES 
@@ -267,7 +255,7 @@ TIMEOUT /t 30
 GOTO MENU
 
 :: Uninstall
-:UNINSTALL
+:UNINSTALL_TASKS
 ECHO.
 ECHO Uninstalling Registry patches ...
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-uninstall.reg
@@ -292,8 +280,7 @@ REG DELETE "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray
 SCHTASKS /DELETE /TN "Raccine Rules Updater" /F
 :: in case of automation, directly got to EOF
 IF NOT "%SELECTED_OPTION%"=="" GOTO EOF
-TIMEOUT /t 30
-GOTO MENU
+EXIT /B
 
 :EOF
 EXIT /B %ERRORLEVEL%
