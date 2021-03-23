@@ -15,6 +15,7 @@
 int wmain(int argc, WCHAR* argv[])
 {
     setlocale(LC_ALL, "");
+    DWORD threadExitcode = 0;
 
     std::vector<std::wstring> command_line;
     std::wstring sCommandLine;
@@ -122,6 +123,12 @@ int wmain(int argc, WCHAR* argv[])
 
             ResumeThread(hThread);
             WaitForSingleObject(hProcess, INFINITE);
+            if (GetExitCodeThread(hThread, &threadExitcode) == false)
+            {
+                if (configuration.is_debug_mode()) {
+                    wprintf(L"can't get return code. error number: %d\n", GetLastError());
+                }
+            }
         }
     }
     else {
@@ -130,8 +137,11 @@ int wmain(int argc, WCHAR* argv[])
         }
     }
 
+    //if (configuration.is_debug_mode()) {
+    //    wprintf(L"return code: %d\n", threadExitcode);
+    //}
     // Log events
     logSend(sListLogs);
 
-    return 0;
+    return threadExitcode;
 }
