@@ -15,6 +15,18 @@ SET ARCHITECTURE_SUFFIX=32
 SET ARCHITECTURE_SUFFIX_X=86
 )
 
+:: Make sure that the release package with the compiled binaries has been downloaded and not just the source code
+IF NOT EXIST RaccineSettings.exe (
+    ECHO WARNING: you may have downloaded the source code only
+    ECHO Make sure to download a package that contains the compiled binaries by downloading a package from the RELEASE section.
+    ECHO.
+    ECHO   https://github.com/Neo23x0/Raccine/releases
+    ECHO.
+    ECHO The installer will exit now ..
+    TIMEOUT /t 30
+    EXIT /B 1
+)
+
 :: BatchGotAdmin
 :: Source: https://stackoverflow.com/a/10052222
 :-------------------------------------
@@ -112,11 +124,6 @@ GOTO MENU
 :: Actions to run in all modes
 :INSTALL
 ECHO.
-:: Make sure that the release package with the compiled binaries has been downloaded and not just the source code
-IF NOT EXIST RaccineSettings.exe (
-    ECHO "Warning: you may have downloaded the source code only (Github ZIP download). Make sure to download a package that contains the compiled binaries by downloading a package from the RELEASE section"
-    EXIT /B 1
-)
 :: Requirements
 :: Visual C++ Runtime
 IF NOT EXIST C:\Windows\System32\vcruntime140.dll (
