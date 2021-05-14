@@ -1,4 +1,4 @@
-rem @ECHO OFF
+@ECHO OFF
 
 :: Download Components
 ECHO Create Temp directory for some downloads

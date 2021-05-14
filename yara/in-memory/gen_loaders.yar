@@ -130,5 +130,5 @@ rule Reflective_DLL_Loader_Aug17_4 {
       $s2 = "<H2>Operating system: %s<H2>" fullword ascii
       $s3 = "<H2>System32 dir:  %s</H2>" fullword ascii
    condition:
-      1 of them
+      2 of them
 }

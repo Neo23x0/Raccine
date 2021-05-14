@@ -266,6 +266,7 @@ GOTO MENU
 ECHO.
 ECHO Uninstalling Registry patches ...
 REGEDIT.EXE /S reg-patches\raccine-reg-patch-uninstall.reg
+ECHO Killing the Raccine related processes
 TASKKILL /F /IM Raccine.exe
 TASKKILL /F /IM RaccineSettings.exe
 TASKKILL /F /IM RaccineRulesSync.exe
