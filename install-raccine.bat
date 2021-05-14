@@ -16,16 +16,11 @@ SET ARCHITECTURE_SUFFIX_X=86
 )
 
 :: Make sure that the release package with the compiled binaries has been downloaded and not just the source code
-IF NOT EXIST RaccineSettings.exe (
-    ECHO WARNING: you may have downloaded the source code only
-    ECHO Make sure to download a package that contains the compiled binaries by downloading a package from the RELEASE section.
-    ECHO.
-    ECHO   https://github.com/Neo23x0/Raccine/releases
-    ECHO.
-    ECHO The installer will exit now ..
-    TIMEOUT /t 30
-    EXIT /B 1
-)
+IF NOT EXIST Raccine.exe GOTO PACKAGE_ERROR
+IF NOT EXIST Raccine_x86.exe GOTO PACKAGE_ERROR
+IF NOT EXIST RaccineRulesSync.exe GOTO PACKAGE_ERROR
+IF NOT EXIST RaccineElevatedCfg.exe GOTO PACKAGE_ERROR
+IF NOT EXIST RaccineSettings.exe GOTO PACKAGE_ERROR
 
 :: BatchGotAdmin
 :: Source: https://stackoverflow.com/a/10052222
@@ -294,6 +289,16 @@ REG DELETE "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray
 :: Uninstall update task
 SCHTASKS /DELETE /TN "Raccine Rules Updater" /F
 EXIT /B %ERRORLEVEL%
+
+:PACKAGE_ERROR
+ECHO WARNING: you may have downloaded the source code only or an Antivirus has deleted an important part of the package
+ECHO Make sure to download a package that contains the compiled binaries by downloading a package from the RELEASE section.
+ECHO.
+ECHO   https://github.com/Neo23x0/Raccine/releases
+ECHO.
+ECHO The installer will exit now ..
+TIMEOUT /t 30
+EXIT /B 1
 
 :EOF
 EXIT /B %ERRORLEVEL%
