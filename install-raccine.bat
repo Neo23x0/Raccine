@@ -112,6 +112,11 @@ GOTO MENU
 :: Actions to run in all modes
 :INSTALL
 ECHO.
+:: Make sure that the release package with the compiled binaries has been downloaded and not just the source code
+IF NOT EXIST RaccineSettings.exe (
+    ECHO "Warning: you may have downloaded the source code only (Github ZIP download). Make sure to download a package that contains the compiled binaries by downloading a package from the RELEASE section"
+    EXIT /B 1
+)
 :: Requirements
 :: Visual C++ Runtime
 IF NOT EXIST C:\Windows\System32\vcruntime140.dll (
