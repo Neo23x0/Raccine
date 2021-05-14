@@ -114,7 +114,7 @@ Both the Visual C++ Redistributable package and the .NET Framework will be autom
 
 1. Download `Raccine.zip` from the [Release](https://github.com/Neo23x0/Raccine/releases/) section
 2. Extract it
-3. Run `raccine-installer.bat`
+3. Run `raccine-installer.bat` as administrator
 
 ![Windows Batch Installer](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/raccine-installer.png)
 
