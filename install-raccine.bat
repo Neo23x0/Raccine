@@ -15,13 +15,6 @@ SET ARCHITECTURE_SUFFIX=32
 SET ARCHITECTURE_SUFFIX_X=86
 )
 
-:: Make sure that the release package with the compiled binaries has been downloaded and not just the source code
-IF NOT EXIST Raccine.exe GOTO PACKAGE_ERROR
-IF NOT EXIST Raccine_x86.exe GOTO PACKAGE_ERROR
-IF NOT EXIST RaccineRulesSync.exe GOTO PACKAGE_ERROR
-IF NOT EXIST RaccineElevatedCfg.exe GOTO PACKAGE_ERROR
-IF NOT EXIST RaccineSettings.exe GOTO PACKAGE_ERROR
-
 :: BatchGotAdmin
 :: Source: https://stackoverflow.com/a/10052222
 :-------------------------------------
@@ -53,6 +46,13 @@ IF '%errorlevel%' NEQ '0' (
 :gotAdmin
     PUSHD "%CD%"
     CD /D "%~dp0"
+
+:: Make sure that the release package with the compiled binaries has been downloaded and not just the source code
+IF NOT EXIST Raccine.exe GOTO PACKAGE_ERROR
+IF NOT EXIST Raccine_x86.exe GOTO PACKAGE_ERROR
+IF NOT EXIST RaccineRulesSync.exe GOTO PACKAGE_ERROR
+IF NOT EXIST RaccineElevatedCfg.exe GOTO PACKAGE_ERROR
+IF NOT EXIST RaccineSettings.exe GOTO PACKAGE_ERROR
 
 :: Check Architecture and set postfix
 SET ARCH=
