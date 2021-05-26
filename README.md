@@ -14,7 +14,7 @@ We see ransomware delete all shadow copies using `vssadmin` pretty often. What i
 
 We [register a debugger](https://attack.mitre.org/techniques/T1546/012/) for `vssadmin.exe` (and `wmic.exe`), which is our compiled `raccine.exe`. Raccine is a binary, that first collects all PIDs of the parent processes and then tries to kill all parent processes. 
 
-Avantages:
+Advantages:
 
 - The method is rather generic
 - We don't have to replace a system file (`vssadmin.exe` or `wmic.exe`), which could lead to integrity problems and could break our raccination on each patch day 
