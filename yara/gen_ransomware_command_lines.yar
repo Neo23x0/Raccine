@@ -50,7 +50,6 @@ rule ransomware_command_lines
                 or ( $e_powershell and $p_win32_shadowcopy)
                 or ( $e_powershell and 1 of ($p_ps_version*))
                 or ( $e_powershell and 1 of ($p_ps_enc*) and 1 of ($p_ps_cmds*))
-                or ( $e_powershell and $p_win32_shadowcopy)
             )
         
 }
