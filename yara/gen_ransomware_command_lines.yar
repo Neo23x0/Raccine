@@ -1,5 +1,8 @@
 rule ransomware_command_lines
 {
+    meta:
+        description = "This is a rewrite of the formerly hard-coded program plus command line combinations that have been blocked by the first version of Raccine"
+        last_modified = "2021-07-26"
     strings:
         $e_vssadmin = "vssadmin" fullword nocase
         $e_wmic     = "wmic" fullword nocase
@@ -7,6 +10,7 @@ rule ransomware_command_lines
         $e_bcdedit  = "bcdedit" fullword nocase
         $e_powershell  = "powershell" fullword nocase
         $e_diskshadow  = "diskshadow" fullword nocase
+        $e_fsutil = "fsutil" fullword nocase
 
         $p_delete       = "delete" fullword nocase
         $p_shadows      = "shadows" fullword nocase
@@ -25,6 +29,7 @@ rule ransomware_command_lines
         $p_ps_version2  = "/version" nocase
         $p_ps_enc       = "-e" nocase
         $p_ps_enc2      = "/e" nocase
+        $p_fsutil_usn   = "usn deletejournal" nocase
         $p_ps_cmds1     = "JAB"
         $p_ps_cmds2     = "SQBFAF"
         $p_ps_cmds3     = "SQBuAH"
@@ -50,6 +55,7 @@ rule ransomware_command_lines
                 or ( $e_powershell and $p_win32_shadowcopy)
                 or ( $e_powershell and 1 of ($p_ps_version*))
                 or ( $e_powershell and 1 of ($p_ps_enc*) and 1 of ($p_ps_cmds*))
+                or ( $e_fsutil and $p_fsutil_usn )
             )
         
 }
