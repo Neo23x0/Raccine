@@ -242,13 +242,13 @@ In case that the Ransomware that your're currently handling uses a certain proce
 
 ## Help Wanted
 
-I'd like to extend Raccine but lack the C++ coding skills, especially o the Windows platform.
+I'd like to extend Raccine but lack the C++ coding skills, especially on the Windows platform.
 
 ## Help - My System is Broken
 
 If anything happens to your installation, e.g. sudden error messages, broken services or programs that won't start anymore, run the file `raccine-reg-patch-uninstall.reg` in the `reg-patches` sub folder. This should bring everything back to normal. 
 
-After that your should also be able to run a full uninstallation using `install-raccine.bat`.
+After that you should also be able to run a full uninstallation using `install-raccine.bat`.
 
 ## Other Info
 
