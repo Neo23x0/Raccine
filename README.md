@@ -49,6 +49,8 @@ Malicious combinations:
 - `recoveryenabled` (bcedit)
 - `ignoreallfailures` (bcedit)
 
+^ outdated list: check the corresponding [YARA rule](https://github.com/Neo23x0/Raccine/blob/main/yara/gen_ransomware_command_lines.yar)
+
 Powershell list of encoded commands: `JAB`, `SQBFAF`, `SQBuAH`, `SUVYI`, `cwBhA`, `aWV4I`, `aQBlAHgA` and many more
 
 ## Example
