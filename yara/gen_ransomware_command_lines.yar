@@ -2,7 +2,7 @@ rule ransomware_command_lines
 {
     meta:
         description = "This is a rewrite of the formerly hard-coded program plus command line combinations that have been blocked by the first version of Raccine"
-        last_modified = "2021-07-26"
+        last_modified = "2022-08-22"
     strings:
         $e_vssadmin = "vssadmin" fullword nocase
         $e_wmic     = "wmic" fullword nocase
@@ -41,6 +41,9 @@ rule ransomware_command_lines
         $p_ps_cmds9     = "IAA"
         $p_ps_cmdsa     = "IAB"
         $p_ps_cmdsb     = "UwB"
+
+        $fp1a = "ParentName=\"Termius.exe\""
+        $fp1b = "ParentExecutablePath=\"C:\\Program Files\\WindowsApps\\"
     condition:
             (
                 ( $e_vssadmin and $p_delete and $p_shadows)
@@ -57,6 +60,6 @@ rule ransomware_command_lines
                 or ( $e_powershell and 1 of ($p_ps_enc*) and 1 of ($p_ps_cmds*))
                 or ( $e_fsutil and $p_fsutil_usn )
             )
-        
+        and not all of ($fp1*)
 }
 
