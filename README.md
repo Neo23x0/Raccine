@@ -33,7 +33,7 @@ Disadvantages / Blind Spots:
 
 ### The Process
 
-1. Invocation of `vssadmin.exe` (and `wmic.exe`) gets intercepted and passed to `raccine.exe` as debugger (`vssadmin.exe delete shadows` becomes `raccine.xe vssadmin.exe delete shadows`)
+1. Invocation of `vssadmin.exe` (and `wmic.exe`) gets intercepted and passed to `raccine.exe` as debugger (`vssadmin.exe delete shadows` becomes `raccine.exe vssadmin.exe delete shadows`)
 2. We then process the command line arguments and look for malicious combinations using Yara rules.
 3. If no malicious combination could be found, we create a new process with the original command line parameters. 
 4. If a malicious combination could be found, we collect all PIDs of parent processes and the start killing them (this should be the malware processes as shown in the screenshots above). Raccine shows a command line window with the killed PIDs for 5 seconds, logs it to the Windows Eventlog and then exits itself. 
@@ -57,11 +57,11 @@ Powershell list of encoded commands: `JAB`, `SQBFAF`, `SQBuAH`, `SUVYI`, `cwBhA`
 
 Emotet without Raccine - [Link](https://app.any.run/tasks/b12f8ee2-f6cc-4571-bcc2-51e34c19941f/)
 
-![Emotet wihtout Raccine](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/emotet-wo-raccine.png)
+![Emotet without Raccine](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/emotet-wo-raccine.png)
 
 Emotet with Raccine - [Link](https://app.any.run/tasks/057ff7f5-43c1-4e51-93c3-a702c6fb0d75/) (ignore the process activity that is related to the Raccine installation)
 
-![Emotet wihtout Raccine](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/emotet-with-raccine.png)
+![Emotet with Raccine](https://raw.githubusercontent.com/Neo23x0/Raccine/main/images/emotet-with-raccine.png)
 
 The infection gets nipped in the bud. 
 
@@ -69,7 +69,7 @@ The infection gets nipped in the bud.
 
 USE IT AT YOUR OWN RISK!
 
-You won't be able to run commands that use the blacklisted commands on a raccinated machine anymore until your apply the uninstall patch `raccine-reg-patch-uninstall.reg`. This could break various backup solutions that run that specific command during their work. It will not only block that request but kills all processes in that tree including the backup solution and its invoking process.
+You won't be able to run commands that use the blacklisted commands on a raccinated machine anymore until you apply the uninstall patch `raccine-reg-patch-uninstall.reg`. This could break various backup solutions that run that specific command during their work. It will not only block that request but kill all processes in that tree including the backup solution and its invoking process.
 
 If you have a solid security monitoring that logs all process executions, you could check your logs to see if `vssadmin.exe delete shadows`, `vssadmin.exe resize shadowstorage ...` or the other blocked command lines are frequently or sporadically used for legitimate purposes in which case you should refrain from using Raccine.
 
@@ -89,7 +89,7 @@ If you have a solid security monitoring that logs all process executions, you co
 - 0.6.0 - Additional checks for `bcdedit.exe /set {default} bootstatuspolicy ignoreallfailures` and `bcdedit.exe /set {default} recoveryenabled no`
 - 0.7.0 - Additional checks for `powershell.exe` and `win32_shadowcopy` or a list of encoded commands
 - 0.7.1 - Improvements by @JohnLaTwC
-- 0.7.2 - Using abolsute paths in registry patches
+- 0.7.2 - Using absolute paths in registry patches
 - 0.8.0 - Creates a log file with all intercepted requests and actions performed `C:\ProgramData\Raccine_log.txt`
 - 0.9.0 - Logs to Windows Eventlog by @JohnLaTwC
 - 0.10.0 - Simulation mode only
@@ -129,7 +129,7 @@ The batch installer includes an "uninstall" option.
 As Administrator do:
 
 1. Run `raccine-reg-patch-uninstall.reg` 
-2. Remove `%ProgramFiles%\Raccine` and `%ProgramData%\Raccine folders
+2. Remove `%ProgramFiles%\Raccine` and `%ProgramData%\Raccine` folders
 3. Run `reg delete HKCU\Software\Raccine /F`
 4. Run `taskkill /F /IM RaccineSettings.exe` 
 5. Run `reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /V "Raccine Tray" /F`
@@ -175,7 +175,7 @@ The matching process looks like this on the command line:
 "C:\Program Files\Raccine\yara64.exe" -d FromRaccine="true" -d Name="WMIC.exe" -d ExecutablePath="C:\Windows\System32\wbem\WMIC.exe" -d CommandLine="WMIC.exe delete justatest" -d  Priority=32 -d FromRaccine="true" -d ParentName="cmd.exe" -d ParentExecutablePath="C:\Windows\System32\cmd.exe" -d ParentCommandLine="'C:\WINDOWS\system32\cmd.exe' " -d ParentPriority=32 C:\ProgramData\Raccine\yarayara\mal_emotet.yar C:\ProgramData\Raccine\yara\Rac1C6A.tmp
 ```
 
-The following listing shows an example YARA rule that makes use of the external variables in its coindition. 
+The following listing shows an example YARA rule that makes use of the external variables in its condition. 
 
 ```javascript 
 rule env_vars_test {
@@ -244,7 +244,7 @@ In case that the Ransomware that your're currently handling uses a certain proce
 
 ## Help Wanted
 
-I'd like to extend Raccine but lack the C++ coding skills, especially o the Windows platform.
+I'd like to extend Raccine but lack the C++ coding skills, especially on the Windows platform.
 
 ## Help - My System is Broken
 
